@@ -8,67 +8,57 @@ import {
   Eye, 
   EyeOff, 
   ShieldCheck, 
-  Building2, 
   Truck, 
-  UserCog, 
   ArrowRight,
-  CheckCircle2,
   AlertCircle
 } from 'lucide-react';
 
-const DEMO_USERS = [
-  {
-    role: 'super_admin',
-    label: 'Admin',
+const ROLE_PRESETS: Record<string, { email: string; pass: string; label: string; redirect: string }> = {
+  super_admin: {
     email: 'admin@shohnaat.com',
-    password: 'admin123',
-    icon: ShieldCheck,
-    color: 'border-blue-200 bg-blue-50/60 text-blue-700 hover:bg-blue-100/70',
-    target: '/admin',
+    pass: 'admin123',
+    label: 'Superadmin Console',
+    redirect: '/admin',
   },
-  {
-    role: 'merchant',
-    label: 'Merchant',
+  merchant: {
     email: 'merchant@shohnaat.com',
-    password: 'merchant123',
-    icon: Building2,
-    color: 'border-emerald-200 bg-emerald-50/60 text-emerald-700 hover:bg-emerald-100/70',
-    target: '/dashboard',
+    pass: 'merchant123',
+    label: 'Merchant Portal',
+    redirect: '/dashboard',
   },
-  {
-    role: 'rider',
-    label: 'Rider',
+  rider: {
     email: 'rider@shohnaat.com',
-    password: 'rider123',
-    icon: Truck,
-    color: 'border-amber-200 bg-amber-50/60 text-amber-700 hover:bg-amber-100/70',
-    target: '/rider',
+    pass: 'rider123',
+    label: 'Field Rider App',
+    redirect: '/rider',
   },
-  {
-    role: 'operator',
-    label: 'Operator',
+  operator: {
     email: 'operator@shohnaat.com',
-    password: 'operator123',
-    icon: UserCog,
-    color: 'border-purple-200 bg-purple-50/60 text-purple-700 hover:bg-purple-100/70',
-    target: '/admin',
+    pass: 'operator123',
+    label: 'Hub Operator',
+    redirect: '/admin',
   },
-];
+};
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [selectedRole, setSelectedRole] = useState<string>('merchant');
+  const [email, setEmail] = useState<string>('merchant@shohnaat.com');
+  const [password, setPassword] = useState<string>('merchant123');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const handleFill = (user: typeof DEMO_USERS[0]) => {
-    setEmail(user.email);
-    setPassword(user.password);
-    setSelectedRole(user.label);
+  const handleRoleChange = (roleKey: string) => {
+    setSelectedRole(roleKey);
     setError(null);
+    if (roleKey && ROLE_PRESETS[roleKey]) {
+      setEmail(ROLE_PRESETS[roleKey].email);
+      setPassword(ROLE_PRESETS[roleKey].pass);
+    } else {
+      setEmail('');
+      setPassword('');
+    }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -102,6 +92,7 @@ export default function LoginPage() {
           window.location.href = '/dashboard';
         }
       } else {
+        // Fallback for preset test logins
         if (email === 'admin@shohnaat.com' && password === 'admin123') {
           window.location.href = '/admin';
         } else if (email === 'merchant@shohnaat.com') {
@@ -113,6 +104,7 @@ export default function LoginPage() {
         }
       }
     } catch {
+      // Offline / Network fallback
       if (email === 'admin@shohnaat.com' && password === 'admin123') {
         window.location.href = '/admin';
       } else if (email.includes('rider')) {
@@ -127,55 +119,22 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-[#F8FAFC] selection:bg-blue-600 selection:text-white font-sans">
-      <div className="w-full max-w-[390px] my-8">
+      <div className="w-full max-w-[380px] my-8">
         {/* Brand Logomark */}
-        <div className="text-center mb-7">
-          <div className="inline-flex items-center justify-center w-11 h-11 rounded-lg bg-[#2563EB] text-white shadow-sm mb-3">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-[#2563EB] text-white shadow-xs mb-2.5">
             <Truck className="w-5 h-5 stroke-[2.2]" />
           </div>
-          <h1 className="text-xl font-bold tracking-tight text-[#0F172A]">
-            Shohnaat Logistics
+          <h1 className="text-lg font-bold tracking-tight text-[#0F172A]">
+            Shohnaat Logistics OS
           </h1>
-          <p className="text-[13px] text-[#64748B] mt-1 font-normal">
-            Sign in to access your portal
+          <p className="text-xs text-[#64748B] mt-0.5 font-normal">
+            Sign in to access your dashboard
           </p>
         </div>
 
-        {/* 1-Click Test Credentials Strip */}
-        <div className="mb-4 bg-white border border-[#E2E8F0] rounded-lg p-3 shadow-xs">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10.5px] font-bold uppercase tracking-wider text-[#64748B]">
-              ⚡ 1-Click Demo Fill
-            </span>
-            {selectedRole && (
-              <span className="text-[11px] font-semibold text-[#2563EB] flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-[#16A34A]" /> {selectedRole} Ready
-              </span>
-            )}
-          </div>
-          <div className="grid grid-cols-4 gap-1.5">
-            {DEMO_USERS.map((u) => {
-              const Icon = u.icon;
-              const isSelected = selectedRole === u.label;
-              return (
-                <button
-                  key={u.role}
-                  type="button"
-                  onClick={() => handleFill(u)}
-                  className={`flex flex-col items-center justify-center py-1.5 px-1 rounded border text-[11px] font-semibold transition-all ${
-                    u.color
-                  } ${isSelected ? 'ring-2 ring-[#2563EB] shadow-xs' : ''}`}
-                >
-                  <Icon className="w-3.5 h-3.5 mb-0.5 shrink-0" />
-                  <span className="truncate">{u.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Crisp Enterprise Form Card */}
-        <div className="bg-white border border-[#E2E8F0] rounded-lg p-6 sm:p-7 shadow-[0_1px_3px_0_rgba(0,0,0,0.06),0_1px_2px_0_rgba(0,0,0,0.04)]">
+        {/* Single Crisp Enterprise Form Card */}
+        <div className="bg-white border border-[#E2E8F0] rounded-lg p-6 sm:p-7 shadow-[0_1px_3px_0_rgba(0,0,0,0.04)]">
           {error && (
             <div className="mb-4 p-2.5 rounded-md bg-red-50 border border-red-200 text-xs text-red-700 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
@@ -184,13 +143,35 @@ export default function LoginPage() {
           )}
 
           <form onSubmit={handleLogin} className="space-y-4">
+            {/* Simple Role Selector Dropdown */}
+            <div>
+              <label 
+                htmlFor="role-select" 
+                className="block text-[12px] font-semibold text-[#334155] mb-1.5"
+              >
+                Account Role (Quick Switch)
+              </label>
+              <select
+                id="role-select"
+                value={selectedRole}
+                onChange={(e) => handleRoleChange(e.target.value)}
+                className="w-full h-10 px-3 text-xs bg-white border border-[#CBD5E1] rounded-md text-[#0F172A] focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 cursor-pointer font-medium"
+              >
+                <option value="merchant">Merchant Portal (merchant@shohnaat.com)</option>
+                <option value="super_admin">Superadmin Console (admin@shohnaat.com)</option>
+                <option value="rider">Field Rider App (rider@shohnaat.com)</option>
+                <option value="operator">Hub Operator (operator@shohnaat.com)</option>
+                <option value="">Custom Account (Enter manually)</option>
+              </select>
+            </div>
+
             {/* Email Field */}
             <div>
               <label 
                 htmlFor="email" 
-                className="block text-[12.5px] font-semibold text-[#334155] mb-1.5"
+                className="block text-[12px] font-semibold text-[#334155] mb-1.5"
               >
-                Email
+                Email Address
               </label>
               <div className="relative flex items-center">
                 <span className="absolute left-3 text-slate-400 pointer-events-none">
@@ -204,9 +185,9 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
-                    setSelectedRole(null);
+                    setSelectedRole('');
                   }}
-                  className="w-full h-10 pl-9 pr-3 text-sm bg-white border border-[#CBD5E1] rounded-md text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-all"
+                  className="w-full h-10 pl-9 pr-3 text-xs bg-white border border-[#CBD5E1] rounded-md text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-all font-medium"
                 />
               </div>
             </div>
@@ -215,7 +196,7 @@ export default function LoginPage() {
             <div>
               <label 
                 htmlFor="password" 
-                className="block text-[12.5px] font-semibold text-[#334155] mb-1.5"
+                className="block text-[12px] font-semibold text-[#334155] mb-1.5"
               >
                 Password
               </label>
@@ -231,9 +212,9 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
-                    setSelectedRole(null);
+                    setSelectedRole('');
                   }}
-                  className="w-full h-10 pl-9 pr-10 text-sm bg-white border border-[#CBD5E1] rounded-md text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-all"
+                  className="w-full h-10 pl-9 pr-10 text-xs bg-white border border-[#CBD5E1] rounded-md text-[#0F172A] placeholder:text-slate-400 focus:outline-none focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/15 transition-all"
                 />
                 <button
                   type="button"
@@ -275,45 +256,36 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full h-10 rounded-md bg-[#2563EB] hover:bg-[#1E40AF] active:bg-[#1D4ED8] text-white text-sm font-semibold shadow-xs hover:shadow transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full h-10 rounded-md bg-[#2563EB] hover:bg-[#1E40AF] active:bg-[#1D4ED8] text-white text-xs font-semibold shadow-xs transition-all flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    <span>Sign In</span>
-                    <ArrowRight className="w-4 h-4 stroke-[2.2]" />
+                    <span>Sign In to Dashboard</span>
+                    <ArrowRight className="w-3.5 h-3.5 stroke-[2.2]" />
                   </>
                 )}
               </button>
             </div>
           </form>
 
-          {/* Divider */}
-          <div className="my-5 flex items-center gap-3">
-            <div className="h-px flex-1 bg-[#E2E8F0]" />
-            <span className="text-[10.5px] text-[#64748B] font-semibold uppercase tracking-wider">
-              Enterprise Secure
-            </span>
-            <div className="h-px flex-1 bg-[#E2E8F0]" />
-          </div>
-
-          {/* Sign Up / Access Request */}
-          <div className="text-center text-xs text-[#64748B]">
-            Don&apos;t have an account?{' '}
+          {/* Clean Security Footer */}
+          <div className="mt-5 pt-4 border-t border-[#E2E8F0] text-center text-xs text-[#64748B]">
+            Need access?{' '}
             <Link
               href="/request-access"
               className="text-[#2563EB] font-semibold hover:text-[#1E40AF] hover:underline"
             >
-              Request access
+              Contact Administrator
             </Link>
           </div>
         </div>
 
-        {/* Global Security Footer */}
-        <div className="mt-5 text-center text-[11px] text-[#64748B] flex items-center justify-center gap-1.5">
+        {/* 256-Bit SSL Footer */}
+        <div className="mt-4 text-center text-[11px] text-[#64748B] flex items-center justify-center gap-1.5">
           <ShieldCheck className="w-3.5 h-3.5 text-[#16A34A]" />
-          <span>256-Bit SSL Encrypted • Shohnaat Logistics OS</span>
+          <span>256-Bit SSL Encrypted • Shohnaat Logistics</span>
         </div>
       </div>
     </div>
