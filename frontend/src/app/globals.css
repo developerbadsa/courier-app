@@ -29,21 +29,18 @@
   /* Accent */
   --color-purple: #8b5cf6;
   --color-teal: #14b8a6;
-
-  /* Input Tint */
-  --color-input-bg: #f0f5ff;
-  --color-input-border: #e0eaff;
 }
 
 body {
   color: var(--color-slate-700);
   background-color: var(--color-slate-50);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-family: var(--font-inter), 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  letter-spacing: -0.01em;
 }
 
-/* Custom Scrollbars */
+/* Custom Clean Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
