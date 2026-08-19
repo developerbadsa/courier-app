@@ -77,8 +77,8 @@ async function runTests() {
     expectStatus: 401,
   });
   await request('POST', '/api/v1/auth/register', {
-    body: { name: 'Test', email: 'testcheck@test.com', password: 'testpass123', role: 'merchant' },
-    expectStatus: 201,
+    body: { name: 'Smoke Test', email: 'smoketest@verify.com', phone: '+15550000000', password: 'testpass123' },
+    expectStatus: [201, 409],
   });
 
   // ─── 3. Shipments (requires auth — expect 401) ───

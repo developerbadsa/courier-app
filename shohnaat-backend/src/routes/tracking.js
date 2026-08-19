@@ -65,7 +65,7 @@ router.get('/:trackingNumber', async (req, res, next) => {
         deletedAt: null,
       },
       include: {
-        consignee: { select: { name: true, city: true } },
+        consignee: { select: { name: true } },
         pickupAddress: { select: { line1: true, city: true } },
         deliveryAddress: { select: { line1: true, city: true } },
         currentBranch: { select: { name: true, code: true } },
