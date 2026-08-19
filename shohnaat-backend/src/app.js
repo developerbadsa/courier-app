@@ -5,6 +5,7 @@ const path = require('path');
 const logger = require('./lib/logger');
 const { prisma, connectWithRetry, disconnect } = require('./lib/prisma');
 const errorHandler = require('./middleware/errorHandler');
+const { helmetMiddleware, requestId, inputSanitizer, sqlInjectionGuard, rateLimiter, corsOptions } = require('./middleware/security');
 
 // Routes
 const healthRoutes = require('./routes/health');
@@ -25,6 +26,7 @@ const manifestRoutes = require('./routes/manifests');
 const developerRoutes = require('./routes/developer');
 const trackingRoutes = require('./routes/tracking');
 const notificationRoutes = require('./routes/notifications');
+const securityRoutes = require('./routes/security');
 const { createWorker: createNotificationWorker } = require('./services/notificationService');
 
 // Initialize Express App
@@ -34,10 +36,15 @@ const PORT = process.env.PORT || 5000;
 // Make prisma available globally to route handlers
 app.locals.prisma = prisma;
 
-// Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Security Middleware
+app.use(helmetMiddleware);
+app.use(requestId);
+app.use(corsOptions);
+app.use(rateLimiter);
+app.use(inputSanitizer);
+app.use(sqlInjectionGuard);
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Serve uploaded files statically with cache headers
 app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
@@ -70,6 +77,7 @@ app.use('/api/v1/operations', manifestRoutes);
 app.use('/api/v1/developer', developerRoutes);
 app.use('/api/v1/tracking', trackingRoutes); // PUBLIC — no auth
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/v1/security', securityRoutes);
 
 // 404 handler
 app.use((req, res) => {
