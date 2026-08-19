@@ -9,13 +9,12 @@ import {
   BarChart3, 
   Search, 
   ArrowRight, 
-  Database, 
   CheckCircle2, 
   DollarSign, 
-  Layers, 
-  Zap,
-  Globe,
-  HardDrive
+  Clock,
+  MapPin,
+  Headphones,
+  Box
 } from 'lucide-react';
 
 export default function Home() {
@@ -32,7 +31,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A] selection:bg-[#2563EB] selection:text-white font-sans">
-      {/* 1. Crisp Top Navbar */}
+      {/* 1. Top Navbar */}
       <header className="border-b border-[#E2E8F0] bg-white sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-3">
@@ -42,23 +41,23 @@ export default function Home() {
             <div>
               <span className="font-bold text-base tracking-tight text-[#0F172A]">Shohnaat</span>
               <span className="text-[11px] font-semibold text-[#2563EB] ml-1.5 px-1.5 py-0.5 rounded bg-blue-50 border border-blue-200">
-                Logistics OS
+                Express Logistics
               </span>
             </div>
           </Link>
 
           <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-[#475569]">
             <Link href="/track" className="hover:text-[#2563EB] transition-colors">
-              Public Tracking
+              Track Parcel
             </Link>
             <Link href="/dashboard" className="hover:text-[#2563EB] transition-colors">
               Merchant Portal
             </Link>
-            <Link href="/admin" className="hover:text-[#2563EB] transition-colors">
-              Admin Console
-            </Link>
             <Link href="/rider" className="hover:text-[#2563EB] transition-colors">
               Rider App
+            </Link>
+            <Link href="/admin" className="hover:text-[#2563EB] transition-colors">
+              Operations Hub
             </Link>
           </nav>
 
@@ -68,7 +67,7 @@ export default function Home() {
               className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-[#475569] hover:text-[#0F172A] px-3 py-1.5 rounded-md hover:bg-slate-100 transition-colors"
             >
               <Search className="w-3.5 h-3.5 text-slate-400" />
-              Track Parcel
+              Live Tracking
             </Link>
             <Link
               href="/login"
@@ -82,25 +81,25 @@ export default function Home() {
       </header>
 
       {/* 2. Hero Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-16 text-center">
-        {/* Release Tag */}
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#2563EB] text-xs font-semibold mb-6 shadow-2xs">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-16 text-center">
+        {/* Quality Badge */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#2563EB] text-xs font-semibold mb-6 shadow-2xs">
           <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
-          <span>Global Logistics SaaS • Strictly USD ($) • Multi-Tenant Architecture</span>
+          <span>Next-Day & Express Parcel Delivery Services</span>
         </div>
 
-        {/* Main Title */}
-        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#0F172A] max-w-4xl mx-auto leading-tight sm:leading-tight">
-          Enterprise Courier & Logistics Platform Engineered for Scale
+        {/* Main Brand Title */}
+        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#0F172A] max-w-3xl mx-auto leading-tight sm:leading-tight">
+          Fast, Reliable & Global Courier & Freight Delivery
         </h1>
 
         {/* Subtitle */}
         <p className="mt-4 text-sm sm:text-base text-[#64748B] max-w-2xl mx-auto font-normal leading-relaxed">
-          High-performance supply chain orchestration featuring immutable ledger accounting, server-enforced state machines, live GPS rider dispatch, and automated COD settlements.
+          From doorstep merchant pickup to nationwide delivery with live GPS tracking, automated Cash on Delivery (COD) payouts, and guaranteed safety for every parcel.
         </p>
 
         {/* 3. Hero Quick Tracking Bar */}
-        <div className="max-w-xl mx-auto mt-8 bg-white border border-[#E2E8F0] p-2 rounded-lg shadow-xs">
+        <div className="max-w-xl mx-auto mt-8 bg-white border border-[#CBD5E1] p-2 rounded-lg shadow-xs">
           <form onSubmit={handleTrackSubmit} className="flex items-center gap-2">
             <div className="relative flex-1">
               <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
@@ -116,7 +115,7 @@ export default function Home() {
               type="submit"
               className="h-10 px-5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold rounded-md shadow-xs transition-all shrink-0 flex items-center gap-1.5"
             >
-              <span>Track</span>
+              <span>Track Parcel</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
           </form>
@@ -137,7 +136,7 @@ export default function Home() {
                 Merchant Portal
               </h3>
               <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed font-normal">
-                Book parcel shipments, schedule bulk warehouse pickups, manage address book, and track USD COD balances.
+                Book deliveries, request warehouse pickups, download thermal shipping labels, and manage COD settlements.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 text-xs font-semibold text-[#2563EB] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
@@ -156,14 +155,14 @@ export default function Home() {
                 <ShieldCheck className="w-4 h-4" />
               </div>
               <h3 className="text-sm font-bold text-[#0F172A] group-hover:text-emerald-600 transition-colors">
-                Operations Console
+                Operations Hub
               </h3>
               <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed font-normal">
-                Superadmin oversight, merchant KYC verification queue, central sorting hubs, and rate rules.
+                Central sorting management, merchant KYC approvals, branch dispatching, and delivery zone rate rules.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 text-xs font-semibold text-emerald-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              <span>Open Admin View</span>
+              <span>Open Hub Console</span>
               <span>&rarr;</span>
             </div>
           </Link>
@@ -178,14 +177,14 @@ export default function Home() {
                 <Truck className="w-4 h-4" />
               </div>
               <h3 className="text-sm font-bold text-[#0F172A] group-hover:text-amber-600 transition-colors">
-                Field Rider App
+                Field Delivery App
               </h3>
               <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed font-normal">
-                Mobile-first PWA interface for pickups, delivery confirmation, tap-to-call, and real-time COD collection.
+                Rider app for doorstep pickups, delivery confirmation, digital proof-of-delivery, and COD collection.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 text-xs font-semibold text-amber-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              <span>Open Rider View</span>
+              <span>Open Rider App</span>
               <span>&rarr;</span>
             </div>
           </Link>
@@ -203,108 +202,113 @@ export default function Home() {
                 Live Tracking
               </h3>
               <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed font-normal">
-                Instant parcel tracking for global recipients without login. Multi-stage timeline & location stamps.
+                Instant parcel tracking for customers without login. Real-time timeline, location stamps, and delivery ETA.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-slate-100 text-xs font-semibold text-purple-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              <span>Track Now</span>
+              <span>Track Parcel</span>
               <span>&rarr;</span>
             </div>
           </Link>
         </div>
       </section>
 
-      {/* 5. Enterprise Feature Highlights */}
-      <section className="bg-white border-y border-[#E2E8F0] py-12">
+      {/* 5. Courier Key Service Highlights */}
+      <section className="bg-white border-y border-[#E2E8F0] py-14">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-10">
             <h2 className="text-xl sm:text-2xl font-bold text-[#0F172A] tracking-tight">
-              Architected for Reliability & Accuracy
+              Why Businesses Trust Shohnaat Express
             </h2>
-            <p className="text-xs sm:text-sm text-[#64748B] mt-1 font-normal">
-              Built with zero compromises on financial ledgers, parcel safety, and API concurrency.
+            <p className="text-xs sm:text-sm text-[#64748B] mt-1.5 font-normal">
+              Built to provide the fastest, safest, and most dependable delivery experience for merchants and customers.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
             <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
               <div className="w-8 h-8 rounded bg-blue-100 text-[#2563EB] flex items-center justify-center mb-3">
-                <DollarSign className="w-4 h-4" />
+                <Clock className="w-4 h-4" />
               </div>
-              <h3 className="text-sm font-bold text-[#0F172A]">Double-Entry Accounting</h3>
+              <h3 className="text-sm font-bold text-[#0F172A]">Doorstep Fast Pickup</h3>
               <p className="text-xs text-[#64748B] mt-1 font-normal leading-relaxed">
-                Money balances are never overwritten. Every COD collection and delivery fee is recorded as an immutable ledger transaction.
+                Dedicated couriers collect parcels directly from your warehouse or store within scheduled pickup windows.
               </p>
             </div>
 
             <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
               <div className="w-8 h-8 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3">
-                <ShieldCheck className="w-4 h-4" />
+                <DollarSign className="w-4 h-4" />
               </div>
-              <h3 className="text-sm font-bold text-[#0F172A]">Locked State Machine</h3>
+              <h3 className="text-sm font-bold text-[#0F172A]">Reliable COD Settlement</h3>
               <p className="text-xs text-[#64748B] mt-1 font-normal leading-relaxed">
-                Parcel status transitions are strictly enforced on the server. Illegal status transitions throw an automatic 409 conflict.
+                Instant collection upon delivery with transparent automated statements and rapid payout transfers in USD.
               </p>
             </div>
 
             <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
               <div className="w-8 h-8 rounded bg-purple-100 text-purple-700 flex items-center justify-center mb-3">
-                <HardDrive className="w-4 h-4" />
+                <MapPin className="w-4 h-4" />
               </div>
-              <h3 className="text-sm font-bold text-[#0F172A]">Dedicated Media Microservice</h3>
+              <h3 className="text-sm font-bold text-[#0F172A]">Live Real-Time Tracking</h3>
               <p className="text-xs text-[#64748B] mt-1 font-normal leading-relaxed">
-                KYC documents and proof-of-delivery signatures are handled by an isolated storage service, keeping core API load at zero.
+                Complete transparency for both sender and recipient with instant milestone updates and delivery progress.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
+              <div className="w-8 h-8 rounded bg-amber-100 text-amber-700 flex items-center justify-center mb-3">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-bold text-[#0F172A]">100% Parcel Safety</h3>
+              <p className="text-xs text-[#64748B] mt-1 font-normal leading-relaxed">
+                Tamper-proof barcode tracking, OTP confirmation, and digital proof-of-delivery signatures on every order.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 6. Live Container Infrastructure Strip */}
+      {/* 6. Clean Performance & Delivery Metrics */}
       <section className="py-8 bg-[#F8FAFC] border-b border-[#E2E8F0]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-center gap-6 text-xs text-[#64748B]">
-          <div className="flex items-center gap-1.5 font-medium">
-            <Database className="w-3.5 h-3.5 text-[#2563EB]" />
-            <span>PostgreSQL 16 Engine</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+          <div>
+            <div className="text-xl sm:text-2xl font-black text-[#2563EB]">99.4%</div>
+            <div className="text-xs text-[#64748B] mt-0.5 font-medium">On-Time Delivery</div>
           </div>
-          <span className="text-slate-300">•</span>
-          <div className="flex items-center gap-1.5 font-medium">
-            <Zap className="w-3.5 h-3.5 text-amber-500" />
-            <span>Redis 7 Distributed Cache</span>
+          <div>
+            <div className="text-xl sm:text-2xl font-black text-[#0F172A]">24/7</div>
+            <div className="text-xs text-[#64748B] mt-0.5 font-medium">Customer Support</div>
           </div>
-          <span className="text-slate-300">•</span>
-          <div className="flex items-center gap-1.5 font-medium">
-            <Layers className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Node.js Modular API (:5001)</span>
+          <div>
+            <div className="text-xl sm:text-2xl font-black text-[#16A34A]">100%</div>
+            <div className="text-xs text-[#64748B] mt-0.5 font-medium">Verified COD Payouts</div>
           </div>
-          <span className="text-slate-300">•</span>
-          <div className="flex items-center gap-1.5 font-medium">
-            <HardDrive className="w-3.5 h-3.5 text-purple-600" />
-            <span>Storage Microservice (:5002)</span>
-          </div>
-          <span className="text-slate-300">•</span>
-          <div className="flex items-center gap-1.5 font-medium">
-            <Globe className="w-3.5 h-3.5 text-blue-600" />
-            <span>Next.js 14 Standalone (:3001)</span>
+          <div>
+            <div className="text-xl sm:text-2xl font-black text-[#0F172A]">10,000+</div>
+            <div className="text-xs text-[#64748B] mt-0.5 font-medium">Parcels Delivered</div>
           </div>
         </div>
       </section>
 
-      {/* 7. Clean Global Footer */}
+      {/* 7. Clean Professional Footer */}
       <footer className="bg-white py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#64748B]">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-800">Shohnaat Logistics OS</span>
+            <span className="font-bold text-slate-800">Shohnaat Logistics</span>
             <span>&copy; {new Date().getFullYear()}</span>
             <span>•</span>
-            <span>Enterprise Global SaaS (USD Only)</span>
+            <span>All rights reserved.</span>
           </div>
           <div className="flex items-center gap-4">
+            <Link href="/track" className="hover:text-[#2563EB] font-medium">
+              Track Parcel
+            </Link>
+            <Link href="/dashboard" className="hover:text-[#2563EB] font-medium">
+              Merchant Portal
+            </Link>
             <Link href="/login" className="hover:text-[#2563EB] font-medium">
               Portal Sign In
-            </Link>
-            <Link href="/track" className="hover:text-[#2563EB] font-medium">
-              Public Tracking
             </Link>
           </div>
         </div>
