@@ -45,7 +45,7 @@ services:
     container_name: shohnaat-backend
     restart: unless-stopped
     ports:
-      - "127.0.0.1:5001:5000"   # Only localhost — nginx proxies
+      - "5001:5000"
     environment:
       NODE_ENV: production
       PORT: 5000
@@ -73,7 +73,7 @@ services:
     container_name: shohnaat-frontend
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3001:3000"   # Only localhost — nginx proxies
+      - "3001:3000"
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: http://localhost:5001
