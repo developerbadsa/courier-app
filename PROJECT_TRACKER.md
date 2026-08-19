@@ -10,6 +10,8 @@
 
 | Category | Total | Done | Pending |
 |---|---|---|---|
+| VPS Docker Deployment | 4 | 4 ✅ | 0 |
+| GitHub CI/CD Pipeline | 1 | 1 ✅ | 0 |
 | Stitch Designs | 39 | 20 | 19 |
 | Backend Phase 0 | 7 | 7 ✅ | 0 |
 | Backend Phase 1 | 6 | 5 | 1 |
