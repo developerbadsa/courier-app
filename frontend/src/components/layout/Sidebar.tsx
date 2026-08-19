@@ -78,6 +78,13 @@ const NAV_CONFIG: Record<UserRole, { section: string; items: NavItem[] }[]> = {
       ],
     },
     {
+      section: 'Hub Operations',
+      items: [
+        { label: 'Inbound Scanner', href: '/admin/scan', icon: Package },
+        { label: 'Outbound Bagging', href: '/admin/scan/outbound', icon: Truck },
+      ],
+    },
+    {
       section: 'Logistics',
       items: [
         { label: 'Branches & Hubs', href: '/admin/hubs', icon: Building2 },
@@ -110,7 +117,7 @@ const NAV_CONFIG: Record<UserRole, { section: string; items: NavItem[] }[]> = {
       section: 'Hub Management',
       items: [
         { label: 'Hub Dashboard', href: '/admin', icon: LayoutDashboard },
-        { label: 'Inbound Scanning', href: '/admin/scan/inbound', icon: Package },
+        { label: 'Inbound Scanner', href: '/admin/scan', icon: Package },
         { label: 'Outbound Bagging', href: '/admin/scan/outbound', icon: Truck },
         { label: 'Rider Dispatch', href: '/admin/dispatch', icon: Users },
       ],

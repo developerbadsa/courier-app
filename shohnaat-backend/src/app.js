@@ -21,6 +21,7 @@ const auditLogRoutes = require('./routes/auditLogs');
 const financeRoutes = require('./routes/finance');
 const paymentRoutes = require('./routes/payments');
 const addressRoutes = require('./routes/addresses');
+const manifestRoutes = require('./routes/manifests');
 
 // Initialize Express App
 const app = express();
@@ -61,6 +62,7 @@ app.use('/api/v1/audit-logs', auditLogRoutes);
 app.use('/api/v1/finance', financeRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/addresses', addressRoutes);
+app.use('/api/v1/operations', manifestRoutes);
 
 // 404 handler
 app.use((req, res) => {

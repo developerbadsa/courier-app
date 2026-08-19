@@ -269,16 +269,96 @@ router.patch('/assignments/:shipmentId', requireRole('super_admin', 'operator'),
   }
 });
 
+// POST /api/v1/riders/generate-otp — Generate OTP for COD collection verification
+router.post('/generate-otp', async (req, res, next) => {
+  try {
+    const prisma = req.app.locals.prisma;
+    const { shipmentId } = req.body;
+
+    if (!shipmentId) {
+      return res.status(400).json({ success: false, message: 'shipmentId required' });
+    }
+
+    const rider = await prisma.rider.findUnique({ where: { userId: req.user.id } });
+    if (!rider) {
+      return res.status(404).json({ success: false, message: 'Rider profile not found' });
+    }
+
+    // Generate 6-digit OTP
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Store OTP in shipment's chargeSnapshot (temporary, will be cleared)
+    await prisma.shipment.update({
+      where: { id: shipmentId },
+      data: {
+        chargeSnapshot: {
+          otp,
+          otpExpiresAt: expiresAt.toISOString(),
+          otpGeneratedBy: rider.id,
+        },
+      },
+    });
+
+    res.json({
+      success: true,
+      data: {
+        otp,
+        expiresAt: expiresAt.toISOString(),
+        expiresInMinutes: 10,
+        message: 'Share this OTP with consignee for COD verification',
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/v1/riders/verify-otp — Verify OTP entered by consignee
+router.post('/verify-otp', async (req, res, next) => {
+  try {
+    const prisma = req.app.locals.prisma;
+    const { shipmentId, otp } = req.body;
+
+    const shipment = await prisma.shipment.findUnique({ where: { id: shipmentId } });
+    if (!shipment) {
+      return res.status(404).json({ success: false, message: 'Shipment not found' });
+    }
+
+    const snapshot = shipment.chargeSnapshot;
+    if (!snapshot?.otp || !snapshot?.otpExpiresAt) {
+      return res.status(400).json({ success: false, message: 'No OTP generated for this shipment' });
+    }
+
+    // Check expiry
+    if (new Date() > new Date(snapshot.otpExpiresAt)) {
+      return res.status(400).json({ success: false, message: 'OTP expired. Generate a new one.' });
+    }
+
+    // Verify OTP
+    if (otp !== snapshot.otp) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP. Please try again.' });
+    }
+
+    // OTP verified — clear it
+    await prisma.shipment.update({
+      where: { id: shipmentId },
+      data: { chargeSnapshot: { ...snapshot, otpVerified: true, otp: undefined } },
+    });
+
+    res.json({ success: true, data: { verified: true, message: 'OTP verified successfully' } });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // POST /api/v1/riders/complete-delivery — Rider marks delivery complete with COD
 router.post('/complete-delivery', async (req, res, next) => {
   try {
     const prisma = req.app.locals.prisma;
-    const { shipmentId, codCollected, deliveryNotes, podPhotoUrl, signatureUrl } = req.body;
+    const { shipmentId, codCollected, deliveryNotes, podPhotoUrl, signatureUrl, otpVerified } = req.body;
 
-    const rider = await prisma.rider.findUnique({
-      where: { userId: req.user.id },
-    });
-
+    const rider = await prisma.rider.findUnique({ where: { userId: req.user.id } });
     if (!rider) {
       return res.status(404).json({ success: false, message: 'Rider profile not found' });
     }
@@ -286,6 +366,18 @@ router.post('/complete-delivery', async (req, res, next) => {
     const shipment = await prisma.shipment.findUnique({ where: { id: shipmentId } });
     if (!shipment) {
       return res.status(404).json({ success: false, message: 'Shipment not found' });
+    }
+
+    // If COD shipment, OTP must be verified
+    const isCOD = parseFloat(shipment.codAmount || 0) > 0;
+    if (isCOD && codCollected && parseFloat(codCollected) > 0) {
+      const snapshot = shipment.chargeSnapshot;
+      if (!snapshot?.otpVerified) {
+        return res.status(400).json({
+          success: false,
+          message: 'OTP verification required for COD collection',
+        });
+      }
     }
 
     // Update shipment to DELIVERED
