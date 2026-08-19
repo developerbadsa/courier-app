@@ -1,0 +1,700 @@
+// ============================================================
+// SHOHNAAT LOGISTICS — PRODUCTION MASTER SCHEMA (Prisma)
+// PostgreSQL
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// 1. USERS / RBAC
+// ============================================================
+
+model User {
+  id           String     @id @default(cuid())
+  name         String
+  email        String?    @unique
+  phone        String     @unique
+  passwordHash String
+  status       UserStatus @default(ACTIVE)
+  branchId     String?
+  branch       Branch?    @relation(fields: [branchId], references: [id])
+
+  roles        UserRole[]
+  merchant     Merchant?
+  rider        Rider?
+  auditLogs    AuditLog[]
+
+  deletedAt    DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([status])
+  @@map("users")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+// Proper RBAC: roles are DB rows, not hardcoded enum values —
+// lets you add/adjust roles and permissions without a code deploy.
+model Role {
+  id          String           @id @default(cuid())
+  name        String           @unique // e.g. "super_admin", "operator", "rider", "merchant"
+  description String?
+  permissions RolePermission[]
+  users       UserRole[]
+
+  createdAt   DateTime         @default(now())
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String           @id @default(cuid())
+  key         String           @unique // e.g. "shipment.update_status", "settlement.approve"
+  description String?
+  roles       RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id])
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id])
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+model UserRole {
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  @@id([userId, roleId])
+  @@map("user_roles")
+}
+
+// ============================================================
+// 2. BRANCH / WAREHOUSE
+// ============================================================
+
+model Branch {
+  id        String   @id @default(cuid())
+  name      String
+  code      String   @unique
+  isHub     Boolean  @default(false)
+  address   String
+  city      String
+  isActive  Boolean  @default(true)
+
+  users             User[]
+  shipmentsHere     Shipment[]       @relation("CurrentBranch")
+  manifestsOut      Manifest[]       @relation("ManifestFromBranch")
+  manifestsIn       Manifest[]       @relation("ManifestToBranch")
+
+  deletedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("branches")
+}
+
+// ============================================================
+// 3. MERCHANT (platform's paying client — was "Customer" before)
+// ============================================================
+
+model Merchant {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id])
+
+  businessName  String
+  businessType  String?
+  kycStatus     String    @default("pending")
+  isActive      Boolean   @default(true)
+
+  apiKeyHash    String?   @unique
+  apiKeyEnabled Boolean   @default(false)
+
+  rateCardId    String?
+  rateCard      RateCard? @relation(fields: [rateCardId], references: [id])
+
+  addresses      Address[]
+  pickupRequests PickupRequest[]
+  shipments      Shipment[]
+  ledgerAccount  LedgerAccount?
+  settlements    Settlement[]
+  complaints     Complaint[]
+  requests       CustomerRequest[]
+  webhooks       Webhook[]
+  idempotencyKeys IdempotencyKey[]
+
+  deletedAt     DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([isActive])
+  @@map("merchants")
+}
+
+// End-recipient — the merchant's own customer receiving the parcel.
+model Consignee {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String
+  altPhone  String?
+  shipments Shipment[]
+
+  createdAt DateTime @default(now())
+
+  @@index([phone])
+  @@map("consignees")
+}
+
+// ============================================================
+// 4. ADDRESS / ZONE
+// ============================================================
+
+model Zone {
+  id       String   @id @default(cuid())
+  name     String   @unique // e.g. "Zone A", "Zone B"
+  isActive Boolean  @default(true)
+
+  addresses Address[]
+  rateRules RateRule[]
+
+  @@map("zones")
+}
+
+model Address {
+  id         String      @id @default(cuid())
+  merchantId String
+  merchant   Merchant    @relation(fields: [merchantId], references: [id])
+  type       AddressType
+  label      String?
+  line1      String
+  area       String?
+  city       String
+  zoneId     String?
+  zone       Zone?       @relation(fields: [zoneId], references: [id])
+  lat        Float?
+  lng        Float?
+  isDefault  Boolean     @default(false)
+
+  pickupRequests       PickupRequest[]
+  shipmentPickupFor    Shipment[]      @relation("ShipmentPickupAddress")
+  shipmentDeliveryFor  Shipment[]      @relation("ShipmentDeliveryAddress")
+
+  deletedAt  DateTime?
+  createdAt  DateTime    @default(now())
+
+  @@index([merchantId, type])
+  @@map("addresses")
+}
+
+enum AddressType {
+  PICKUP
+  DELIVERY
+}
+
+// ============================================================
+// 5. PRICING
+// ============================================================
+
+model RateCard {
+  id        String     @id @default(cuid())
+  name      String
+  isDefault Boolean    @default(false)
+  rules     RateRule[]
+  merchants Merchant[]
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("rate_cards")
+}
+
+model RateRule {
+  id           String   @id @default(cuid())
+  rateCardId   String
+  rateCard     RateCard @relation(fields: [rateCardId], references: [id])
+  zoneId       String?
+  zone         Zone?    @relation(fields: [zoneId], references: [id])
+  serviceType  String
+  baseCharge   Decimal  @db.Decimal(10, 2)
+  extraPerKg   Decimal? @db.Decimal(10, 2)
+
+  @@index([rateCardId, zoneId])
+  @@map("rate_rules")
+}
+
+// ============================================================
+// 6. PICKUP REQUEST
+// ============================================================
+
+model PickupRequest {
+  id              String       @id @default(cuid())
+  merchantId      String
+  merchant        Merchant     @relation(fields: [merchantId], references: [id])
+  pickupAddressId String
+  pickupAddress   Address      @relation(fields: [pickupAddressId], references: [id])
+
+  requestedDate   DateTime
+  parcelCount     Int          @default(1)
+  status          PickupStatus @default(PENDING)
+
+  assignments     RiderAssignment[]
+  shipments       Shipment[]
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([merchantId, status])
+  @@index([status, requestedDate])
+  @@map("pickup_requests")
+}
+
+enum PickupStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  ASSIGNED
+  COMPLETED
+  CANCELLED
+}
+
+// ============================================================
+// 7. SHIPMENT (core entity, with historical snapshots)
+// ============================================================
+
+model Shipment {
+  id              String         @id @default(cuid())
+  trackingNumber  String         @unique
+
+  merchantId      String
+  merchant        Merchant       @relation(fields: [merchantId], references: [id])
+
+  pickupRequestId String?
+  pickupRequest   PickupRequest? @relation(fields: [pickupRequestId], references: [id])
+
+  consigneeId     String
+  consignee       Consignee      @relation(fields: [consigneeId], references: [id])
+
+  pickupAddressId     String
+  pickupAddress       Address      @relation("ShipmentPickupAddress", fields: [pickupAddressId], references: [id])
+  pickupAddressSnap   Json?
+  deliveryAddressId   String
+  deliveryAddress     Address      @relation("ShipmentDeliveryAddress", fields: [deliveryAddressId], references: [id])
+  deliveryAddressSnap Json?
+
+  weightKg        Decimal?       @db.Decimal(6, 2)
+  paymentType     PaymentType
+  codAmount       Decimal        @default(0) @db.Decimal(10, 2)
+  deliveryCharge  Decimal        @default(0) @db.Decimal(10, 2)
+  chargeSnapshot  Json?
+
+  currentStatus     ShipmentStatus @default(PENDING)
+  currentBranchId   String?
+  currentBranch     Branch?        @relation("CurrentBranch", fields: [currentBranchId], references: [id])
+
+  deliveryAttempts Int            @default(0)
+  isSettled        Boolean        @default(false)
+
+  statusHistory     ShipmentStatusHistory[]
+  riderAssignments  RiderAssignment[]
+  manifestItems     ManifestItem[]
+  ledgerEntries     LedgerEntry[]
+  webhookDeliveries WebhookDelivery[]
+  notifications     Notification[]
+  complaint         Complaint?
+
+  pickedUpAt   DateTime?
+  deliveredAt  DateTime?
+  deletedAt    DateTime?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([merchantId, createdAt])
+  @@index([currentStatus])
+  @@index([currentBranchId, currentStatus])
+  @@index([consigneeId])
+  @@index([pickupRequestId])
+  @@map("shipments")
+}
+
+enum PaymentType {
+  COD
+  PREPAID
+}
+
+enum ShipmentStatus {
+  PENDING
+  PICKUP_ASSIGNED
+  PICKED_UP
+  AT_HUB
+  IN_TRANSIT
+  OUT_FOR_DELIVERY
+  DELIVERED
+  FAILED
+  RESCHEDULED
+  CANCELLED
+  RETURN_INITIATED
+  RETURNED
+}
+
+// Append-only source of truth
+model ShipmentStatusHistory {
+  id               String         @id @default(cuid())
+  shipmentId       String
+  shipment         Shipment       @relation(fields: [shipmentId], references: [id])
+  status           ShipmentStatus
+  note             String?
+  reasonCode       String?
+  actorUserId      String?
+  locationBranchId String?
+  createdAt        DateTime       @default(now())
+
+  @@index([shipmentId, createdAt])
+  @@map("shipment_status_history")
+}
+
+// ============================================================
+// 8. RIDER / DELIVERY
+// ============================================================
+
+model Rider {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id])
+  vehicleType String?
+  isOnDuty    Boolean  @default(false)
+
+  assignments RiderAssignment[]
+  ledgerAccount LedgerAccount?
+
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("riders")
+}
+
+model RiderAssignment {
+  id              String    @id @default(cuid())
+  riderId         String
+  rider           Rider     @relation(fields: [riderId], references: [id])
+  shipmentId      String?
+  shipment        Shipment? @relation(fields: [shipmentId], references: [id])
+  pickupRequestId String?
+  pickupRequest   PickupRequest? @relation(fields: [pickupRequestId], references: [id])
+
+  assignedAt      DateTime  @default(now())
+  unassignedAt    DateTime?
+  outcome         String?
+
+  @@index([riderId, assignedAt])
+  @@index([shipmentId])
+  @@map("rider_assignments")
+}
+
+// ============================================================
+// 9. WAREHOUSE / MANIFEST
+// ============================================================
+
+model Manifest {
+  id             String   @id @default(cuid())
+  fromBranchId   String
+  fromBranch     Branch   @relation("ManifestFromBranch", fields: [fromBranchId], references: [id])
+  toBranchId     String
+  toBranch       Branch   @relation("ManifestToBranch", fields: [toBranchId], references: [id])
+  type           String   // "dispatch" or "receive"
+  dispatchedAt   DateTime?
+  receivedAt     DateTime?
+  createdByUserId String?
+
+  items          ManifestItem[]
+
+  createdAt      DateTime @default(now())
+
+  @@index([fromBranchId, toBranchId])
+  @@map("manifests")
+}
+
+model ManifestItem {
+  id         String   @id @default(cuid())
+  manifestId String
+  manifest   Manifest @relation(fields: [manifestId], references: [id])
+  shipmentId String
+  shipment   Shipment @relation(fields: [shipmentId], references: [id])
+  scannedAt  DateTime @default(now())
+
+  @@index([manifestId])
+  @@unique([manifestId, shipmentId])
+  @@index([shipmentId])
+  @@map("manifest_items")
+}
+
+// ============================================================
+// 10. COD & DOUBLE-ENTRY LEDGER
+// ============================================================
+
+model LedgerAccount {
+  id         String   @id @default(cuid())
+  merchantId String?  @unique
+  merchant   Merchant? @relation(fields: [merchantId], references: [id])
+  riderId    String?  @unique
+  rider      Rider?    @relation(fields: [riderId], references: [id])
+
+  entries    LedgerEntry[]
+
+  createdAt  DateTime @default(now())
+
+  @@map("ledger_accounts")
+}
+
+model LedgerEntry {
+  id            String          @id @default(cuid())
+  transactionId String
+  accountId     String
+  account       LedgerAccount   @relation(fields: [accountId], references: [id])
+  direction     LedgerDirection
+  amount        Decimal         @db.Decimal(10, 2)
+  type          LedgerEntryType
+
+  shipmentId    String?
+  shipment      Shipment?       @relation(fields: [shipmentId], references: [id])
+  settlementId  String?
+  settlement    Settlement?     @relation(fields: [settlementId], references: [id])
+
+  note          String?
+  createdAt     DateTime        @default(now())
+
+  @@index([accountId, createdAt])
+  @@index([transactionId])
+  @@map("ledger_entries")
+}
+
+enum LedgerDirection {
+  DEBIT
+  CREDIT
+}
+
+enum LedgerEntryType {
+  COD_COLLECTED
+  DELIVERY_CHARGE
+  PAYABLE_TO_MERCHANT
+  SETTLEMENT_PAYOUT
+  REFUND
+  ADJUSTMENT
+}
+
+// ============================================================
+// 11. SETTLEMENT
+// ============================================================
+
+model Settlement {
+  id          String            @id @default(cuid())
+  merchantId  String
+  merchant    Merchant          @relation(fields: [merchantId], references: [id])
+  periodStart DateTime
+  periodEnd   DateTime
+  totalAmount Decimal           @db.Decimal(10, 2)
+  status      SettlementStatus  @default(PENDING)
+  paidAt      DateTime?
+
+  ledgerEntries LedgerEntry[]
+
+  createdAt   DateTime          @default(now())
+
+  @@index([merchantId, status])
+  @@map("settlements")
+}
+
+enum SettlementStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+}
+
+// ============================================================
+// 12. API / WEBHOOK + IDEMPOTENCY
+// ============================================================
+
+model Webhook {
+  id         String   @id @default(cuid())
+  merchantId String
+  merchant   Merchant @relation(fields: [merchantId], references: [id])
+  url        String
+  secret     String
+  events     String[]
+  isActive   Boolean  @default(true)
+
+  deliveries WebhookDelivery[]
+
+  createdAt  DateTime @default(now())
+
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id            String    @id @default(cuid())
+  webhookId     String
+  webhook       Webhook   @relation(fields: [webhookId], references: [id])
+  shipmentId    String?
+  shipment      Shipment? @relation(fields: [shipmentId], references: [id])
+  eventType     String
+  payload       Json
+  status        String    @default("pending")
+  attempts      Int       @default(0)
+  lastAttemptAt DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([webhookId, status])
+  @@map("webhook_deliveries")
+}
+
+model IdempotencyKey {
+  id           String   @id @default(cuid())
+  merchantId   String
+  merchant     Merchant @relation(fields: [merchantId], references: [id])
+  key          String
+  requestHash  String
+  responseBody Json
+  statusCode   Int
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  @@unique([merchantId, key])
+  @@map("idempotency_keys")
+}
+
+model ApiRequestLog {
+  id         String   @id @default(cuid())
+  merchantId String?
+  endpoint   String
+  method     String
+  statusCode Int
+  latencyMs  Int
+  createdAt  DateTime @default(now())
+
+  @@index([merchantId, createdAt])
+  @@map("api_request_logs")
+}
+
+// ============================================================
+// 13. NOTIFICATIONS
+// ============================================================
+
+model Notification {
+  id         String              @id @default(cuid())
+  shipmentId String?
+  shipment   Shipment?           @relation(fields: [shipmentId], references: [id])
+  channel    NotificationChannel
+  recipient  String
+  message    String
+  status     NotificationStatus  @default(QUEUED)
+  sentAt     DateTime?
+  createdAt  DateTime            @default(now())
+
+  @@index([shipmentId])
+  @@map("notifications")
+}
+
+enum NotificationChannel {
+  SMS
+  EMAIL
+  WHATSAPP
+}
+
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+// ============================================================
+// 14. COMPLAINTS & CUSTOMER REQUESTS
+// ============================================================
+
+model Complaint {
+  id          String          @id @default(cuid())
+  merchantId  String
+  merchant    Merchant        @relation(fields: [merchantId], references: [id])
+  shipmentId  String?
+  shipment    Shipment?       @relation(fields: [shipmentId], references: [id])
+  subject     String
+  description String
+  status      ComplaintStatus @default(OPEN)
+
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([merchantId, status])
+  @@map("complaints")
+}
+
+enum ComplaintStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+model CustomerRequest {
+  id         String                 @id @default(cuid())
+  merchantId String
+  merchant   Merchant               @relation(fields: [merchantId], references: [id])
+  type       String
+  details    String
+  status     CustomerRequestStatus  @default(PENDING)
+
+  createdAt  DateTime               @default(now())
+  updatedAt  DateTime               @updatedAt
+
+  @@index([merchantId, status])
+  @@map("customer_requests")
+}
+
+enum CustomerRequestStatus {
+  PENDING
+  IN_PROGRESS
+  DONE
+  REJECTED
+}
+
+// ============================================================
+// 15. AUDIT LOG
+// ============================================================
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  actor      User?    @relation(fields: [actorId], references: [id])
+  action     String
+  entityType String
+  entityId   String
+  diff       Json?
+  requestId  String?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+  @@index([actorId, createdAt])
+  @@map("audit_logs")
+}

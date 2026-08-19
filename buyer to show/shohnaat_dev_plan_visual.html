@@ -1,0 +1,1913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shohnaat Logistics Platform — Technical Architecture & Delivery Proposal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-surface: #f1f5f9;
+    --bg-surface-subtle: #f8fafc;
+    --border: #e2e8f0;
+    --border-bright: #cbd5e1;
+    --border-accent: rgba(37, 99, 235, 0.25);
+
+    --text-main: #0f172a;
+    --text-secondary: #334155;
+    --text-muted: #475569;
+    --text-dim: #64748b;
+
+    --primary: #2563eb;
+    --primary-dark: #1d4ed8;
+    --primary-soft: #eff6ff;
+    --primary-border: #bfdbfe;
+
+    --emerald: #16a34a;
+    --emerald-dark: #15803d;
+    --emerald-soft: #f0fdf4;
+    --emerald-border: #86efac;
+
+    --amber: #d97706;
+    --amber-dark: #b45309;
+    --amber-soft: #fffbeb;
+    --amber-border: #fcd34d;
+
+    --purple: #7c3aed;
+    --purple-soft: #f5f3ff;
+    --purple-border: #ddd6fe;
+
+    --rose: #e11d48;
+    --rose-soft: #fff1f2;
+    --rose-border: #fecdd3;
+
+    --mono: "JetBrains Mono", Consolas, monospace;
+    --sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --display: "Outfit", sans-serif;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-full: 9999px;
+    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+    --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.05), 0 2px 4px rgba(15, 23, 42, 0.02);
+    --shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.07), 0 4px 6px rgba(15, 23, 42, 0.02);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text-main);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ══ Header ══ */
+  .header {
+    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+    color: #ffffff;
+    padding: 50px 24px 60px;
+    text-align: center;
+    position: relative;
+    border-bottom: 1px solid #334155;
+  }
+  .header-meta-bar {
+    max-width: 1180px; margin: 0 auto 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+  }
+  .meta-tag {
+    font-family: var(--mono); font-size: 0.74rem; font-weight: 600;
+    color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .meta-status {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(37, 99, 235, 0.2); border: 1px solid rgba(59, 130, 246, 0.35);
+    padding: 3px 10px; border-radius: var(--radius-full);
+    font-size: 0.72rem; color: #93c5fd; font-family: var(--mono); font-weight: 600;
+  }
+  .status-pulse {
+    width: 6px; height: 6px; border-radius: 50%; background: #38bdf8;
+  }
+
+  .header h1 {
+    font-family: var(--display);
+    font-size: 2.3rem; font-weight: 700; letter-spacing: -0.5px;
+    color: #ffffff; line-height: 1.25; max-width: 860px; margin: 0 auto 12px;
+  }
+  .header .sub {
+    font-size: 1rem; color: #cbd5e1; max-width: 740px; margin: 0 auto;
+    font-weight: 400; line-height: 1.55;
+  }
+
+  /* Navigation Bar */
+  .mode-bar {
+    margin-top: 24px; display: inline-flex; gap: 6px; padding: 4px;
+    background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: var(--radius-full);
+  }
+  .mode-btn {
+    padding: 7px 18px; border-radius: var(--radius-full); border: none;
+    font-size: 0.82rem; font-weight: 600; cursor: pointer; color: #94a3b8;
+    background: transparent; transition: all 0.2s;
+  }
+  .mode-btn.active {
+    background: #2563eb; color: #ffffff;
+  }
+  .mode-btn:hover:not(.active) { color: #ffffff; background: rgba(255,255,255,0.06); }
+
+  /* ══ Main Container ══ */
+  .container {
+    max-width: 1220px; margin: -28px auto 60px; padding: 0 20px;
+    position: relative; z-index: 2;
+  }
+
+  /* ══ Executive Summary Banner ══ */
+  .exec-banner {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 22px 26px; margin-bottom: 24px;
+    box-shadow: var(--shadow-md); display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  }
+  .exec-stat {
+    border-right: 1px solid var(--border); padding-right: 14px;
+  }
+  .exec-stat:last-child { border-right: none; }
+  .exec-stat .k { font-family: var(--mono); font-size: 0.72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+  .exec-stat .v { font-family: var(--display); font-size: 1.35rem; font-weight: 700; color: var(--text-main); }
+  .exec-stat .s { font-size: 0.75rem; color: var(--text-muted); margin-top: 1px; }
+
+  /* ══ 6-Phase Pipeline Map ══ */
+  .pipeline-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 24px; margin-bottom: 24px;
+    box-shadow: var(--shadow-md);
+  }
+  .section-label {
+    font-family: var(--mono); font-size: 0.72rem; font-weight: 700; color: var(--primary);
+    text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;
+  }
+  .section-heading {
+    font-family: var(--display); font-size: 1.25rem; font-weight: 700; color: var(--text-main); margin-bottom: 16px;
+  }
+
+  .story-steps {
+    display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px;
+  }
+  .story-step {
+    background: var(--bg-surface-subtle); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 14px 12px; text-align: left;
+    position: relative; transition: all 0.2s; cursor: pointer;
+  }
+  .story-step:hover, .story-step.active {
+    border-color: var(--primary); background: var(--primary-soft);
+  }
+  .story-step .step-idx {
+    font-family: var(--mono); font-size: 0.72rem; font-weight: 700; color: var(--primary);
+    margin-bottom: 4px; display: block;
+  }
+  .story-step .title { font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
+  .story-step .desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.35; }
+
+  /* ══ Section Card ══ */
+  .section-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-lg); padding: 26px; margin-bottom: 24px;
+    box-shadow: var(--shadow-md); position: relative;
+  }
+  .section-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 18px; padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title-wrap h3 {
+    font-family: var(--display); font-size: 1.25rem; font-weight: 700; color: var(--text-main);
+  }
+  .section-title-wrap p { font-size: 0.85rem; color: var(--text-muted); margin-top: 2px; }
+  .section-pill {
+    font-family: var(--mono); font-size: 0.72rem; font-weight: 600;
+    padding: 3px 10px; border-radius: var(--radius-full);
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .pill-p1 { background: var(--emerald-soft); color: var(--emerald-dark); border: 1px solid var(--emerald-border); }
+  .pill-p2 { background: var(--primary-soft); color: var(--primary-dark); border: 1px solid var(--primary-border); }
+  .pill-p3 { background: var(--amber-soft); color: var(--amber-dark); border: 1px solid var(--amber-border); }
+
+  /* ══ Lifecycle Simulator ══ */
+  .sim-container {
+    background: var(--bg-surface-subtle); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 20px; position: relative;
+  }
+  .sim-top-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 12px; margin-bottom: 18px;
+  }
+  .sim-scenario-selector {
+    display: flex; gap: 4px; background: var(--bg-card);
+    padding: 3px; border-radius: var(--radius-full); border: 1px solid var(--border);
+  }
+  .scen-btn {
+    padding: 5px 12px; border-radius: var(--radius-full); border: none;
+    font-size: 0.76rem; font-weight: 600; cursor: pointer; color: var(--text-muted);
+    background: transparent; transition: all 0.2s;
+  }
+  .scen-btn.active {
+    background: var(--emerald); color: #ffffff;
+  }
+  .scen-btn.active.alt { background: var(--amber); color: #ffffff; }
+  .scen-btn.active.bad { background: var(--rose); color: #ffffff; }
+
+  .sim-controls {
+    display: flex; gap: 6px; align-items: center;
+  }
+  .sim-btn {
+    padding: 6px 14px; border-radius: var(--radius-sm); border: none;
+    font-family: var(--mono); font-size: 0.76rem; font-weight: 600; cursor: pointer;
+    background: var(--primary); color: #ffffff; transition: all 0.2s;
+  }
+  .sim-btn:hover { background: var(--primary-dark); }
+  .sim-btn.ghost {
+    background: var(--bg-card); color: var(--text-main); border: 1px solid var(--border);
+  }
+  .sim-btn.ghost:hover { background: var(--bg-surface); }
+
+  /* Animated Track */
+  .anim-track-wrap {
+    position: relative; padding: 32px 14px 24px; margin-bottom: 18px;
+    background: var(--bg-card); border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+  }
+  .anim-track-line {
+    position: absolute; top: 48px; left: 5%; right: 5%; height: 3px;
+    background: #e2e8f0; border-radius: 3px; z-index: 1;
+  }
+  .anim-track-fill {
+    height: 100%; width: 0%; border-radius: 3px;
+    background: linear-gradient(90deg, #2563eb 0%, #16a34a 50%, #d97706 100%);
+    transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .track-nodes {
+    display: flex; justify-content: space-between; position: relative; z-index: 2;
+  }
+  .track-node {
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    width: 100px; cursor: pointer;
+  }
+  .track-node .node-index {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--bg-card); border: 2px solid #cbd5e1;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700; font-family: var(--mono); color: var(--text-dim);
+    transition: all 0.2s; margin-bottom: 6px;
+  }
+  .track-node.active .node-index {
+    border-color: var(--emerald); background: var(--emerald-soft); color: var(--emerald-dark);
+  }
+  .track-node.current .node-index {
+    border-color: var(--primary); background: var(--primary); color: #ffffff;
+    box-shadow: 0 0 0 3px var(--primary-soft);
+  }
+
+  .track-node .node-name {
+    font-size: 0.74rem; font-weight: 600; color: var(--text-muted); line-height: 1.25;
+  }
+  .track-node.active .node-name { color: var(--text-main); }
+  .track-node.current .node-name { color: var(--primary); font-weight: 700; }
+  .track-node .node-time {
+    font-family: var(--mono); font-size: 0.64rem; color: var(--text-dim); margin-top: 2px;
+  }
+
+  .moving-carrier {
+    position: absolute; top: 32px; left: 5%; transform: translateX(-50%);
+    font-family: var(--mono); font-size: 0.68rem; font-weight: 700;
+    background: var(--primary); color: #ffffff; padding: 2px 8px; border-radius: var(--radius-full);
+    z-index: 5; transition: left 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Live Simulation Dashboard (3 Columns) */
+  .sim-dash-grid {
+    display: grid; grid-template-columns: 1.2fr 0.8fr 1fr; gap: 14px;
+  }
+  .sim-panel {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 14px;
+  }
+  .sim-panel-title {
+    font-family: var(--mono); font-size: 0.68rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-dim);
+    margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;
+  }
+  
+  .sim-status-badge {
+    display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px;
+    border-radius: var(--radius-sm); font-size: 0.74rem; font-weight: 700;
+    background: var(--emerald-soft); color: var(--emerald-dark); border: 1px solid var(--emerald-border);
+  }
+  .sim-log-feed {
+    font-family: var(--mono); font-size: 0.73rem; color: var(--text-secondary);
+    line-height: 1.55; display: flex; flex-direction: column; gap: 5px;
+  }
+  .sim-log-feed .log-item {
+    background: var(--bg-surface); padding: 5px 8px; border-radius: 4px;
+    border-left: 3px solid var(--primary);
+  }
+
+  .phone-mock {
+    background: #ffffff; border: 1px solid #cbd5e1; border-radius: 6px;
+    padding: 10px; font-size: 0.73rem;
+  }
+  .phone-header {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;
+    padding-bottom: 4px; border-bottom: 1px solid #e2e8f0; color: #16a34a; font-weight: 700; font-family: var(--mono); font-size: 0.7rem;
+  }
+  .phone-msg-bubble {
+    background: #f0fdf4; color: #14532d; padding: 7px 9px;
+    border-radius: 6px; line-height: 1.4; border: 1px solid #bbf7d0;
+  }
+  .phone-msg-bubble .msg-time {
+    font-size: 0.62rem; color: #166534; text-align: right; margin-top: 3px; font-family: var(--mono);
+  }
+
+  .money-tracker {
+    display: flex; flex-direction: column; gap: 6px; font-family: var(--mono); font-size: 0.74rem;
+  }
+  .money-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 5px 8px; border-radius: 4px; background: var(--bg-surface);
+  }
+  .money-row.highlight { background: var(--emerald-soft); border: 1px solid var(--emerald-border); }
+  .money-row .val { font-weight: 700; }
+  .val-green { color: var(--emerald-dark); }
+  .val-amber { color: var(--amber-dark); }
+  .val-blue { color: var(--primary); }
+
+  /* ══ Architecture Grid ══ */
+  .arch-canvas-wrap {
+    background: var(--bg-surface-subtle); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 18px; position: relative;
+    overflow-x: auto;
+  }
+  .arch-nav-tabs {
+    display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .arch-tab {
+    padding: 4px 10px; border-radius: var(--radius-sm); font-size: 0.75rem;
+    font-weight: 600; cursor: pointer; border: 1px solid var(--border);
+    background: var(--bg-card); color: var(--text-muted); transition: all 0.2s;
+  }
+  .arch-tab.active {
+    background: var(--primary); color: #ffffff; border-color: var(--primary);
+  }
+  
+  .arch-grid {
+    display: grid;
+    grid-template-columns: 260px 1fr 260px;
+    gap: 14px;
+    min-width: 940px;
+  }
+  .arch-col {
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .arch-col-title {
+    font-family: var(--mono); font-size: 0.7rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-dim);
+    display: flex; align-items: center; gap: 6px; padding-bottom: 4px;
+    border-bottom: 2px solid var(--border);
+  }
+  .arch-col-title .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--primary); }
+
+  .node-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 11px 13px;
+    transition: all 0.15s;
+    position: relative; cursor: pointer; box-shadow: var(--shadow-sm);
+  }
+  .node-box:hover {
+    border-color: var(--primary);
+  }
+  .node-box.highlight {
+    border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-border);
+    background: var(--primary-soft);
+  }
+  .node-box .node-top {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 3px;
+  }
+  .node-box .node-title {
+    font-size: 0.84rem; font-weight: 700; color: var(--text-main);
+  }
+  .node-box .node-sub { font-size: 0.72rem; color: var(--text-muted); line-height: 1.35; }
+  .node-box .phase-tag {
+    font-family: var(--mono); font-size: 0.62rem; font-weight: 700;
+    padding: 1px 5px; border-radius: 3px;
+  }
+
+  .node-portal { border-left: 3px solid var(--primary); }
+  .node-ops { border-left: 3px solid var(--emerald); }
+  .node-hub { border-left: 3px solid var(--amber); }
+  .node-rider { border-left: 3px solid var(--purple); }
+  .node-finance { border-left: 3px solid var(--rose); }
+  .node-ext { border-left: 3px solid var(--primary-dark); }
+
+  .flow-hub-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 12px;
+  }
+  .hub-chain {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .hub-chain-item {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--bg-surface-subtle); border: 1px solid var(--border);
+    padding: 7px 10px; border-radius: var(--radius-sm); font-size: 0.76rem;
+    transition: all 0.15s; cursor: pointer;
+  }
+  .hub-chain-item:hover { border-color: var(--amber); background: var(--amber-soft); }
+  .hub-chain-item .act { font-weight: 700; color: var(--text-main); }
+  .hub-chain-item .badge-mini {
+    font-family: var(--mono); font-size: 0.65rem; padding: 1px 5px;
+    border-radius: 3px; background: var(--bg-card); border: 1px solid var(--border); color: var(--text-muted);
+  }
+
+  .node-inspector {
+    margin-top: 16px; background: var(--bg-card);
+    border: 1px solid var(--primary); border-radius: var(--radius-md);
+    padding: 14px 18px; display: none; animation: fadeIn 0.2s ease-out;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: translateY(0); } }
+  .node-inspector.active { display: block; }
+  .inspector-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-top: 8px;
+  }
+  .inspector-col h5 {
+    font-family: var(--mono); font-size: 0.7rem; color: var(--primary);
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 3px; font-weight: 700;
+  }
+  .inspector-col p { font-size: 0.78rem; color: var(--text-secondary); line-height: 1.4; }
+
+  /* ══ Financial Flow & Settlement ══ */
+  .cash-journey-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 12px;
+  }
+  .cash-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 14px; text-align: left;
+    box-shadow: var(--shadow-sm); transition: all 0.2s;
+  }
+  .cash-card:hover { border-color: var(--emerald); transform: translateY(-1px); }
+  .cash-card .step-tag {
+    font-family: var(--mono); font-size: 0.68rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .cash-card .cash-title { font-size: 0.84rem; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
+  .cash-card .cash-amount {
+    font-family: var(--mono); font-size: 1.15rem; font-weight: 800; color: var(--emerald-dark);
+    margin-bottom: 4px;
+  }
+  .cash-card .cash-desc { font-size: 0.72rem; color: var(--text-muted); line-height: 1.35; }
+
+  .cod-calc-wrap {
+    background: var(--bg-surface-subtle); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 16px; margin-top: 16px;
+  }
+  .calc-input-row {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px;
+  }
+  .calc-input-group {
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .calc-input-group label {
+    font-family: var(--mono); font-size: 0.68rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600;
+  }
+  .calc-input-group input, .calc-input-group select {
+    background: var(--bg-card); border: 1px solid var(--border-bright);
+    padding: 6px 9px; border-radius: var(--radius-sm); color: var(--text-main);
+    font-family: var(--mono); font-size: 0.8rem; outline: none;
+  }
+  .calc-breakdown {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+    background: var(--bg-card); padding: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+  }
+  .breakdown-box { text-align: center; }
+  .breakdown-box .lbl { font-size: 0.68rem; color: var(--text-muted); margin-bottom: 1px; }
+  .breakdown-box .amt { font-family: var(--mono); font-size: 0.96rem; font-weight: 700; color: var(--text-main); }
+
+  /* ══ Multi-Role Perspective ══ */
+  .role-tabs {
+    display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap;
+  }
+  .role-tab-btn {
+    padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+    background: var(--bg-card); color: var(--text-muted); font-size: 0.78rem;
+    font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 4px;
+    transition: all 0.15s;
+  }
+  .role-tab-btn:hover { background: var(--bg-surface); color: var(--text-main); }
+  .role-tab-btn.active {
+    background: var(--primary); color: #ffffff; border-color: var(--primary);
+  }
+  .role-content-card {
+    background: var(--bg-surface-subtle); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 18px; display: none;
+  }
+  .role-content-card.active { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .role-info h4 { font-family: var(--display); font-size: 1.1rem; color: var(--text-main); margin-bottom: 4px; }
+  .role-info p { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 10px; }
+  .role-features { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .role-features li {
+    font-size: 0.78rem; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;
+  }
+  .role-features li::before {
+    content: "—"; color: var(--primary); font-weight: 700; font-family: var(--mono);
+  }
+  
+  .role-ui-mock {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 12px; font-family: var(--mono); font-size: 0.72rem;
+  }
+  .mock-header {
+    display: flex; justify-content: space-between; border-bottom: 1px solid var(--border);
+    padding-bottom: 5px; margin-bottom: 6px; color: var(--text-dim); font-weight: 700; font-size: 0.7rem;
+  }
+  .mock-card {
+    background: var(--bg-surface-subtle); border: 1px solid var(--border); border-radius: 4px;
+    padding: 7px 9px; margin-bottom: 5px;
+  }
+  .mock-btn {
+    background: var(--primary); color: #ffffff; border: none; padding: 4px 9px;
+    border-radius: 4px; cursor: pointer; font-size: 0.68rem; font-weight: 700;
+  }
+
+  /* ══ Timeline & Roadmap ══ */
+  .timeline-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 18px;
+  }
+  .timeline-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-md); padding: 14px; position: relative;
+    border-top: 3px solid var(--primary);
+  }
+  .timeline-card.p1 { border-top-color: var(--emerald); }
+  .timeline-card.p2 { border-top-color: var(--primary); }
+  .timeline-card.p3 { border-top-color: var(--amber); }
+  .timeline-card.p4 { border-top-color: var(--purple); }
+  .timeline-phase {
+    font-family: var(--mono); font-size: 0.68rem; font-weight: 700; color: var(--text-dim);
+    display: flex; justify-content: space-between; margin-bottom: 3px;
+  }
+  .timeline-name { font-size: 0.92rem; font-weight: 700; color: var(--text-main); margin-bottom: 2px; }
+  .timeline-time {
+    font-size: 0.72rem; font-weight: 700; font-family: var(--mono);
+    color: var(--primary); margin-bottom: 8px;
+  }
+  .timeline-deliverables { list-style: none; display: flex; flex-direction: column; gap: 3px; }
+  .timeline-deliverables li {
+    font-size: 0.75rem; color: var(--text-secondary); position: relative; padding-left: 10px;
+  }
+  .timeline-deliverables li::before {
+    content: "•"; position: absolute; left: 0; color: var(--primary); font-size: 0.8rem; top: -1px;
+  }
+
+  /* ══ Database Entity Architecture ══ */
+  .db-grid {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  }
+  .db-card {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius-md); overflow: hidden;
+  }
+  .db-card-head {
+    padding: 6px 9px; font-family: var(--mono); font-size: 0.72rem; font-weight: 700;
+    color: #ffffff; display: flex; justify-content: space-between; align-items: center;
+  }
+  .db-card.p1 .db-card-head { background: var(--emerald-dark); }
+  .db-card.p2 .db-card-head { background: var(--primary-dark); }
+  .db-card.p3 .db-card-head { background: var(--amber-dark); }
+  .db-card.p4 .db-card-head { background: var(--purple); }
+  .db-fields {
+    list-style: none; padding: 8px 9px; font-family: var(--mono); font-size: 0.68rem;
+    color: var(--text-secondary); display: flex; flex-direction: column; gap: 2px;
+  }
+  .db-fields li { display: flex; align-items: center; justify-content: space-between; }
+  .db-fields .pk { color: var(--amber-dark); font-weight: 700; }
+  .db-fields .fk { color: var(--primary); font-weight: 600; }
+  .db-fields .type { color: var(--text-dim); }
+
+  /* ══ Footer ══ */
+  .footer {
+    text-align: center; padding: 28px 20px 40px; color: var(--text-dim);
+    font-size: 0.78rem; font-family: var(--mono); border-top: 1px solid var(--border);
+  }
+
+  /* ══ Responsive ══ */
+  @media (max-width: 1024px) {
+    .exec-banner { grid-template-columns: 1fr 1fr; }
+    .story-steps { grid-template-columns: repeat(3, 1fr); }
+    .sim-dash-grid { grid-template-columns: 1fr; }
+    .cash-journey-grid { grid-template-columns: 1fr 1fr; }
+    .timeline-grid { grid-template-columns: 1fr 1fr; }
+    .db-grid { grid-template-columns: 1fr 1fr; }
+    .role-content-card.active { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 640px) {
+    .header h1 { font-size: 1.65rem; }
+    .exec-banner { grid-template-columns: 1fr; }
+    .story-steps { grid-template-columns: 1fr 1fr; }
+    .calc-breakdown { grid-template-columns: 1fr 1fr; }
+    .timeline-grid { grid-template-columns: 1fr; }
+    .db-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<header class="header">
+  <div class="header-meta-bar">
+    <div class="meta-tag">Shohnaat Logistics Architecture &bull; Engineering Proposal</div>
+    <div class="meta-status"><span class="status-pulse"></span> Production Ready Specification</div>
+  </div>
+
+  <h1>Shohnaat Logistics Platform: Technical Blueprint & Delivery Roadmap</h1>
+  <p class="sub">
+    A comprehensive engineering architecture and operational roadmap covering parcel intake, automated linehaul dispatch, real-time tracking, and automated financial settlements.
+  </p>
+
+  <div class="mode-bar">
+    <button class="mode-btn active" id="btnModeVisual">Executive Blueprint</button>
+    <button class="mode-btn" id="btnModeArch">System Architecture</button>
+    <button class="mode-btn" id="btnModeSim">Live Lifecycle Simulator</button>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ══ EXECUTIVE METRICS ══ -->
+  <div class="exec-banner">
+    <div class="exec-stat">
+      <div class="k">Phase 1 Target</div>
+      <div class="v" style="color:var(--emerald-dark);">7–10 Days</div>
+      <div class="s">Core Operational MVP Live</div>
+    </div>
+    <div class="exec-stat">
+      <div class="k">Architecture Stack</div>
+      <div class="v" style="color:var(--primary);">Next.js + Node</div>
+      <div class="s">PostgreSQL &bull; Prisma ORM</div>
+    </div>
+    <div class="exec-stat">
+      <div class="k">Financial Engine</div>
+      <div class="v" style="color:var(--amber-dark);">Automated COD</div>
+      <div class="s">Zero Cash Discrepancy</div>
+    </div>
+    <div class="exec-stat">
+      <div class="k">Channel Integration</div>
+      <div class="v" style="color:var(--purple);">REST &bull; Webhooks</div>
+      <div class="s">Shopify &bull; WhatsApp Cloud</div>
+    </div>
+  </div>
+
+  <!-- ══ 6-STEP OPERATIONAL PIPELINE ══ -->
+  <div class="pipeline-card" id="sectionStory">
+    <div class="section-label">End-to-End Workflow</div>
+    <div class="section-heading">The 6 Core Operational Milestones</div>
+
+    <div class="story-steps">
+      <div class="story-step active" data-story="1">
+        <span class="step-idx">Phase 01</span>
+        <div class="title">Merchant Booking</div>
+        <div class="desc">Order created via portal, CSV upload, or e-commerce REST API</div>
+      </div>
+      <div class="story-step" data-story="2">
+        <span class="step-idx">Phase 02</span>
+        <div class="title">Pickup Dispatch</div>
+        <div class="desc">Field rider allocated for parcel collection & QR label scan</div>
+      </div>
+      <div class="story-step" data-story="3">
+        <span class="step-idx">Phase 03</span>
+        <div class="title">Hub Sorting</div>
+        <div class="desc">Digital scale weight audit, bin sorting & inter-branch transfer</div>
+      </div>
+      <div class="story-step" data-story="4">
+        <span class="step-idx">Phase 04</span>
+        <div class="title">Last-Mile Dispatch</div>
+        <div class="desc">Daily delivery runsheet generation & zone representative routing</div>
+      </div>
+      <div class="story-step" data-story="5">
+        <span class="step-idx">Phase 05</span>
+        <div class="title">Doorstep Delivery</div>
+        <div class="desc">Recipient delivery, COD cash collection or partial item return</div>
+      </div>
+      <div class="story-step" data-story="6">
+        <span class="step-idx">Phase 06</span>
+        <div class="title">Financial Settlement</div>
+        <div class="desc">WhatsApp delivery confirmation, rider audit & merchant payout</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ LIVE LIFECYCLE SIMULATOR ══ -->
+  <div class="section-card" id="sectionSim">
+    <div class="section-header">
+      <div class="section-title-wrap">
+        <h3>Interactive Shipment Lifecycle Simulator</h3>
+        <p>Simulate how a package transitions through the system, updating tracking states, customer notifications, and ledger entries in real time.</p>
+      </div>
+      <div class="sim-controls">
+        <button class="sim-btn" id="simPlayBtn">Play Simulation</button>
+        <button class="sim-btn ghost" id="simStepBtn">Next Step</button>
+        <button class="sim-btn ghost" id="simResetBtn">Reset</button>
+      </div>
+    </div>
+
+    <div class="sim-container">
+      <div class="sim-top-bar">
+        <div style="font-size:0.78rem; font-weight:700; color:var(--text-main);">Select Simulation Scenario:</div>
+        <div class="sim-scenario-selector">
+          <button class="scen-btn active" data-scenario="success">Standard Delivery (100% COD)</button>
+          <button class="scen-btn" data-scenario="partial">Partial Delivery (Partial Return)</button>
+          <button class="scen-btn" data-scenario="reject">Customer Rejected / RTO</button>
+        </div>
+      </div>
+
+      <!-- Animated Track -->
+      <div class="anim-track-wrap">
+        <div class="anim-track-line">
+          <div class="anim-track-fill" id="trackFill"></div>
+        </div>
+
+        <div class="moving-carrier" id="movingCarrier">Origin</div>
+
+        <div class="track-nodes" id="trackNodes">
+          <div class="track-node active current" data-step="0">
+            <div class="node-index">01</div>
+            <div class="node-name">Merchant Store</div>
+            <div class="node-time">09:00 AM</div>
+          </div>
+          <div class="track-node" data-step="1">
+            <div class="node-index">02</div>
+            <div class="node-name">Pickup Rider</div>
+            <div class="node-time">11:30 AM</div>
+          </div>
+          <div class="track-node" data-step="2">
+            <div class="node-index">03</div>
+            <div class="node-name">Central Hub</div>
+            <div class="node-time">03:00 PM</div>
+          </div>
+          <div class="track-node" data-step="3">
+            <div class="node-index">04</div>
+            <div class="node-name">Linehaul Transit</div>
+            <div class="node-time">08:00 PM</div>
+          </div>
+          <div class="track-node" data-step="4">
+            <div class="node-index">05</div>
+            <div class="node-name">Delivery Rider</div>
+            <div class="node-time">10:15 AM (+1)</div>
+          </div>
+          <div class="track-node" data-step="5">
+            <div class="node-index">06</div>
+            <div class="node-name">Customer Door</div>
+            <div class="node-time">12:45 PM</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Dashboard Under Simulation -->
+      <div class="sim-dash-grid">
+        <div class="sim-panel">
+          <div class="sim-panel-title">
+            <span>System State Event Log</span>
+            <span class="sim-status-badge" id="liveBadge">PENDING PICKUP</span>
+          </div>
+          <div class="sim-log-feed" id="liveLogFeed">
+            <div class="log-item">Order #SH-9082 registered for $15.00 COD.</div>
+          </div>
+        </div>
+
+        <div class="sim-panel">
+          <div class="sim-panel-title">
+            <span>Customer Notification Trigger</span>
+            <span style="color:var(--emerald-dark); font-size:0.68rem; font-weight:700;">WhatsApp Active</span>
+          </div>
+          <div class="phone-mock">
+            <div class="phone-header">
+              <span>Shohnaat Express Service</span>
+            </div>
+            <div class="phone-msg-bubble" id="phoneMsgBubble">
+              "Hello! Your parcel #SH-9082 has been booked by GadgetZone. Track live here: shohnaat.com/t/9082"
+              <div class="msg-time" id="msgTime">09:00 AM &bull; Delivered</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="sim-panel">
+          <div class="sim-panel-title">
+            <span>Real-time Financial Ledger</span>
+            <span style="color:var(--primary); font-size:0.68rem; font-weight:700;">USD Ledger</span>
+          </div>
+          <div class="money-tracker">
+            <div class="money-row">
+              <span>Parcel Invoice (COD):</span>
+              <span class="val val-green" id="trackCod">$15.00</span>
+            </div>
+            <div class="money-row">
+              <span>Rider Cash Liability:</span>
+              <span class="val val-amber" id="trackRiderCash">$0.00</span>
+            </div>
+            <div class="money-row">
+              <span>Delivery Fee:</span>
+              <span class="val val-blue" id="trackFee">$1.20</span>
+            </div>
+            <div class="money-row highlight">
+              <span>Merchant Net Payout:</span>
+              <span class="val val-green" id="trackMerchantNet">Pending Delivery</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SYSTEM ARCHITECTURE SPECIFICATION ══ -->
+  <div class="section-card" id="sectionArch">
+    <div class="section-header">
+      <div class="section-title-wrap">
+        <h3>System Architecture & Technical Modules</h3>
+        <p>Modular software architecture organized into access channels, operational controllers, and financial ledger engines.</p>
+      </div>
+      <span class="section-pill pill-p1">Production Architecture</span>
+    </div>
+
+    <div class="arch-canvas-wrap">
+      <div class="arch-nav-tabs">
+        <button class="arch-tab active" data-filter="all">All Modules</button>
+        <button class="arch-tab" data-filter="portal">Client Portals</button>
+        <button class="arch-tab" data-filter="hub">Warehouse & Operations</button>
+        <button class="arch-tab" data-filter="rider">Representative Dispatch</button>
+        <button class="arch-tab" data-filter="finance">Accounting & Settlement</button>
+      </div>
+
+      <div class="arch-grid">
+        <!-- Col 1: Channels -->
+        <div class="arch-col">
+          <div class="arch-col-title"><span class="dot"></span> 1. Access Channels & Portals</div>
+          
+          <div class="node-box node-portal" data-node="merchant">
+            <div class="node-top">
+              <span class="node-title">Merchant Portal</span>
+              <span class="phase-tag pill-p1">P1</span>
+            </div>
+            <div class="node-sub">Bulk shipment creation, live COD balance, invoices, tracking widgets</div>
+          </div>
+
+          <div class="node-box node-portal" data-node="customer">
+            <div class="node-top">
+              <span class="node-title">Customer Web Portal</span>
+              <span class="phase-tag pill-p1">P1</span>
+            </div>
+            <div class="node-sub">Public tracking interface, delivery verification, inquiry submission</div>
+          </div>
+
+          <div class="node-box node-portal" data-node="rider-app">
+            <div class="node-top">
+              <span class="node-title">Rider Mobile PWA</span>
+              <span class="phase-tag pill-p1">P1/P4</span>
+            </div>
+            <div class="node-sub">Pickup assignments, delivery queue, COD entry, offline barcode scan</div>
+          </div>
+
+          <div class="node-box node-portal" data-node="admin-desk">
+            <div class="node-top">
+              <span class="node-title">Operations Command Desk</span>
+              <span class="phase-tag pill-p1">P1</span>
+            </div>
+            <div class="node-sub">Regional rate cards, rider allocations, inter-branch manifest auditing</div>
+          </div>
+
+          <div class="node-box node-ext" data-node="api-sync">
+            <div class="node-top">
+              <span class="node-title">Merchant REST API & Sync</span>
+              <span class="phase-tag pill-p2">P2</span>
+            </div>
+            <div class="node-sub">E-commerce store synchronization with HMAC-signed event webhooks</div>
+          </div>
+        </div>
+
+        <!-- Col 2: Core Processing -->
+        <div class="arch-col">
+          <div class="arch-col-title"><span class="dot" style="background:var(--emerald);"></span> 2. Operational Backbone</div>
+
+          <div class="flow-hub-card">
+            <div style="font-family:var(--mono); font-size:0.72rem; font-weight:700; color:var(--primary); margin-bottom:8px;">
+              CORE LOGISTICS ENGINE (Node.js / Next.js)
+            </div>
+            <div class="hub-chain">
+              <div class="hub-chain-item" data-node="pricing-engine">
+                <span class="act">Dynamic Pricing Engine</span>
+                <span class="badge-mini">Zone + Weight Matrix</span>
+              </div>
+              <div class="hub-chain-item" data-node="pickup-dispatch">
+                <span class="act">Pickup Dispatch Router</span>
+                <span class="badge-mini">Zone Allocation</span>
+              </div>
+              <div class="hub-chain-item" data-node="hub-sorting">
+                <span class="act">Warehouse Inbound & Sorting</span>
+                <span class="badge-mini">Barcode Scan & Binning</span>
+              </div>
+              <div class="hub-chain-item" data-node="branch-transfer">
+                <span class="act">Inter-Branch Linehaul System</span>
+                <span class="badge-mini">Transfer Manifests</span>
+              </div>
+              <div class="hub-chain-item" data-node="runsheet-gen">
+                <span class="act">Automated Delivery Runsheet</span>
+                <span class="badge-mini">Rider Handover Sheet</span>
+              </div>
+              <div class="hub-chain-item" data-node="return-engine">
+                <span class="act">Partial Delivery & RTO Engine</span>
+                <span class="badge-mini">Reverse Logistics</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="node-box node-ext" data-node="notify-engine" style="margin-top:4px;">
+            <div class="node-top">
+              <span class="node-title">Notification Gateway</span>
+              <span class="phase-tag pill-p2">P2</span>
+            </div>
+            <div class="node-sub">Meta Cloud WhatsApp API + SMS fallback triggered on state changes</div>
+          </div>
+        </div>
+
+        <!-- Col 3: Finance & DB -->
+        <div class="arch-col">
+          <div class="arch-col-title"><span class="dot" style="background:var(--rose);"></span> 3. Financial & Ledger Engine</div>
+
+          <div class="node-box node-finance" data-node="cod-reconcile">
+            <div class="node-top">
+              <span class="node-title">Cash Collection Reconciliation</span>
+              <span class="phase-tag pill-p2">P2</span>
+            </div>
+            <div class="node-sub">End-of-shift rider cash deposit and hub safe balance verification</div>
+          </div>
+
+          <div class="node-box node-finance" data-node="merchant-settle">
+            <div class="node-top">
+              <span class="node-title">Merchant Settlement Hub</span>
+              <span class="phase-tag pill-p2">P2</span>
+            </div>
+            <div class="node-sub">Debt invoice generation, fee deductions, bank/PayPal payout exports</div>
+          </div>
+
+          <div class="node-box node-finance" data-node="rider-commission">
+            <div class="node-top">
+              <span class="node-title">Rider Payroll & Advances</span>
+              <span class="phase-tag pill-p3">P3</span>
+            </div>
+            <div class="node-sub">Delivery commission logs, cash advance deductions, payroll schedules</div>
+          </div>
+
+          <div class="node-box node-finance" data-node="double-entry">
+            <div class="node-top">
+              <span class="node-title">Double-Entry General Ledger</span>
+              <span class="phase-tag" style="background:var(--bg-surface); color:var(--text-dim);">P4</span>
+            </div>
+            <div class="node-sub">Debit/Credit journals, Trial balances, Profit & Loss reporting</div>
+          </div>
+
+          <div class="node-box node-ext" data-node="storage-db">
+            <div class="node-top">
+              <span class="node-title">PostgreSQL Database</span>
+              <span class="phase-tag pill-p1">P1</span>
+            </div>
+            <div class="node-sub">Prisma ORM, transactional ACID integrity, nightly backup jobs</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Node Inspector Panel -->
+      <div class="node-inspector" id="nodeInspector">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); padding-bottom:6px;">
+          <h4 id="inspTitle" style="font-family:var(--display); font-size:1.05rem; color:var(--text-main);">Module Specification</h4>
+          <span id="inspPhase" class="phase-tag pill-p1">PHASE 1</span>
+        </div>
+        <div class="inspector-grid">
+          <div class="inspector-col">
+            <h5>Functional Scope</h5>
+            <p id="inspPurpose">Select any architecture module above to inspect specifications.</p>
+          </div>
+          <div class="inspector-col">
+            <h5>Technical Architecture</h5>
+            <p id="inspTech">API routes, service controllers, background workers.</p>
+          </div>
+          <div class="inspector-col">
+            <h5>Data & Ledger Impact</h5>
+            <p id="inspData">Database tables affected and financial state modifications.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ FINANCIAL RECONCILIATION & COD FLOW ══ -->
+  <div class="section-card" id="sectionFinance">
+    <div class="section-header">
+      <div class="section-title-wrap">
+        <h3>Cash Collection & Settlement Flow</h3>
+        <p>A systematic financial audit trail managing Cash on Delivery collection, platform fees, and net merchant disbursements.</p>
+      </div>
+      <span class="section-pill pill-p2">Financial Engine</span>
+    </div>
+
+    <div class="cash-journey-grid">
+      <div class="cash-card">
+        <div class="step-tag">Step 1</div>
+        <div class="cash-title">Customer Doorstep</div>
+        <div class="cash-amount">$10.00</div>
+        <div class="cash-desc">Recipient pays Cash on Delivery (COD) upon receiving the package.</div>
+      </div>
+
+      <div class="cash-card">
+        <div class="step-tag">Step 2</div>
+        <div class="cash-title">Rider Liability Entry</div>
+        <div class="cash-amount">$10.00</div>
+        <div class="cash-desc">App records cash in the rider's digital wallet balance. Rider deposits at branch.</div>
+      </div>
+
+      <div class="cash-card">
+        <div class="step-tag">Step 3</div>
+        <div class="cash-title">Platform Fee Deduction</div>
+        <div class="cash-amount">$1.00 Fee</div>
+        <div class="cash-desc">Platform deducts $0.80 standard delivery fee plus $0.20 COD handling charge.</div>
+      </div>
+
+      <div class="cash-card">
+        <div class="step-tag">Step 4</div>
+        <div class="cash-title">Merchant Settlement</div>
+        <div class="cash-amount">$9.00 Net</div>
+        <div class="cash-desc">Automated batch credits merchant bank/PayPal account with itemized statement.</div>
+      </div>
+    </div>
+
+    <!-- Live Interactive COD Calculator -->
+    <div class="cod-calc-wrap">
+      <div style="font-weight:700; font-size:0.86rem; color:var(--text-main); margin-bottom:10px;">
+        Interactive Revenue & Settlement Calculator (USD)
+      </div>
+      <div class="calc-input-row">
+        <div class="calc-input-group">
+          <label>Product COD Price ($)</label>
+          <input type="number" id="calcCod" value="25" min="0" step="0.50">
+        </div>
+        <div class="calc-input-group">
+          <label>Delivery Region</label>
+          <select id="calcRegion">
+            <option value="inside">Inside City ($0.60)</option>
+            <option value="suburb" selected>Sub-Urban Zone ($1.00)</option>
+            <option value="outside">Nationwide Outer ($1.30)</option>
+          </select>
+        </div>
+        <div class="calc-input-group">
+          <label>Parcel Weight</label>
+          <select id="calcWeight">
+            <option value="1">Up to 1 KG</option>
+            <option value="2">2 KG (+$0.20)</option>
+            <option value="5">5 KG (+$0.80)</option>
+          </select>
+        </div>
+        <div class="calc-input-group">
+          <label>Rider Commission ($)</label>
+          <input type="number" id="calcRiderPay" value="0.35" min="0.10" step="0.05">
+        </div>
+      </div>
+
+      <div class="calc-breakdown">
+        <div class="breakdown-box">
+          <div class="lbl">Customer Pays (COD)</div>
+          <div class="amt" id="outTotalCod" style="color:var(--emerald-dark);">$25.00</div>
+        </div>
+        <div class="breakdown-box">
+          <div class="lbl">Courier Service Fee</div>
+          <div class="amt" id="outCourierFee" style="color:var(--primary);">$1.25</div>
+        </div>
+        <div class="breakdown-box">
+          <div class="lbl">Rider Commission</div>
+          <div class="amt" id="outRiderComm" style="color:var(--amber-dark);">$0.35</div>
+        </div>
+        <div class="breakdown-box">
+          <div class="lbl">Merchant Net Settlement</div>
+          <div class="amt" id="outMerchantNet" style="color:var(--emerald-dark);">$23.75</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ USER PERSONAS & ROLE WORKFLOWS ══ -->
+  <div class="section-card" id="sectionRoles">
+    <div class="section-header">
+      <div class="section-title-wrap">
+        <h3>User Personas & Role Workflows</h3>
+        <p>Dedicated operational interfaces customized for each primary stakeholder in the logistics ecosystem.</p>
+      </div>
+      <span class="section-pill pill-p1">Role-Based Access</span>
+    </div>
+
+    <div class="role-tabs">
+      <button class="role-tab-btn active" data-role="merchant">Merchant</button>
+      <button class="role-tab-btn" data-role="rider">Field Representative</button>
+      <button class="role-tab-btn" data-role="hub">Warehouse Operations</button>
+      <button class="role-tab-btn" data-role="customer">Recipient / Customer</button>
+      <button class="role-tab-btn" data-role="finance">Finance & Administration</button>
+    </div>
+
+    <!-- Role 1: Merchant -->
+    <div class="role-content-card active" id="role-merchant">
+      <div class="role-info">
+        <h4>Merchant Experience</h4>
+        <p>E-commerce sellers need rapid parcel booking, real-time status tracking, and predictable settlement disbursements.</p>
+        <ul class="role-features">
+          <li>Bulk upload parcels via CSV or 1-click Shopify/WooCommerce sync</li>
+          <li>Real-time dashboard monitoring in-transit, delivered, and returned items</li>
+          <li>Automated account statements and debt invoice reconciliation</li>
+          <li>Custom pricing rate cards based on monthly shipping volume</li>
+        </ul>
+      </div>
+      <div class="role-ui-mock">
+        <div class="mock-header">
+          <span>MERCHANT PORTAL &bull; GadgetZone</span>
+          <span style="color:var(--emerald-dark); font-weight:700;">Balance: $428.00</span>
+        </div>
+        <div class="mock-card">
+          <div><strong>Order #SH-9082</strong> &bull; TWS Earbuds</div>
+          <div style="color:var(--text-muted); font-size:0.7rem; margin-top:2px;">Status: Out for Delivery &bull; COD: $15.00</div>
+        </div>
+        <div class="mock-card">
+          <div><strong>Order #SH-9081</strong> &bull; Mechanical Keyboard</div>
+          <div style="color:var(--emerald-dark); font-size:0.7rem; margin-top:2px;">Status: Delivered &bull; Settled in Batch #49</div>
+        </div>
+        <button class="mock-btn">+ Bulk Pickup Request (14 Items)</button>
+      </div>
+    </div>
+
+    <!-- Role 2: Rider -->
+    <div class="role-content-card" id="role-rider">
+      <div class="role-info">
+        <h4>Field Representative (Mobile PWA)</h4>
+        <p>Engineered for high-efficiency mobile operation on streets with barcode scanning and instant COD logging.</p>
+        <ul class="role-features">
+          <li>Pickups and deliveries ordered by optimized geographical stops</li>
+          <li>One-tap recipient calling and WhatsApp location assistance</li>
+          <li>Partial delivery verification with instant itemized split receipts</li>
+          <li>Shift-end cash collection summary with deposit voucher QR code</li>
+        </ul>
+      </div>
+      <div class="role-ui-mock">
+        <div class="mock-header">
+          <span>RIDER APP &bull; Karim (Zone: Central)</span>
+          <span style="color:var(--amber-dark); font-weight:700;">COD In Hand: $45.00</span>
+        </div>
+        <div class="mock-card" style="border-left:3px solid var(--primary);">
+          <div><strong>House 42, Road 9A, Central District</strong></div>
+          <div style="color:var(--text-secondary); font-size:0.7rem;">Recipient: Tanvir Ahmed</div>
+          <div style="color:var(--emerald-dark); font-weight:700; margin-top:3px;">Collect: $15.00</div>
+        </div>
+        <div style="display:flex; gap:6px; margin-top:6px;">
+          <button class="mock-btn" style="background:var(--emerald);">Delivered (COD)</button>
+          <button class="mock-btn" style="background:var(--amber);">Partial</button>
+          <button class="mock-btn" style="background:var(--rose);">Reschedule</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Role 3: Hub -->
+    <div class="role-content-card" id="role-hub">
+      <div class="role-info">
+        <h4>Warehouse & Sorting Hub</h4>
+        <p>High-throughput parcel intake, digital scale weight auditing, and inter-branch manifest generation.</p>
+        <ul class="role-features">
+          <li>High-speed barcode scanner listener for batch handover verification</li>
+          <li>Weight and volumetric discrepancy audits to prevent billing leaks</li>
+          <li>Linehaul manifest generation for inter-branch transport fleets</li>
+          <li>Morning delivery runsheet dispatch and representative allocation</li>
+        </ul>
+      </div>
+      <div class="role-ui-mock">
+        <div class="mock-header">
+          <span>CENTRAL HUB &bull; Inbound Scanner</span>
+          <span style="color:var(--primary); font-weight:700;">Sorted Today: 1,420</span>
+        </div>
+        <div class="mock-card">
+          <div><strong>Scan: [SH-9082-MAIN]</strong></div>
+          <div style="color:var(--emerald-dark); font-size:0.7rem;">Verified: 0.45 KG &bull; Destination Bin #04</div>
+        </div>
+        <div class="mock-card">
+          <div><strong>Linehaul Manifest #LH-204</strong> &bull; Regional Depot</div>
+          <div style="color:var(--text-muted); font-size:0.7rem;">420 Parcels Loaded &bull; Driver: Rafiqul</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Role 4: Customer -->
+    <div class="role-content-card" id="role-customer">
+      <div class="role-info">
+        <h4>Recipient Experience</h4>
+        <p>Frictionless parcel visibility with automated status notifications and transparent delivery windows.</p>
+        <ul class="role-features">
+          <li>Automated WhatsApp notification upon parcel booking</li>
+          <li>Live map tracking with estimated delivery time window</li>
+          <li>Direct contact link to assigned delivery representative</li>
+          <li>Digital contactless payment options (PayPal / Cards) at doorstep</li>
+        </ul>
+      </div>
+      <div class="role-ui-mock">
+        <div class="mock-header">
+          <span>TRACKING &bull; shohnaat.com/t/9082</span>
+          <span style="color:var(--emerald-dark); font-weight:700;">Out for Delivery</span>
+        </div>
+        <div class="mock-card">
+          <div style="font-weight:700; color:var(--primary);">Rider is 4 stops away from your address</div>
+          <div style="color:var(--text-muted); font-size:0.7rem; margin-top:2px;">Estimated Arrival: 12:30 PM &bull; Amount Due: $15.00</div>
+        </div>
+        <div style="font-size:0.7rem; color:var(--text-secondary); margin-top:4px;">
+          Delivery note: "Leave with reception if unavailable"
+        </div>
+      </div>
+    </div>
+
+    <!-- Role 5: Finance & Admin -->
+    <div class="role-content-card" id="role-finance">
+      <div class="role-info">
+        <h4>Finance & Administration</h4>
+        <p>Complete financial oversight, zero cash discrepancies, automated reconciliation, and executive metrics.</p>
+        <ul class="role-features">
+          <li>Daily cash collection vs deposit variance monitoring</li>
+          <li>Automated batch merchant settlements via bank transfer or PayPal</li>
+          <li>Representative commission logs and payroll advance deductions</li>
+          <li>Double-entry general ledger with exportable balance sheets</li>
+        </ul>
+      </div>
+      <div class="role-ui-mock">
+        <div class="mock-header">
+          <span>FINANCE AUDIT &bull; Daily Cash Flow</span>
+          <span style="color:var(--emerald-dark); font-weight:700;">Reconciled: 99.8%</span>
+        </div>
+        <div class="mock-card">
+          <div style="display:flex; justify-content:space-between;">
+            <span>Total COD Collected:</span>
+            <strong style="color:var(--emerald-dark);">$4,850.00</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:3px;">
+            <span>Platform Revenue:</span>
+            <strong style="color:var(--primary);">$384.00</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:3px;">
+            <span>Merchant Payouts Due:</span>
+            <strong style="color:var(--text-secondary);">$4,466.00</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 4-PHASE ROADMAP & SPRINT TIMELINE ══ -->
+  <div class="section-card" id="sectionRoadmap">
+    <div class="section-header">
+      <div class="section-title-wrap">
+        <h3>Development Phasing & Implementation Roadmap</h3>
+        <p>A milestone-driven 4-phase rollout plan prioritizing a production-ready MVP followed by business scaling.</p>
+      </div>
+      <span class="section-pill pill-p1">MVP in 7–10 Days</span>
+    </div>
+
+    <div class="timeline-grid">
+      <!-- Phase 1 -->
+      <div class="timeline-card p1">
+        <div class="timeline-phase">
+          <span>PHASE 1</span>
+          <span style="color:var(--emerald-dark); font-weight:700;">CURRENT SPRINT</span>
+        </div>
+        <div class="timeline-name">Core Operational MVP</div>
+        <div class="timeline-time">7 to 10 Days</div>
+        <ul class="timeline-deliverables">
+          <li>Customer & Merchant CRUD + JWT Auth</li>
+          <li>Pickup request intake & assignment</li>
+          <li>Shipment status lifecycle pipeline</li>
+          <li>Rider mobile tasks + COD recording</li>
+          <li>Public web tracking interface</li>
+          <li>VPS + Docker + SSL deployment</li>
+        </ul>
+      </div>
+
+      <!-- Phase 2 -->
+      <div class="timeline-card p2">
+        <div class="timeline-phase">
+          <span>PHASE 2</span>
+          <span style="color:var(--primary); font-weight:700;">NEXT SPRINT</span>
+        </div>
+        <div class="timeline-name">Business & Integration</div>
+        <div class="timeline-time">1 to 2 Weeks</div>
+        <ul class="timeline-deliverables">
+          <li>Dynamic multi-zone pricing engine</li>
+          <li>Merchant debt invoices & billing statements</li>
+          <li>Merchant REST API & Webhooks</li>
+          <li>SMS & Email notification triggers</li>
+          <li>Customer complaint ticketing desk</li>
+          <li>Operational analytics dashboard</li>
+        </ul>
+      </div>
+
+      <!-- Phase 3 -->
+      <div class="timeline-card p3">
+        <div class="timeline-phase">
+          <span>PHASE 3</span>
+          <span style="color:var(--amber-dark); font-weight:700;">OPERATIONS</span>
+        </div>
+        <div class="timeline-name">Multi-Branch Scaling</div>
+        <div class="timeline-time">3 to 4 Weeks</div>
+        <ul class="timeline-deliverables">
+          <li>Multi-warehouse & branch routing</li>
+          <li>Inter-branch linehaul transfer manifests</li>
+          <li>Automated delivery runsheets</li>
+          <li>Partial delivery & returns (RTO) engine</li>
+          <li>Rider commission & advance ledger</li>
+          <li>Batch merchant settlement processing</li>
+        </ul>
+      </div>
+
+      <!-- Phase 4 -->
+      <div class="timeline-card p4">
+        <div class="timeline-phase">
+          <span>PHASE 4</span>
+          <span style="color:var(--purple); font-weight:700;">ENTERPRISE</span>
+        </div>
+        <div class="timeline-name">Enterprise Scale</div>
+        <div class="timeline-time">Future Scope</div>
+        <ul class="timeline-deliverables">
+          <li>Live GPS rider location map</li>
+          <li>Official Meta WhatsApp Cloud API</li>
+          <li>Double-entry general ledger engine</li>
+          <li>Online payment gateway (PayPal / Stripe)</li>
+          <li>Thermal barcode label generation</li>
+          <li>AI delivery route optimization</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ DATABASE RELATIONAL ARCHITECTURE ══ -->
+  <div class="section-card" id="sectionDB">
+    <div class="section-header">
+      <div class="section-title-wrap">
+        <h3>Database Schema & Relational Structure</h3>
+        <p>PostgreSQL schema design normalized for data integrity, financial auditing, and high transaction volume.</p>
+      </div>
+      <span class="section-pill pill-p1">Prisma ORM</span>
+    </div>
+
+    <div class="db-grid">
+      <!-- Entity 1: User & Merchant -->
+      <div class="db-card p1">
+        <div class="db-card-head"><span>User &amp; Merchant</span> <span>P1</span></div>
+        <ul class="db-fields">
+          <li><span class="pk">PK id</span> <span class="type">UUID</span></li>
+          <li><span>email / phone</span> <span class="type">String</span></li>
+          <li><span>role (ADMIN|MERCHANT|RIDER)</span></li>
+          <li><span class="fk">FK user_id</span> <span class="type">User</span></li>
+          <li><span>business_name</span> <span class="type">String</span></li>
+          <li><span>default_zone</span> <span class="type">Zone</span></li>
+          <li><span>api_key</span> <span class="type">P2 Token</span></li>
+        </ul>
+      </div>
+
+      <!-- Entity 2: Shipment & Logs -->
+      <div class="db-card p1">
+        <div class="db-card-head"><span>Shipment &amp; Log</span> <span>P1</span></div>
+        <ul class="db-fields">
+          <li><span class="pk">PK id</span> <span class="type">UUID</span></li>
+          <li><span>tracking_no</span> <span class="type">Unique Str</span></li>
+          <li><span class="fk">FK merchant_id</span> <span class="type">Merchant</span></li>
+          <li><span class="fk">FK pickup_id</span> <span class="type">PickupReq</span></li>
+          <li><span>cod_amount</span> <span class="type">Decimal</span></li>
+          <li><span>delivery_fee</span> <span class="type">Decimal</span></li>
+          <li><span>status</span> <span class="type">Enum</span></li>
+          <li><span class="fk">FK assigned_rider_id</span></li>
+        </ul>
+      </div>
+
+      <!-- Entity 3: Hub & Branch -->
+      <div class="db-card p3">
+        <div class="db-card-head"><span>Hub &amp; Transfers</span> <span>P3</span></div>
+        <ul class="db-fields">
+          <li><span class="pk">PK id</span> <span class="type">UUID</span></li>
+          <li><span>branch_name</span> <span class="type">String</span></li>
+          <li><span>city / zone</span> <span class="type">String</span></li>
+          <li><span class="pk">PK manifest_id</span> <span class="type">UUID</span></li>
+          <li><span class="fk">FK from_hub_id</span> <span class="type">Hub</span></li>
+          <li><span class="fk">FK to_hub_id</span> <span class="type">Hub</span></li>
+          <li><span>parcel_count</span> <span class="type">Int</span></li>
+          <li><span>driver_name</span> <span class="type">String</span></li>
+        </ul>
+      </div>
+
+      <!-- Entity 4: Financial & Settlement -->
+      <div class="db-card p2">
+        <div class="db-card-head"><span>Finance &amp; Ledger</span> <span>P2/P4</span></div>
+        <ul class="db-fields">
+          <li><span class="pk">PK id</span> <span class="type">UUID</span></li>
+          <li><span class="fk">FK shipment_id</span> <span class="type">Shipment</span></li>
+          <li><span>collected_cod</span> <span class="type">Decimal</span></li>
+          <li><span>net_merchant_payout</span></li>
+          <li><span>settlement_status</span></li>
+          <li><span class="pk">PK ledger_entry_id</span></li>
+          <li><span>debit_account</span> <span class="type">Str</span></li>
+          <li><span>credit_account</span> <span class="type">Str</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ FOOTER ══ -->
+<footer class="footer">
+  <div>Shohnaat Logistics System &bull; System Architecture &amp; Delivery Proposal &bull; <b>Confidential Engineering Specification</b></div>
+</footer>
+
+<script>
+(function() {
+  // ── 1. Tab & Mode Switching ──
+  var btnVisual = document.getElementById('btnModeVisual');
+  var btnArch = document.getElementById('btnModeArch');
+  var btnSim = document.getElementById('btnModeSim');
+
+  function scrollToSection(id) {
+    var el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  btnVisual.addEventListener('click', function() {
+    setActiveMode(btnVisual);
+    scrollToSection('sectionStory');
+  });
+  btnArch.addEventListener('click', function() {
+    setActiveMode(btnArch);
+    scrollToSection('sectionArch');
+  });
+  btnSim.addEventListener('click', function() {
+    setActiveMode(btnSim);
+    scrollToSection('sectionSim');
+  });
+
+  function setActiveMode(btn) {
+    [btnVisual, btnArch, btnSim].forEach(function(b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+  }
+
+  // ── 2. Story Steps Click ──
+  var storySteps = document.querySelectorAll('.story-step');
+  storySteps.forEach(function(step) {
+    step.addEventListener('click', function() {
+      storySteps.forEach(function(s) { s.classList.remove('active'); });
+      step.classList.add('active');
+      var num = parseInt(step.getAttribute('data-story'), 10) - 1;
+      jumpSimToStep(num);
+      scrollToSection('sectionSim');
+    });
+  });
+
+  // ── 3. Live Parcel Simulator Logic ──
+  var SCENARIOS = {
+    success: {
+      name: "Standard Delivery (100% COD)",
+      statusNames: ["PENDING PICKUP", "PICKUP ASSIGNED", "HUB SORTING", "LINEHAUL TRANSIT", "OUT FOR DELIVERY", "DELIVERED"],
+      logs: [
+        "Merchant created order #SH-9082 for $15.00 COD.",
+        "Pickup rider assigned. En route to merchant pickup location.",
+        "Parcel received at Central Sorting Hub. Weighed (0.45 KG), barcode scanned.",
+        "Loaded onto Linehaul Transit #LH-204 -> Dispatched to delivery depot.",
+        "Out for delivery with assigned rider. Recipient notified via WhatsApp.",
+        "Delivered successfully. $15.00 COD collected. Merchant wallet credited $13.80."
+      ],
+      messages: [
+        "Hello! Your parcel #SH-9082 has been booked by GadgetZone. Track live here: shohnaat.com/t/9082",
+        "Shohnaat Express: Rider is on the way to pick up your package from the seller.",
+        "Your parcel #SH-9082 has arrived at our Central Sorting Hub and has been verified.",
+        "Package dispatched to your local delivery branch depot.",
+        "Rider Karim is out for delivery today. Please have $15.00 ready upon arrival.",
+        "Package delivered successfully. Thank you for choosing Shohnaat Express."
+      ],
+      cods: ["$15.00", "$15.00", "$15.00", "$15.00", "$15.00", "$15.00 (Collected)"],
+      riderCash: ["$0.00", "$0.00", "$0.00", "$0.00", "$0.00", "$15.00 (In Safe)"],
+      fees: ["$1.20", "$1.20", "$1.20", "$1.20", "$1.20", "$1.20 (Earned)"],
+      netPayouts: ["Pending", "Pending", "Pending", "Pending", "Pending", "$13.80 (Settled)"]
+    },
+    partial: {
+      name: "Partial Delivery (Customer keeps 1 of 2 items)",
+      statusNames: ["PENDING PICKUP", "PICKED UP", "HUB SORTED", "IN TRANSIT", "OUT FOR DELIVERY", "PARTIALLY DELIVERED"],
+      logs: [
+        "Order #SH-9082 registered with 2 items (Total $25.00).",
+        "Pickup completed from merchant store.",
+        "Warehouse verified 2 items packed. Routed to destination branch.",
+        "In transit to regional delivery depot.",
+        "Rider at doorstep. Recipient accepted 1 item and returned 1 item.",
+        "Partial delivery confirmed: $12.00 COD collected. 1 item routed for return (RTO)."
+      ],
+      messages: [
+        "Order #SH-9082 created with 2 items. Track live at shohnaat.com/t/9082",
+        "Rider picked up 2 items from seller.",
+        "Warehouse hub verified 2 items for delivery.",
+        "Package arriving in your area today.",
+        "Rider Karim is at your address with your package.",
+        "Partial delivery confirmed: 1 item kept ($12.00), 1 item returned to merchant."
+      ],
+      cods: ["$25.00", "$25.00", "$25.00", "$25.00", "$25.00", "$12.00 (Partial)"],
+      riderCash: ["$0.00", "$0.00", "$0.00", "$0.00", "$0.00", "$12.00 (Held)"],
+      fees: ["$1.40", "$1.40", "$1.40", "$1.40", "$1.40", "$1.40 + Return Fee"],
+      netPayouts: ["Pending", "Pending", "Pending", "Pending", "Pending", "$10.40 Net Payout"]
+    },
+    reject: {
+      name: "Customer Rejected / Uncovered Area",
+      statusNames: ["PENDING PICKUP", "PICKED UP", "HUB VERIFIED", "BRANCH ARRIVAL", "OUT FOR DELIVERY", "RETURNED TO ORIGIN"],
+      logs: [
+        "Order #SH-9082 registered by seller.",
+        "Picked up from seller location.",
+        "Hub processed parcel for routing.",
+        "Dispatched to regional delivery hub.",
+        "Delivery attempted. Recipient unavailable / cancelled.",
+        "Parcel returned to Central Hub. Return manifest issued to merchant."
+      ],
+      messages: [
+        "Order #SH-9082 booked with Shohnaat Express.",
+        "Parcel collected from seller.",
+        "Processed at Central Logistics Center.",
+        "Out for delivery attempt.",
+        "Delivery Attempt: Customer unavailable. Rescheduling item...",
+        "Parcel Cancelled: Item is safely returning to seller."
+      ],
+      cods: ["$15.00", "$15.00", "$15.00", "$15.00", "$15.00", "$0.00 (Cancelled)"],
+      riderCash: ["$0.00", "$0.00", "$0.00", "$0.00", "$0.00", "$0.00"],
+      fees: ["$1.20", "$1.20", "$1.20", "$1.20", "$1.20", "$0.60 (Return Charge)"],
+      netPayouts: ["Pending", "Pending", "Pending", "Pending", "Pending", "-$0.60 (Billed)"]
+    }
+  };
+
+  var currentScenario = 'success';
+  var currentStep = 0;
+  var isPlaying = false;
+  var playTimer = null;
+
+  var trackFill = document.getElementById('trackFill');
+  var movingCarrier = document.getElementById('movingCarrier');
+  var trackNodes = document.querySelectorAll('.track-node');
+  var liveBadge = document.getElementById('liveBadge');
+  var liveLogFeed = document.getElementById('liveLogFeed');
+  var phoneMsgBubble = document.getElementById('phoneMsgBubble');
+  var trackCod = document.getElementById('trackCod');
+  var trackRiderCash = document.getElementById('trackRiderCash');
+  var trackFee = document.getElementById('trackFee');
+  var trackMerchantNet = document.getElementById('trackMerchantNet');
+  var simPlayBtn = document.getElementById('simPlayBtn');
+  var simStepBtn = document.getElementById('simStepBtn');
+  var simResetBtn = document.getElementById('simResetBtn');
+
+  var carrierLabels = ['Origin', 'Pickup', 'Sorting', 'Linehaul', 'Last-Mile', 'Delivered'];
+
+  function updateSimUI(stepIdx) {
+    currentStep = stepIdx;
+    var scen = SCENARIOS[currentScenario];
+    var totalSteps = trackNodes.length;
+
+    trackNodes.forEach(function(node, idx) {
+      node.classList.toggle('active', idx <= stepIdx);
+      node.classList.toggle('current', idx === stepIdx);
+    });
+
+    var pct = (stepIdx / (totalSteps - 1)) * 90;
+    trackFill.style.width = pct + '%';
+    movingCarrier.style.left = (5 + pct) + '%';
+    movingCarrier.textContent = carrierLabels[stepIdx] || 'Transit';
+
+    liveBadge.textContent = scen.statusNames[stepIdx];
+    if (stepIdx === totalSteps - 1) {
+      liveBadge.style.background = currentScenario === 'reject' ? 'var(--rose-soft)' : 'var(--emerald-soft)';
+      liveBadge.style.color = currentScenario === 'reject' ? 'var(--rose)' : 'var(--emerald-dark)';
+    } else {
+      liveBadge.style.background = 'var(--primary-soft)';
+      liveBadge.style.color = 'var(--primary-dark)';
+    }
+
+    var logHTML = '';
+    for (var i = 0; i <= stepIdx; i++) {
+      logHTML += '<div class="log-item">' + scen.logs[i] + '</div>';
+    }
+    liveLogFeed.innerHTML = logHTML;
+
+    phoneMsgBubble.innerHTML = scen.messages[stepIdx] + '<div class="msg-time">' + (stepIdx + 9) + ':00 AM &bull; Delivered</div>';
+
+    trackCod.textContent = scen.cods[stepIdx];
+    trackRiderCash.textContent = scen.riderCash[stepIdx];
+    trackFee.textContent = scen.fees[stepIdx];
+    trackMerchantNet.textContent = scen.netPayouts[stepIdx];
+  }
+
+  function jumpSimToStep(stepIdx) {
+    stopSim();
+    updateSimUI(stepIdx);
+  }
+
+  function nextSimStep() {
+    if (currentStep < trackNodes.length - 1) {
+      updateSimUI(currentStep + 1);
+    } else {
+      stopSim();
+    }
+  }
+
+  function startSim() {
+    if (currentStep >= trackNodes.length - 1) {
+      updateSimUI(0);
+    }
+    isPlaying = true;
+    simPlayBtn.textContent = 'Pause';
+    playTimer = setInterval(function() {
+      if (currentStep < trackNodes.length - 1) {
+        nextSimStep();
+      } else {
+        stopSim();
+      }
+    }, 1800);
+  }
+
+  function stopSim() {
+    isPlaying = false;
+    simPlayBtn.textContent = 'Play Simulation';
+    if (playTimer) {
+      clearInterval(playTimer);
+      playTimer = null;
+    }
+  }
+
+  simPlayBtn.addEventListener('click', function() {
+    if (isPlaying) stopSim();
+    else startSim();
+  });
+
+  simStepBtn.addEventListener('click', function() {
+    stopSim();
+    nextSimStep();
+  });
+
+  simResetBtn.addEventListener('click', function() {
+    stopSim();
+    updateSimUI(0);
+  });
+
+  trackNodes.forEach(function(node, idx) {
+    node.addEventListener('click', function() {
+      jumpSimToStep(idx);
+    });
+  });
+
+  var scenBtns = document.querySelectorAll('.scen-btn');
+  scenBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      scenBtns.forEach(function(b) { b.classList.remove('active', 'alt', 'bad'); });
+      var sc = btn.getAttribute('data-scenario');
+      currentScenario = sc;
+      if (sc === 'partial') btn.classList.add('active', 'alt');
+      else if (sc === 'reject') btn.classList.add('active', 'bad');
+      else btn.classList.add('active');
+      jumpSimToStep(0);
+    });
+  });
+
+  updateSimUI(0);
+
+  // ── 4. Architecture Node Inspector ──
+  var NODE_SPECS = {
+    merchant: {
+      title: "Merchant Portal & API Gateway",
+      phase: "PHASE 1 & 2",
+      purpose: "Allows e-commerce merchants to book single/bulk shipments, print thermal barcode labels, inspect live order statuses, and view financial statements.",
+      tech: "Next.js 14 App Router, Server Actions, REST API (/api/v1/shipments), API Key authentication with Redis rate limiting.",
+      data: "Interacts with Merchant, User, Shipment, and Settlement tables. Triggers PickupRequest creation on bulk booking."
+    },
+    customer: {
+      title: "Public Customer Tracking Portal",
+      phase: "PHASE 1",
+      purpose: "Allows recipients to track parcel location in real time with zero login required, verify OTP, and submit delivery feedback.",
+      tech: "Server-rendered tracking page, WebSockets/polling for live status, SMS/WhatsApp notification triggers.",
+      data: "Reads from Shipment & ShipmentLog. Creates entries in Complaint & Feedback records."
+    },
+    "rider-app": {
+      title: "Rider Mobile Application (PWA)",
+      phase: "PHASE 1 & 3",
+      purpose: "Used by field delivery representatives for pickup acceptance, doorstep COD collection, barcode scanning, and failed delivery reasons.",
+      tech: "Mobile-first PWA, Camera barcode scanner SDK, Offline cache storage, Geolocation tracking.",
+      data: "Updates Shipment.status, creates ShipmentLog timestamps, increments Rider.cash_liability."
+    },
+    "admin-desk": {
+      title: "Operations Command Desk",
+      phase: "PHASE 1",
+      purpose: "Allows operations managers to oversee city-wide parcels, manage merchant accounts, resolve flagged issues, and assign rider zones.",
+      tech: "Next.js Admin Dashboard, TanStack Data Tables, Role-Based Access Control (RBAC), Global Search.",
+      data: "Full CRUD access across all PostgreSQL tables and system configurations."
+    },
+    "api-sync": {
+      title: "Merchant E-commerce Webhooks & Sync",
+      phase: "PHASE 2 & 3",
+      purpose: "Pushes real-time status updates (Delivered, Returned, In Transit) back to merchant Shopify or WooCommerce stores automatically.",
+      tech: "HMAC-SHA256 signature verification, BullMQ background retry queue with exponential backoff.",
+      data: "Reads ShipmentLog events, writes to WebhookDeliveryAudit table."
+    },
+    "pricing-engine": {
+      title: "Dynamic Multi-Zone Pricing Engine",
+      phase: "PHASE 2",
+      purpose: "Calculates shipping charges based on pickup zone, delivery zone, dead weight vs volumetric weight, and merchant discount agreements.",
+      tech: "PricingRule calculation engine with zone matrix table lookup, cached in memory for high-throughput evaluation.",
+      data: "Reads PricingRate and MerchantOverride; writes delivery_fee and cod_charge to Shipment."
+    },
+    "pickup-dispatch": {
+      title: "Pickup Dispatch & Route Allocation",
+      phase: "PHASE 1",
+      purpose: "Batches pickup requests within geographical neighborhoods and assigns them to the nearest available pickup representative.",
+      tech: "Geographic clustering algorithm, automated dispatch dispatcher, push notification to Rider app.",
+      data: "Updates PickupRequest.rider_id and creates initial Shipment records."
+    },
+    "hub-sorting": {
+      title: "Warehouse Inbound Sorting & Barcode Engine",
+      phase: "PHASE 1 & 3",
+      purpose: "Receives bulk parcels from pickup riders, verifies actual weight on digital scales, prints shipping labels, and routes to destination bins.",
+      tech: "Laser barcode scanner listener, weight scale serial/USB integration, bin assignment routing logic.",
+      data: "Updates Shipment.status to 'HUB_RECEIVED', logs warehouse operator ID."
+    },
+    "branch-transfer": {
+      title: "Inter-Branch Linehaul Manifest System",
+      phase: "PHASE 3",
+      purpose: "Manages inter-city transfers between central sorting warehouses and regional branch offices with secure transport manifests.",
+      tech: "TransferManifest generator, QR seal verification upon arrival at destination depot.",
+      data: "Creates TransferManifest, associates N Shipments to Manifest, logs departure and arrival events."
+    },
+    "runsheet-gen": {
+      title: "Automated Daily Delivery Runsheets",
+      phase: "PHASE 1 & 3",
+      purpose: "Generates morning distribution sheets for last-mile delivery riders, ordering stops by street proximity.",
+      tech: "Automated batch clustering by postal code/zone, PDF printable runsheet generator.",
+      data: "Sets Shipment.status to 'OUT_FOR_DELIVERY', links Shipments to DailyRunsheet."
+    },
+    "return-engine": {
+      title: "Partial Delivery & Return (RTO) Handler",
+      phase: "PHASE 2 & 3",
+      purpose: "Handles real-world courier scenarios: recipient accepts 1 item out of 3, or rejects parcel due to mismatch.",
+      tech: "Partial invoice recalculation, split-shipment ledger entry, reverse logistics barcode tagging.",
+      data: "Creates PartialReturnLog, recalculates COD amount, schedules return leg to merchant."
+    },
+    "notify-engine": {
+      title: "Omnichannel Notification Gateway",
+      phase: "PHASE 2 & 4",
+      purpose: "Sends automated instant notifications at 4 key moments: Booking, Pickup, Out for Delivery, and Delivery/COD Receipt.",
+      tech: "Meta Cloud WhatsApp API + SMS Gateway REST fallback, asynchronous event queue worker.",
+      data: "Logs notification delivery status in NotificationAudit table."
+    },
+    "cod-reconcile": {
+      title: "Cash Collection & Daily Rider Reconciliation",
+      phase: "PHASE 2",
+      purpose: "Audits physical cash handed in by riders against app recorded COD amounts at the end of each shift.",
+      tech: "Cashier deposit intake form, mismatch variance alerts, digital cash voucher generation.",
+      data: "Clears Rider.cash_liability, credits BranchCashAccount, records CashReconciliation log."
+    },
+    "merchant-settle": {
+      title: "Automated Merchant Settlement & Invoicing",
+      phase: "PHASE 2",
+      purpose: "Calculates Net Merchant Payouts (Gross COD collected minus Shipping fees minus COD commission) and generates bank payout files.",
+      tech: "Automated weekly/daily settlement cron batch, PDF invoice statement generator, Bank EFT / PayPal export.",
+      data: "Creates SettlementBatch, marks Shipments as 'SETTLED', issues DebtInvoice records."
+    },
+    "rider-commission": {
+      title: "Rider Commission & Advance Management",
+      phase: "PHASE 3",
+      purpose: "Tracks delivery bonus per parcel, fuel allowance, cash advance deductions, and calculates rider net salary.",
+      tech: "Performance commission calculator, advance ledger with scheduled deduction rules.",
+      data: "Writes to RiderCommissionLog, RiderAdvanceLedger, and PayrollSummary."
+    },
+    "double-entry": {
+      title: "Double-Entry General Ledger & Accounting",
+      phase: "PHASE 4",
+      purpose: "Maintains financial accounting standards with balanced Debit and Credit journals for every financial transaction.",
+      tech: "Double-entry bookkeeping engine, trial balance generator, Profit & Loss reporting.",
+      data: "Maintains GeneralLedger, ChartOfAccounts, JournalEntries."
+    },
+    "storage-db": {
+      title: "PostgreSQL Database & Prisma ORM",
+      phase: "PHASE 1",
+      purpose: "The single source of truth for all operational data with ACID compliance, relational integrity, and automated backups.",
+      tech: "PostgreSQL 15+, Prisma ORM with type-safe schema, Redis caching, nightly pg_dump backup.",
+      data: "Houses 14+ core tables with indexing on tracking_no, phone, and status."
+    }
+  };
+
+  var inspector = document.getElementById('nodeInspector');
+  var inspTitle = document.getElementById('inspTitle');
+  var inspPhase = document.getElementById('inspPhase');
+  var inspPurpose = document.getElementById('inspPurpose');
+  var inspTech = document.getElementById('inspTech');
+  var inspData = document.getElementById('inspData');
+  var allNodeBoxes = document.querySelectorAll('.node-box, .hub-chain-item');
+
+  allNodeBoxes.forEach(function(box) {
+    box.addEventListener('click', function() {
+      allNodeBoxes.forEach(function(b) { b.classList.remove('highlight'); });
+      box.classList.add('highlight');
+      var nodeKey = box.getAttribute('data-node');
+      var spec = NODE_SPECS[nodeKey];
+      if (spec) {
+        inspTitle.textContent = spec.title;
+        inspPhase.textContent = spec.phase;
+        inspPurpose.textContent = spec.purpose;
+        inspTech.textContent = spec.tech;
+        inspData.textContent = spec.data;
+        inspector.classList.add('active');
+      }
+    });
+  });
+
+  var archTabs = document.querySelectorAll('.arch-tab');
+  archTabs.forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      archTabs.forEach(function(t) { t.classList.remove('active'); });
+      tab.classList.add('active');
+      var filter = tab.getAttribute('data-filter');
+      allNodeBoxes.forEach(function(box) {
+        if (filter === 'all') {
+          box.style.display = 'block';
+        } else if (box.classList.contains('node-' + filter) || (filter === 'hub' && box.classList.contains('hub-chain-item'))) {
+          box.style.display = 'block';
+        } else {
+          box.style.display = 'none';
+        }
+      });
+    });
+  });
+
+  // ── 5. Interactive COD Calculator ──
+  var calcCod = document.getElementById('calcCod');
+  var calcRegion = document.getElementById('calcRegion');
+  var calcWeight = document.getElementById('calcWeight');
+  var calcRiderPay = document.getElementById('calcRiderPay');
+
+  var outTotalCod = document.getElementById('outTotalCod');
+  var outCourierFee = document.getElementById('outCourierFee');
+  var outRiderComm = document.getElementById('outRiderComm');
+  var outMerchantNet = document.getElementById('outMerchantNet');
+
+  function calculateCOD() {
+    var cod = parseFloat(calcCod.value) || 0;
+    var region = calcRegion.value;
+    var weight = parseFloat(calcWeight.value) || 1;
+    var riderPay = parseFloat(calcRiderPay.value) || 0.35;
+
+    var baseFee = 0.60;
+    if (region === 'suburb') baseFee = 1.00;
+    if (region === 'outside') baseFee = 1.30;
+
+    var weightExtra = (weight - 1) * 0.20;
+    var codFee = cod * 0.01;
+
+    var totalCourierFee = baseFee + weightExtra + codFee;
+    var netMerchant = Math.max(0, cod - totalCourierFee);
+
+    outTotalCod.textContent = '$' + cod.toFixed(2);
+    outCourierFee.textContent = '$' + totalCourierFee.toFixed(2);
+    outRiderComm.textContent = '$' + riderPay.toFixed(2);
+    outMerchantNet.textContent = '$' + netMerchant.toFixed(2);
+  }
+
+  [calcCod, calcRegion, calcWeight, calcRiderPay].forEach(function(inp) {
+    inp.addEventListener('input', calculateCOD);
+    inp.addEventListener('change', calculateCOD);
+  });
+  calculateCOD();
+
+  // ── 6. Multi-Role Perspective Tabs ──
+  var roleTabBtns = document.querySelectorAll('.role-tab-btn');
+  var roleContentCards = document.querySelectorAll('.role-content-card');
+
+  roleTabBtns.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      roleTabBtns.forEach(function(b) { b.classList.remove('active'); });
+      roleContentCards.forEach(function(c) { c.classList.remove('active'); });
+      btn.classList.add('active');
+      var role = btn.getAttribute('data-role');
+      var targetCard = document.getElementById('role-' + role);
+      if (targetCard) targetCard.classList.add('active');
+    });
+  });
+
+})();
+</script>
+
+</body>
+</html>

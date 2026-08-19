@@ -1,0 +1,117 @@
+version: "3.9"
+
+services:
+  # ============================================================
+  # 1. PostgreSQL Database (PostgreSQL 16)
+  # ============================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: shohnaat_postgres_dev
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-shohnaat_logistics}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-shohnaat_logistics}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shohnaat_dev_network
+
+  # ============================================================
+  # 2. Redis Store (Redis 7)
+  # ============================================================
+  redis:
+    image: redis:7-alpine
+    container_name: shohnaat_redis_dev
+    restart: always
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_dev_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - shohnaat_dev_network
+
+  # ============================================================
+  # 3. Backend Development Service (Hot-Reload with tsx/nodemon)
+  # ============================================================
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: shohnaat_backend_dev
+    restart: unless-stopped
+    ports:
+      - "${PORT:-5000}:5000"
+      - "5555:5555" # Prisma Studio port
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-shohnaat_logistics}?schema=public
+      REDIS_URL: redis://redis:6379
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:-shohnaat_super_secure_jwt_access_secret_key_2026}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-shohnaat_super_secure_jwt_refresh_secret_key_2026}
+      DEFAULT_CURRENCY: ${DEFAULT_CURRENCY:-USD}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET}
+      WHATSAPP_API_KEY: ${WHATSAPP_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - shohnaat_dev_network
+
+  # ============================================================
+  # 4. Frontend Development Service (Next.js with Fast Refresh)
+  # ============================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: shohnaat_frontend_dev
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      WATCHPACK_POLLING: "true"
+      NEXT_PUBLIC_API_URL: http://localhost:5000/api/v1
+      NEXT_PUBLIC_DEFAULT_CURRENCY: ${DEFAULT_CURRENCY:-USD}
+      NEXT_PUBLIC_CURRENCY_SYMBOL: ${CURRENCY_SYMBOL:-$}
+    depends_on:
+      - backend
+    networks:
+      - shohnaat_dev_network
+
+networks:
+  shohnaat_dev_network:
+    driver: bridge
+
+volumes:
+  postgres_dev_data:
+    driver: local
+  redis_dev_data:
+    driver: local

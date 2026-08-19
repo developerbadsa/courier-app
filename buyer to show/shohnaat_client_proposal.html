@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shohnaat Logistics — System Development & Architecture Proposal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0f2a4a;
+    --navy-dark: #091a30;
+    --blue: #2563eb;
+    --blue-dark: #1d4ed8;
+    --blue-soft: #eff6ff;
+    --blue-border: #bfdbfe;
+
+    --green: #16a34a;
+    --green-dark: #15803d;
+    --green-soft: #f0fdf4;
+    --green-border: #86efac;
+
+    --amber: #d97706;
+    --amber-dark: #b45309;
+    --amber-soft: #fffbeb;
+    --amber-border: #fcd34d;
+
+    --purple: #7c3aed;
+    --purple-soft: #f5f3ff;
+    --purple-border: #ddd6fe;
+
+    --text: #0f172a;
+    --text-secondary: #334155;
+    --muted: #64748b;
+    --border: #e2e8f0;
+    --border-bright: #cbd5e1;
+    --bg: #f8fafc;
+    --white: #ffffff;
+    --mono: "JetBrains Mono", Consolas, monospace;
+    --sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --display: "Outfit", sans-serif;
+
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-full: 9999px;
+    --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+    --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.05), 0 2px 4px rgba(15, 23, 42, 0.02);
+    --shadow-lg: 0 10px 25px rgba(15, 23, 42, 0.07), 0 4px 6px rgba(15, 23, 42, 0.02);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ══ Sticky Header Bar ══ */
+  .print-bar {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: var(--navy-dark); color: #ffffff; padding: 8px 24px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15); border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .pb-row {
+    max-width: 1140px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  .print-bar .brand {
+    font-family: var(--mono); font-size: 0.78rem; font-weight: 700; color: #93c5fd; letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .print-bar .pb-print {
+    background: var(--blue); color: #ffffff; border: none; padding: 6px 14px;
+    border-radius: var(--radius-sm); font-weight: 600; font-size: 0.78rem; cursor: pointer;
+    font-family: var(--mono); transition: background 0.2s;
+  }
+  .print-bar .pb-print:hover { background: var(--blue-dark); }
+
+  .header-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+  .header-tabs .mock-tab {
+    padding: 4px 10px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(255,255,255,0.06); color: #cbd5e1; font-size: 0.72rem; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; font-family: var(--mono);
+  }
+  .header-tabs .mock-tab:hover { border-color: #93c5fd; color: #ffffff; }
+  .header-tabs .mock-tab.active { background: var(--blue); border-color: var(--blue); color: #ffffff; }
+
+  /* ══ Cover Section ══ */
+  .cover {
+    background: linear-gradient(180deg, #0f2a4a 0%, #1e293b 100%);
+    color: #ffffff; padding: 130px 24px 70px; text-align: center; position: relative;
+    border-bottom: 1px solid #334155;
+  }
+  .cover .wrap { max-width: 820px; margin: 0 auto; }
+  .cover .eyebrow {
+    font-size: 0.76rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase;
+    color: #93c5fd; margin-bottom: 12px; font-family: var(--mono);
+  }
+  .cover h1 {
+    font-family: var(--display);
+    font-size: 2.3rem; font-weight: 700; letter-spacing: -0.5px; line-height: 1.2; margin-bottom: 12px;
+  }
+  .cover .sub {
+    font-size: 1rem; color: #cbd5e1; max-width: 680px; margin: 0 auto; line-height: 1.55;
+  }
+  .cover .meta {
+    margin-top: 22px; font-family: var(--mono); font-size: 0.75rem; color: #94a3b8;
+  }
+
+  /* ══ Container ══ */
+  .container { max-width: 1080px; margin: -30px auto 60px; padding: 0 20px; position: relative; z-index: 3; }
+
+  /* ══ Executive Highlights Bar ══ */
+  .exec-bar {
+    background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 20px 24px; margin-bottom: 22px; box-shadow: var(--shadow-md);
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
+  }
+  .exec-stat { border-right: 1px solid var(--border); padding-right: 12px; }
+  .exec-stat:last-child { border-right: none; }
+  .exec-stat .k { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+  .exec-stat .v { font-family: var(--display); font-size: 1.25rem; font-weight: 700; color: var(--text); }
+  .exec-stat .s { font-size: 0.73rem; color: var(--muted); }
+
+  /* ══ Cards ══ */
+  .card {
+    background: var(--white); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    padding: 26px 30px; margin-bottom: 22px; box-shadow: var(--shadow-md);
+  }
+  .card h2 {
+    font-family: var(--display); font-size: 1.2rem; font-weight: 700; color: var(--navy); letter-spacing: -0.3px;
+    display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+  }
+  .card h2 .n {
+    font-family: var(--mono); font-size: 0.72rem; font-weight: 700; color: var(--blue);
+    background: var(--blue-soft); border: 1px solid var(--blue-border);
+    padding: 2px 7px; border-radius: var(--radius-sm);
+  }
+  .card .lead { color: var(--muted); font-size: 0.88rem; margin-bottom: 16px; }
+
+  /* Features Grid */
+  .feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .feat {
+    border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; background: var(--bg-surface-subtle);
+  }
+  .feat .t { font-size: 0.86rem; font-weight: 700; color: var(--navy); margin-bottom: 6px; font-family: var(--display); }
+  .feat ul { list-style: none; }
+  .feat li { font-size: 0.78rem; color: var(--text-secondary); padding: 2px 0 2px 14px; position: relative; }
+  .feat li::before { content: "•"; position: absolute; left: 2px; color: var(--blue); font-weight: 700; }
+
+  /* 6-Step Journey (Clean Text Boxes) */
+  .journey { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; }
+  .jstep {
+    background: var(--bg-surface-subtle); border: 1px solid var(--border); border-radius: var(--radius-md);
+    padding: 12px 8px; text-align: left; position: relative;
+  }
+  .jstep .num { font-family: var(--mono); font-size: 0.68rem; font-weight: 700; color: var(--blue); margin-bottom: 4px; display: block; }
+  .jstep .t { font-size: 0.78rem; font-weight: 700; color: var(--navy); }
+  .jstep .d { font-size: 0.68rem; color: var(--muted); margin-top: 2px; line-height: 1.35; }
+
+  /* Workflow Timeline */
+  .wf-timeline { position: relative; padding-left: 26px; }
+  .wf-timeline::before { content: ""; position: absolute; left: 8px; top: 8px; bottom: 8px; width: 2px; background: #e2e8f0; }
+  .wf-step { position: relative; margin-bottom: 10px; }
+  .wf-step::before {
+    content: ""; position: absolute; left: -26px; top: 12px; width: 14px; height: 14px; border-radius: 50%;
+    background: #ffffff; border: 2px solid var(--blue); z-index: 1;
+  }
+  .wf-step.done::before { background: var(--green); border-color: var(--green); }
+  .wf-box {
+    border: 1px solid var(--border); border-radius: var(--radius-md); padding: 11px 14px; background: var(--bg-surface-subtle);
+  }
+  .wf-box .t { font-size: 0.86rem; font-weight: 700; color: var(--navy); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .wf-box .d { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+  .who { font-family: var(--mono); font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 2px 7px; border-radius: var(--radius-sm); }
+  .who-cust { background: #f1f5f9; color: #475569; }
+  .who-admin { background: var(--amber-soft); color: #92400e; border: 1px solid var(--amber-border); }
+  .who-rider { background: var(--blue-soft); color: #1e40af; border: 1px solid var(--blue-border); }
+  .who-sys { background: var(--green-soft); color: #166534; border: 1px solid var(--green-border); }
+  .wf-alt-note { margin-top: 10px; font-size: 0.8rem; color: var(--text-secondary); background: var(--amber-soft); border: 1px solid var(--amber-border); border-radius: var(--radius-md); padding: 10px 14px; }
+
+  .highlight-box {
+    margin-top: 14px; background: var(--green-soft); border: 1px solid var(--green-border);
+    border-radius: var(--radius-md); padding: 12px 14px; font-size: 0.82rem; color: #14532d;
+  }
+  .highlight-box b { color: #166534; }
+
+  /* ══ Architecture & Design Principles Grid ══ */
+  .think-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .think {
+    border: 1px solid var(--border); border-radius: var(--radius-md); padding: 13px 15px; background: var(--bg-surface-subtle);
+  }
+  .think .idx { font-family: var(--mono); font-size: 0.68rem; font-weight: 700; color: var(--blue); margin-bottom: 2px; }
+  .think .t { font-size: 0.85rem; font-weight: 700; color: var(--navy); margin-bottom: 2px; }
+  .think .d { font-size: 0.76rem; color: var(--muted); line-height: 1.45; }
+
+  /* ══ UI Mockup Frames ══ */
+  .mock-panel { display: none; }
+  .mock-panel.active { display: block; }
+  .mock-grid { display: grid; grid-template-columns: 1fr; gap: 16px; margin-top: 6px; }
+  .mock { border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; background: #ffffff; box-shadow: var(--shadow-sm); }
+  .mock--phone { max-width: 380px; margin: 0 auto; width: 100%; }
+  .mock-label {
+    font-size: 0.74rem; font-weight: 700; color: var(--navy); padding: 8px 12px; background: var(--bg-surface-subtle);
+    border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;
+  }
+  .mock-label .tag { font-family: var(--mono); font-size: 0.64rem; color: var(--muted); font-weight: 600; }
+
+  .browser { border: 1px solid var(--border); border-radius: 8px; margin: 10px; overflow: hidden; background: #ffffff; }
+  .browser .bar { display: flex; align-items: center; gap: 6px; padding: 6px 9px; background: #f1f5f9; border-bottom: 1px solid var(--border); }
+  .browser .bar .dots { display: flex; gap: 4px; }
+  .browser .bar .dots i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; background: #cbd5e1; }
+  .browser .bar .url {
+    flex: 1; margin-left: 8px; font-family: var(--mono); font-size: 0.62rem; color: var(--muted);
+    background: #ffffff; border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px;
+  }
+
+  .app-top { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #ffffff; }
+  .app-top .t { font-size: 0.72rem; font-weight: 700; color: var(--navy); }
+  .app-top .sub { font-size: 0.58rem; color: var(--muted); }
+
+  .hero-status {
+    background: var(--blue-soft); border-bottom: 1px solid var(--blue-border); padding: 10px 12px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .hero-status .st { font-size: 0.78rem; font-weight: 700; color: var(--blue); }
+  .hero-status .eta { font-size: 0.6rem; color: var(--muted); text-align: right; line-height: 1.3; font-family: var(--mono); }
+
+  .tr-timeline { padding: 8px 12px; }
+  .tr-row { display: flex; gap: 8px; }
+  .tr-row .rail { display: flex; flex-direction: column; align-items: center; width: 14px; flex-shrink: 0; }
+  .tr-row .dot { width: 10px; height: 10px; border-radius: 50%; z-index: 1; flex-shrink: 0; }
+  .tr-row.done .dot { background: var(--green); }
+  .tr-row.now .dot { background: var(--blue); }
+  .tr-row.next .dot { background: #ffffff; border: 2px solid #cbd5e1; }
+  .tr-row .line { width: 2px; flex: 1; background: #e2e8f0; }
+  .tr-row .when { width: 44px; flex-shrink: 0; text-align: right; font-family: var(--mono); font-size: 0.56rem; color: var(--muted); padding-top: 1px; }
+  .tr-row .tx { flex: 1; padding-bottom: 10px; }
+  .tr-row .tx b { font-size: 0.68rem; color: var(--navy); display: block; line-height: 1.2; }
+  .tr-row .tx span { font-size: 0.58rem; color: var(--muted); }
+
+  .rider-card { margin: 4px 12px 10px; border: 1px solid var(--border); border-radius: 6px; padding: 7px 9px; display: flex; align-items: center; justify-content: space-between; background: var(--bg-surface-subtle); }
+  .rider-card .n b { font-size: 0.66rem; color: var(--navy); display: block; }
+  .rider-card .n span { font-size: 0.56rem; color: var(--muted); }
+
+  .dash { display: flex; min-height: 220px; }
+  .dash .side { width: 88px; background: #0f2a4a; padding: 9px 6px; display: flex; flex-direction: column; gap: 2px; flex-shrink: 0; }
+  .dash .side .logo { font-family: var(--mono); font-size: 0.62rem; font-weight: 700; color: #ffffff; padding: 2px 6px 6px; letter-spacing: 0.4px; }
+  .dash .side .mi { font-size: 0.56rem; color: #94a3b8; padding: 4px 6px; border-radius: 4px; }
+  .dash .side .mi.on { background: rgba(59,130,246,0.25); color: #93c5fd; font-weight: 700; }
+  .dash .main { flex: 1; padding: 8px 10px; min-width: 0; }
+
+  .dash-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 8px; }
+  .d-stat { border: 1px solid var(--border); border-radius: 6px; padding: 6px 7px; background: #ffffff; }
+  .d-stat .k { font-size: 0.52rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.3px; font-family: var(--mono); }
+  .d-stat .v { font-family: var(--mono); font-size: 0.78rem; font-weight: 700; color: var(--navy); }
+
+  .mk-table { width: 100%; border-collapse: collapse; font-size: 0.62rem; }
+  .mk-table th { text-align: left; padding: 4px 6px; color: var(--muted); font-weight: 700; font-size: 0.55rem; text-transform: uppercase; letter-spacing: 0.4px; border-bottom: 1px solid var(--border); background: var(--bg-surface-subtle); }
+  .mk-table td { padding: 5px 6px; border-bottom: 1px solid #f1f5f9; color: var(--text); }
+  .mk-table .mono { font-family: var(--mono); font-weight: 700; color: var(--navy); }
+  .pill-s { font-size: 0.54rem; font-weight: 700; padding: 1px 6px; border-radius: var(--radius-full); font-family: var(--mono); }
+  .pill-s.blue { background: var(--blue-soft); color: var(--blue); }
+  .pill-s.green { background: var(--green-soft); color: var(--green); }
+  .pill-s.amber { background: var(--amber-soft); color: var(--amber); }
+
+  .phone { width: 180px; margin: 10px auto; border: 2px solid #cbd5e1; border-radius: 14px; overflow: hidden; background: #f8fafc; }
+  .phone .status { display: flex; justify-content: space-between; padding: 6px 10px 4px; font-size: 0.54rem; font-family: var(--mono); color: var(--text); background: #ffffff; }
+  .phone .app-head { padding: 8px 10px; background: var(--navy); color: #ffffff; font-size: 0.66rem; font-weight: 700; }
+  .phone .screen { padding: 8px; }
+  .mk-task { background: #ffffff; border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; margin-bottom: 6px; }
+  .mk-task .tt { font-weight: 700; color: var(--navy); font-size: 0.62rem; display: flex; justify-content: space-between; }
+  .mk-task .td { color: var(--muted); font-size: 0.54rem; margin-top: 2px; }
+  .mk-btn { display: inline-block; background: var(--blue); color: #ffffff; font-size: 0.54rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; margin-top: 4px; }
+
+  /* ══ Live Simulation Panel ══ */
+  .sim { border: 1px solid var(--border); border-radius: var(--radius-md); padding: 18px 20px; background: var(--bg-surface-subtle); }
+  .sim-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .sim-status { font-family: var(--mono); font-size: 0.76rem; font-weight: 700; background: var(--blue-soft); color: var(--blue); border: 1px solid var(--blue-border); border-radius: 4px; padding: 3px 10px; }
+  .sim-ctrls { display: flex; gap: 6px; }
+  .sim-btn { background: var(--navy); color: #ffffff; border: none; border-radius: 4px; padding: 5px 12px; font-size: 0.74rem; font-weight: 600; cursor: pointer; font-family: var(--mono); }
+  .sim-btn.ghost { background: #e2e8f0; color: var(--navy); }
+  .sim-rail { position: relative; height: 68px; margin: 6px 0; }
+  .sim-track { position: absolute; top: 24px; left: 4%; right: 4%; height: 4px; background: #e2e8f0; border-radius: 4px; }
+  .sim-track .fill { height: 100%; width: 0; background: linear-gradient(90deg, #2563eb, #16a34a); border-radius: 4px; transition: width 0.85s linear; }
+  .sim-stations { position: absolute; inset: 0; }
+  .sim-st { position: absolute; top: 6px; transform: translateX(-50%); width: 96px; text-align: center; }
+  .sim-st .dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid #cbd5e1; background: #ffffff; display: block; margin: 0 auto 3px; }
+  .sim-st .lbl { font-size: 0.65rem; font-family: var(--mono); color: var(--muted); }
+  .sim-st.on .dot { background: var(--green); border-color: var(--green); }
+  .sim-st.on .lbl { color: var(--green-dark); font-weight: 700; }
+  .sim-carrier { position: absolute; top: 14px; left: 4%; font-family: var(--mono); font-size: 0.68rem; font-weight: 700; background: var(--blue); color: #ffffff; padding: 2px 7px; border-radius: var(--radius-full); transition: left 0.85s linear; }
+  .sim-log { margin-top: 8px; font-size: 0.76rem; color: var(--text-secondary); background: #ffffff; border: 1px solid var(--border); border-radius: 6px; padding: 7px 10px; font-family: var(--mono); }
+
+  /* ══ Deliverables & Phase Cards ══ */
+  .deliverables { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
+  .deliverables li { list-style: none; font-size: 0.82rem; padding: 3px 0 3px 18px; position: relative; color: var(--text-secondary); }
+  .deliverables li::before { content: "✓"; position: absolute; left: 0; color: var(--green); font-weight: 700; }
+
+  .simple-list { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+  .simple-list li { font-size: 0.82rem; color: var(--text-secondary); padding-left: 18px; position: relative; }
+  .simple-list li::before { content: "•"; position: absolute; left: 2px; color: var(--blue); font-weight: 700; }
+
+  .phase-note {
+    margin-top: 12px; background: var(--blue-soft); border: 1px solid var(--blue-border);
+    border-radius: var(--radius-md); padding: 10px 14px; font-size: 0.82rem; color: #1e3a8a;
+  }
+
+  .footer { text-align: center; color: var(--muted); font-size: 0.78rem; padding: 10px 0 40px; font-family: var(--mono); }
+
+  @page { size: A4; margin: 12mm; }
+  @media print {
+    body { background: #ffffff; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .print-bar { display: none; }
+    .cover { padding: 40px 20px 30px; }
+    .card { box-shadow: none; break-inside: avoid; }
+    .mock-panel { display: block !important; }
+  }
+  @media (max-width: 820px) {
+    .feat-grid, .deliverables, .think-grid, .exec-bar { grid-template-columns: 1fr; }
+    .journey { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .cover h1 { font-size: 1.8rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ PRINT / NAV BAR ══ -->
+<div class="print-bar">
+  <div class="pb-row">
+    <span class="brand">Shohnaat Logistics Platform &bull; Proposal</span>
+    <button class="pb-print" onclick="window.print()">Print / Save as PDF</button>
+  </div>
+  <div class="header-tabs">
+    <button class="mock-tab active" data-tab="tab-overview">Interface Preview</button>
+    <button class="mock-tab" data-tab="tab-tech">Technical Architecture</button>
+    <button class="mock-tab" data-tab="tab-sim">Interactive Simulator</button>
+  </div>
+</div>
+
+<!-- ══ COVER ══ -->
+<header class="cover">
+  <div class="wrap">
+    <div class="eyebrow">Technical Development Proposal</div>
+    <h1>Logistics Management System for Shohnaat</h1>
+    <p class="sub">A complete operational system managing order booking, linehaul sorting, representative dispatch, and automated cash reconciliation.</p>
+    <div class="meta">Prepared for Shohnaat Operations &bull; Production Architecture Specification</div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ══ EXECUTIVE METRICS ══ -->
+  <div class="exec-bar">
+    <div class="exec-stat">
+      <div class="k">Phase 1 Target</div>
+      <div class="v" style="color:var(--green-dark);">7–10 Days</div>
+      <div class="s">Production Ready MVP</div>
+    </div>
+    <div class="exec-stat">
+      <div class="k">Core Stack</div>
+      <div class="v" style="color:var(--blue);">Next.js + Node</div>
+      <div class="s">PostgreSQL &bull; Prisma ORM</div>
+    </div>
+    <div class="exec-stat">
+      <div class="k">Cash Settlement</div>
+      <div class="v" style="color:var(--amber-dark);">Automated COD</div>
+      <div class="s">Zero Cash Discrepancy</div>
+    </div>
+    <div class="exec-stat">
+      <div class="k">Integrations</div>
+      <div class="v" style="color:var(--purple);">REST &bull; Webhooks</div>
+      <div class="s">Shopify &bull; WhatsApp Cloud</div>
+    </div>
+  </div>
+
+  <!-- ══ 1. OVERVIEW ══ -->
+  <section class="card">
+    <h2><span class="n">01</span> System Overview</h2>
+    <p class="lead">Shohnaat operates a high-frequency parcel distribution network requiring centralized operational coordination. This technical implementation unifies merchant order intake, warehouse sorting, mobile field dispatch, and automated financial accounting into a single robust platform.</p>
+  </section>
+
+  <!-- ══ 2. CORE SYSTEM MODULES ══ -->
+  <section class="card">
+    <h2><span class="n">02</span> Core Functional Modules</h2>
+    <p class="lead">The platform is structured into six key architectural modules:</p>
+    <div class="feat-grid">
+      <div class="feat">
+        <div class="t">Customers &amp; Merchants</div>
+        <ul>
+          <li>Registration and profile management for clients and merchants</li>
+          <li>Dynamic shipping rate calculation by service type and destination zone</li>
+          <li>Payment methods, debt invoice statements, and automated settlement logs</li>
+        </ul>
+      </div>
+      <div class="feat">
+        <div class="t">Pickup &amp; Shipment Management</div>
+        <ul>
+          <li>Pickup request registration and automated rider dispatch</li>
+          <li>Warehouse inbound receiving, barcode sorting, and scale weight audits</li>
+          <li>Inter-branch transport manifests and automated daily delivery runsheets</li>
+          <li>Partial parcel delivery handling and reverse logistics (RTO) tracking</li>
+        </ul>
+      </div>
+      <div class="feat">
+        <div class="t">Delivery Representatives</div>
+        <ul>
+          <li>Rider registration, route allocation, and mobile task queues</li>
+          <li>End-of-shift cash collection reconciliation and vault deposits</li>
+          <li>Representative commission logs and fuel advance management</li>
+        </ul>
+      </div>
+      <div class="feat">
+        <div class="t">Tracking &amp; Notifications</div>
+        <ul>
+          <li>Public web tracking interface with real-time milestone timestamps</li>
+          <li>Full audit log tracking every state change with operator IDs</li>
+          <li>Automated Meta Cloud WhatsApp and SMS status triggers</li>
+        </ul>
+      </div>
+      <div class="feat">
+        <div class="t">Merchant API &amp; Webhooks</div>
+        <ul>
+          <li>Direct integration with merchant Shopify and WooCommerce stores</li>
+          <li>REST API endpoints for automated bulk shipment creation</li>
+          <li>HMAC-signed webhook event triggers on delivery status updates</li>
+        </ul>
+      </div>
+      <div class="feat">
+        <div class="t">Financial &amp; Accounting Engine</div>
+        <ul>
+          <li>Cash on Delivery (COD) collection and rider liability tracking</li>
+          <li>Itemized merchant settlement statements and fee deduction ledgers</li>
+          <li>Double-entry ledger with profit &amp; loss and balance sheet exports</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 3. END-TO-END SHIPMENT PIPELINE ══ -->
+  <section class="card">
+    <h2><span class="n">03</span> End-to-End Operational Lifecycle</h2>
+    <p class="lead">The lifecycle of every parcel moving through the Shohnaat network:</p>
+    <div class="journey">
+      <div class="jstep"><span class="num">Step 01</span><div class="t">Booking</div><div class="d">Merchant registers parcel via portal or REST API</div></div>
+      <div class="jstep"><span class="num">Step 02</span><div class="t">Pickup</div><div class="d">Field representative collects parcel and scans QR code</div></div>
+      <div class="jstep"><span class="num">Step 03</span><div class="t">Sorting</div><div class="d">Central warehouse verifies weight and routes to destination bin</div></div>
+      <div class="jstep"><span class="num">Step 04</span><div class="t">Linehaul</div><div class="d">Inter-branch transit to local delivery depot</div></div>
+      <div class="jstep"><span class="num">Step 05</span><div class="t">Doorstep</div><div class="d">Delivery representative delivers parcel & collects COD cash</div></div>
+      <div class="jstep"><span class="num">Step 06</span><div class="t">Settlement</div><div class="d">Automated fee deduction & net merchant bank/PayPal payout</div></div>
+    </div>
+  </section>
+
+  <!-- ══ 4. CRITICAL WORKFLOW ══ -->
+  <section class="card">
+    <h2><span class="n">04</span> Status Transition & Responsibility Chain</h2>
+    <p class="lead">System state progression and assigned operational stakeholders at each milestone:</p>
+
+    <div class="wf-timeline">
+      <div class="wf-step done">
+        <div class="wf-box">
+          <div class="t">1. Order Placement <span class="who who-cust">Customer / Merchant</span></div>
+          <div class="d">Shipment is created in the database and issued a unique tracking ID. Recipient receives an automated WhatsApp booking notification.</div>
+        </div>
+      </div>
+      <div class="wf-step done">
+        <div class="wf-box">
+          <div class="t">2. Pickup Assignment <span class="who who-admin">Dispatch Controller</span></div>
+          <div class="d">The nearest pickup representative receives the task on their mobile PWA with address, parcel count, and time window.</div>
+        </div>
+      </div>
+      <div class="wf-step done">
+        <div class="wf-box">
+          <div class="t">3. Pickup Confirmation <span class="who who-rider">Field Representative</span></div>
+          <div class="d">Representative scans the barcode label and confirms pickup. System transitions state to Picked Up.</div>
+        </div>
+      </div>
+      <div class="wf-step done">
+        <div class="wf-box">
+          <div class="t">4. Warehouse Inbound & Linehaul <span class="who who-sys">Hub Operations</span></div>
+          <div class="d">Parcel is weighed on digital scales, sorted into regional linehaul manifests, and transferred to the destination depot.</div>
+        </div>
+      </div>
+      <div class="wf-step done">
+        <div class="wf-box">
+          <div class="t">5. Out for Delivery <span class="who who-rider">Delivery Representative</span></div>
+          <div class="d">Delivery runsheet is generated. Recipient receives live tracking link with expected delivery window.</div>
+        </div>
+      </div>
+      <div class="wf-step done">
+        <div class="wf-box">
+          <div class="t">6. Delivery & COD Collection <span class="who who-rider">Delivery Representative</span></div>
+          <div class="d">Parcel is handed to recipient. Cash on Delivery is recorded in rider wallet liability. Instant settlement statement issued.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="wf-alt-note">
+      <b>Exception Handling:</b> Failed delivery attempts, cancellations, and partial item deliveries are handled with reverse logistics manifests (RTO) returning items safely to merchant origin.
+    </div>
+
+    <div class="highlight-box">
+      <b>Operational Advantage:</b> Real-time WhatsApp triggers reduce inbound support inquiries by up to 70%, while immutable audit logs ensure complete operational accountability.
+    </div>
+  </section>
+
+  <!-- ══ 5. ARCHITECTURAL PRINCIPLES ══ -->
+  <section class="card">
+    <h2><span class="n">05</span> Architectural & Security Principles</h2>
+    <p class="lead">Enterprise design principles engineered for data integrity, financial security, and horizontal scalability:</p>
+    <div class="think-grid">
+      <div class="think"><div class="idx">01</div><div class="t">Zero Cash Discrepancy</div><div class="d">COD cash liability is attached to the representative upon delivery and reconciled against physical branch vault deposits.</div></div>
+      <div class="think"><div class="idx">02</div><div class="t">Role-Based Access Control</div><div class="d">Strict RBAC segregation ensures merchants, riders, customers, and admins only access authorized resources.</div></div>
+      <div class="think"><div class="idx">03</div><div class="t">Mobile-First Field PWA</div><div class="d">Representative interfaces are optimized for single-handed street operation with camera barcode scanning and offline caching.</div></div>
+      <div class="think"><div class="idx">04</div><div class="t">Automated Daily Backups</div><div class="d">PostgreSQL database snapshots run nightly with verified recovery scripts and point-in-time transaction logs.</div></div>
+      <div class="think"><div class="idx">05</div><div class="t">Secure Payment Processing</div><div class="d">Online transactions integrate with PayPal and Stripe SDKs. No credit card details are ever stored on platform servers.</div></div>
+      <div class="think"><div class="idx">06</div><div class="t">Modular Extensibility</div><div class="d">Built on a modular service architecture allowing seamless additions of AI route optimization and automated billing.</div></div>
+    </div>
+  </section>
+
+  <!-- ══ 6. WORKING INTERFACE PREVIEW ══ -->
+  <section class="card" id="firstlook">
+    <h2><span class="n">06</span> System Interface Specifications</h2>
+    <p class="lead">Explore the production UI layouts, technical service mappings, and the interactive lifecycle simulator using the tabs below:</p>
+
+    <!-- Tab 1: Interface Previews -->
+    <div class="mock-panel active" id="tab-overview">
+      <div class="mock-grid">
+
+        <!-- Tracking Page -->
+        <div class="mock">
+          <div class="mock-label">Public Customer Tracking Interface <span class="tag">Web &bull; Public</span></div>
+          <div class="browser">
+            <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">shohnaat.com/track/SH-9082</span></div>
+            <div class="app-top"><div><div class="t">Live Shipment Tracking</div><div class="sub">Order #SH-9082 &bull; GadgetZone</div></div></div>
+            <div class="hero-status">
+              <div class="st">Out for Delivery</div>
+              <div class="eta">Estimated Arrival<br>~12:30 PM Today</div>
+            </div>
+            <div class="tr-timeline">
+              <div class="tr-row done"><div class="rail"><span class="dot"></span><span class="line"></span></div><div class="when">Day 1</div><div class="tx"><b>Booked</b><span>Order confirmed by merchant</span></div></div>
+              <div class="tr-row done"><div class="rail"><span class="dot"></span><span class="line"></span></div><div class="when">Day 2</div><div class="tx"><b>Picked Up</b><span>Collected by field representative</span></div></div>
+              <div class="tr-row done"><div class="rail"><span class="dot"></span><span class="line"></span></div><div class="when">Day 3</div><div class="tx"><b>In Transit</b><span>Sorted at central logistics hub</span></div></div>
+              <div class="tr-row now"><div class="rail"><span class="dot"></span><span class="line"></span></div><div class="when">Now</div><div class="tx"><b>Out for Delivery</b><span>Rider is en route to delivery address</span></div></div>
+              <div class="tr-row next"><div class="rail"><span class="dot"></span></div><div class="when">—</div><div class="tx"><b>Delivered</b><span>Pending doorstep handover</span></div></div>
+            </div>
+            <div class="rider-card"><div class="n"><b>Karim &bull; Delivery Representative</b><span>Assigned Courier &bull; 4.9 Rating</span></div></div>
+          </div>
+        </div>
+
+        <!-- Admin Dashboard -->
+        <div class="mock">
+          <div class="mock-label">Operations Command Dashboard <span class="tag">Web &bull; Admin</span></div>
+          <div class="browser">
+            <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span class="url">app.shohnaat.com/admin</span></div>
+            <div class="dash">
+              <div class="side">
+                <div class="logo">SHOHNAAT</div>
+                <div class="mi on">Dashboard</div>
+                <div class="mi">Shipments</div>
+                <div class="mi">Pickups</div>
+                <div class="mi">Riders</div>
+                <div class="mi">Merchants</div>
+                <div class="mi">Finance</div>
+              </div>
+              <div class="main">
+                <div class="app-top" style="padding:2px 0 6px;"><div><div class="t">Operations Overview</div><div class="sub">Live Network Telemetry</div></div></div>
+                <div class="dash-stats">
+                  <div class="d-stat"><div class="k">Active Parcels</div><div class="v">128</div></div>
+                  <div class="d-stat"><div class="k">In Transit</div><div class="v">34</div></div>
+                  <div class="d-stat"><div class="k">Delivered</div><div class="v">92</div></div>
+                  <div class="d-stat"><div class="k">COD Collected</div><div class="v">$1,240</div></div>
+                </div>
+                <table class="mk-table">
+                  <tr><th>Tracking ID</th><th>Route</th><th>Status</th><th>COD</th></tr>
+                  <tr><td class="mono">SH-9082</td><td>Central &rarr; Regional</td><td><span class="pill-s blue">Out for Delivery</span></td><td>$15.00</td></tr>
+                  <tr><td class="mono">SH-9081</td><td>Hub &rarr; Suburb</td><td><span class="pill-s green">Delivered</span></td><td>$22.00</td></tr>
+                  <tr><td class="mono">SH-9080</td><td>Depot &rarr; Branch</td><td><span class="pill-s amber">In Transit</span></td><td>$9.50</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Rider Mobile PWA -->
+        <div class="mock mock--phone">
+          <div class="mock-label">Field Representative Mobile PWA <span class="tag">Mobile &bull; PWA</span></div>
+          <div class="phone">
+            <div class="status"><span>09:41</span><span>4G &bull; GPS</span></div>
+            <div class="app-head">Shohnaat Field App</div>
+            <div class="screen">
+              <div style="font-weight:700; color:var(--navy); font-size:0.68rem; margin-bottom:6px;">Karim &bull; Route: Central</div>
+              <div class="mk-task">
+                <div class="tt">Pickup &bull; GadgetZone <span class="pill-s blue">11:30 AM</span></div>
+                <div class="td">12 parcels &bull; Commercial District</div>
+                <span class="mk-btn">Confirm Pickup</span>
+              </div>
+              <div class="mk-task">
+                <div class="tt">Deliver &bull; SH-9082 <span class="pill-s amber">COD $15.00</span></div>
+                <div class="td">House 42, Road 9A</div>
+                <span class="mk-btn">Complete Delivery</span>
+              </div>
+              <div class="mk-task">
+                <div class="tt">Deliver &bull; SH-9087 <span class="pill-s green">COD $22.00</span></div>
+                <div class="td">Avenue 12, Block B</div>
+                <span class="mk-btn" style="background:var(--green);">Delivered</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Tab 2: Technical Architecture -->
+    <div class="mock-panel" id="tab-tech">
+      <div class="feat-grid">
+        <div class="feat">
+          <div class="t">Application Framework</div>
+          <ul class="simple-list">
+            <li>Frontend: Next.js 14 App Router with React Server Components</li>
+            <li>Backend: Node.js &amp; TypeScript API services with Server Actions</li>
+            <li>Authentication: JWT with Role-Based Access Control (Admin / Merchant / Rider)</li>
+            <li>Styling: High-performance CSS design system without layout bloat</li>
+          </ul>
+        </div>
+        <div class="feat">
+          <div class="t">Database &amp; Storage</div>
+          <ul class="simple-list">
+            <li>Primary Database: PostgreSQL 15+ with ACID transactional guarantees</li>
+            <li>ORM Layer: Prisma ORM providing type-safe database migrations</li>
+            <li>Cache &amp; Queue: Redis token bucket rate limiting and BullMQ workers</li>
+            <li>Deployment: Docker containerized on VPS behind Nginx reverse proxy &amp; SSL</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 3: Interactive Simulator -->
+    <div class="mock-panel" id="tab-sim">
+      <div class="sim">
+        <div class="sim-top">
+          <span class="sim-status" id="simStatus">Status: Booked</span>
+          <div class="sim-ctrls">
+            <button class="sim-btn" id="simPlay">Play Journey</button>
+            <button class="sim-btn ghost" id="simReset">Reset</button>
+          </div>
+        </div>
+        <div class="sim-rail">
+          <div class="sim-track"><div class="fill" id="simFill"></div></div>
+          <div class="sim-stations" id="simStations">
+            <div class="sim-st" style="left:0%"><span class="dot"></span><span class="lbl">Booked</span></div>
+            <div class="sim-st" style="left:20%"><span class="dot"></span><span class="lbl">Pickup</span></div>
+            <div class="sim-st" style="left:40%"><span class="dot"></span><span class="lbl">Warehouse</span></div>
+            <div class="sim-st" style="left:60%"><span class="dot"></span><span class="lbl">In Transit</span></div>
+            <div class="sim-st" style="left:80%"><span class="dot"></span><span class="lbl">Out for Delivery</span></div>
+            <div class="sim-st" style="left:100%"><span class="dot"></span><span class="lbl">Delivered</span></div>
+          </div>
+          <div class="sim-carrier" id="simCarrier">Origin</div>
+        </div>
+        <div class="sim-log" id="simLog">Parcel #SH-9082 registered with tracking number.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 7. PHASE 1 SCOPE ══ -->
+  <section class="card">
+    <h2><span class="n">07</span> Phase 1 — Production MVP Deliverables</h2>
+    <p class="lead">The core operational system scheduled for immediate sprint execution:</p>
+    <ul class="deliverables">
+      <li>Secure authentication and dashboards for Admin, Merchant, and Field Representative</li>
+      <li>Customer and merchant profile registration with customized regional rate cards</li>
+      <li>Pickup request workflow: creation, approval, and geographical rider assignment</li>
+      <li>Automated unique tracking number generation and barcode metadata</li>
+      <li>Shipment state pipeline: Pending &rarr; Picked Up &rarr; In Transit &rarr; Out for Delivery &rarr; Delivered</li>
+      <li>Mobile PWA for representatives: task queues, recipient calling, and COD cash entry</li>
+      <li>Public customer tracking interface with milestone timeline history</li>
+      <li>Production deployment on VPS with automated nightly PostgreSQL backup scripts</li>
+    </ul>
+    <div class="phase-note">
+      <b>Sprint Timeline:</b> Phase 1 delivered in <b>7 to 10 days</b> — a tested, production-ready system ready for live field operations.
+    </div>
+  </section>
+
+  <!-- ══ 8. FUTURE SCALING ROADMAP ══ -->
+  <section class="card">
+    <h2><span class="n">08</span> Scaling &amp; Integration Roadmap</h2>
+    <p class="lead">Structured phases for post-MVP functional expansion:</p>
+    <ul class="simple-list">
+      <li>Phase 2: Dynamic weight/zone pricing engine, merchant REST API, and debt invoices</li>
+      <li>Phase 3: Multi-branch linehaul routing, inter-branch manifests, and partial delivery returns</li>
+      <li>Phase 4: Real-time GPS rider tracking, official Meta WhatsApp Cloud API, and double-entry ledger</li>
+    </ul>
+  </section>
+
+  <div class="footer">Shohnaat Logistics Platform &bull; Engineering Architecture &bull; Production Proposal</div>
+
+</div>
+
+<script>
+(function () {
+  // Navigation Tabs
+  var tabs = document.querySelectorAll('.mock-tab');
+  var panels = document.querySelectorAll('.mock-panel');
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      tabs.forEach(function (t) { t.classList.remove('active'); });
+      panels.forEach(function (p) { p.classList.remove('active'); });
+      tab.classList.add('active');
+      var panel = document.getElementById(tab.getAttribute('data-tab'));
+      if (panel) panel.classList.add('active');
+      var sec = document.getElementById('firstlook');
+      if (sec) {
+        var y = sec.getBoundingClientRect().top + window.pageYOffset - 80;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      }
+    });
+  });
+
+  // Simulator Logic
+  var STATUS = ['Booked', 'Picked Up', 'At Warehouse', 'In Transit', 'Out for Delivery', 'Delivered'];
+  var LOGS = [
+    'Parcel #SH-9082 registered with tracking number.',
+    'Field representative confirms collection at merchant store.',
+    'Parcel received and sorted at central logistics hub.',
+    'Dispatched on inter-branch linehaul transit.',
+    'Delivery representative is en route to recipient address.',
+    'Delivered successfully. COD collected and reconciled.'
+  ];
+  var steps = document.querySelectorAll('#simStations .sim-st');
+  var carrier = document.getElementById('simCarrier');
+  var fill = document.getElementById('simFill');
+  var st = document.getElementById('simStatus');
+  var log = document.getElementById('simLog');
+  var play = document.getElementById('simPlay');
+  var reset = document.getElementById('simReset');
+  var STEP = 1100, i = 0, timer = null, running = false;
+
+  function render(idx) {
+    steps.forEach(function (s, k) { s.classList.toggle('on', k <= idx); });
+    var pct = 4 + (idx / (steps.length - 1)) * 92;
+    carrier.style.left = pct + '%';
+    fill.style.width = (pct - 4) + '%';
+    st.textContent = 'Status: ' + STATUS[idx];
+    log.textContent = LOGS[idx];
+  }
+  function tick() { if (i < steps.length - 1) { i++; render(i); } else { stop(); } }
+  function start() {
+    if (running) return;
+    if (i >= steps.length - 1) { i = 0; render(0); }
+    running = true; play.textContent = 'Pause';
+    timer = setInterval(tick, STEP);
+  }
+  function stop() {
+    running = false; play.textContent = 'Play Journey';
+    clearInterval(timer); timer = null;
+  }
+  play.addEventListener('click', function () { running ? stop() : start(); });
+  reset.addEventListener('click', function () { stop(); i = 0; render(0); });
+
+  tabs.forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      if (tab.getAttribute('data-tab') === 'tab-sim') {
+        stop(); i = 0; render(0);
+        setTimeout(start, 400);
+      } else {
+        stop();
+      }
+    });
+  });
+
+  render(0);
+})();
+</script>
+
+</body>
+</html>
