@@ -3,16 +3,44 @@
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 15, 23, 42;
-  --background-start-rgb: 248, 250, 252;
-  --background-end-rgb: 241, 245, 249;
+  /* ============================================================
+     SHOHNAAT LOGISTICS — MASTER GLOBAL DESIGN TOKENS
+     ============================================================ */
+
+  /* Primary */
+  --color-primary: #2563eb;
+  --color-primary-dark: #1e40af;
+  --color-primary-light: #dbeafe;
+
+  /* Neutral */
+  --color-dark-navy: #0f172a;
+  --color-slate-700: #334155;
+  --color-slate-500: #64748b;
+  --color-slate-200: #e2e8f0;
+  --color-slate-50: #f8fafc;
+
+  /* Status */
+  --color-success: #16a34a;
+  --color-in-transit: #2563eb;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-gray: #9ca3af;
+
+  /* Accent */
+  --color-purple: #8b5cf6;
+  --color-teal: #14b8a6;
+
+  /* Input Tint */
+  --color-input-bg: #f0f5ff;
+  --color-input-border: #e0eaff;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: #f8fafc;
+  color: var(--color-slate-700);
+  background-color: var(--color-slate-50);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 /* Custom Scrollbars */
