@@ -20,6 +20,7 @@ const zoneRoutes = require('./routes/zones');
 const auditLogRoutes = require('./routes/auditLogs');
 const financeRoutes = require('./routes/finance');
 const paymentRoutes = require('./routes/payments');
+const addressRoutes = require('./routes/addresses');
 
 // Initialize Express App
 const app = express();
@@ -59,6 +60,7 @@ app.use('/api/v1/zones', zoneRoutes);
 app.use('/api/v1/audit-logs', auditLogRoutes);
 app.use('/api/v1/finance', financeRoutes);
 app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/v1/addresses', addressRoutes);
 
 // 404 handler
 app.use((req, res) => {

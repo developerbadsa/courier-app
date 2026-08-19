@@ -46,6 +46,7 @@ const NAV_CONFIG: Record<UserRole, { section: string; items: NavItem[] }[]> = {
         { label: 'Create Shipment', href: '/dashboard/shipments/new', icon: Package },
         { label: 'Bulk Upload', href: '/dashboard/shipments/bulk', icon: FileText },
         { label: 'Pickup Requests', href: '/dashboard/pickups', icon: Truck, badge: '3' },
+        { label: 'Schedule Pickup', href: '/dashboard/pickups/new', icon: Truck },
         { label: 'Tracking', href: '/track', icon: MapPin },
       ],
     },
@@ -60,6 +61,7 @@ const NAV_CONFIG: Record<UserRole, { section: string; items: NavItem[] }[]> = {
     {
       section: 'Settings',
       items: [
+        { label: 'Address Book', href: '/dashboard/addresses', icon: MapPin },
         { label: 'Store Profile', href: '/dashboard/profile', icon: Building2 },
         { label: 'API & Webhooks', href: '/dashboard/api', icon: Settings },
       ],
