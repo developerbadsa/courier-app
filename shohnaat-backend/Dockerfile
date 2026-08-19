@@ -12,4 +12,5 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["npm", "run", "dev"]
+# Generate Prisma client at startup (ensures correct binary for Alpine)
+CMD ["sh", "-c", "npx prisma generate && npm run dev"]
