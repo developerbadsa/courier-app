@@ -17,6 +17,7 @@ import {
   CreditCard,
   Building2,
   FileText,
+  Bell,
 } from 'lucide-react';
 import { Avatar } from '@/components/ui';
 
@@ -98,6 +99,7 @@ const NAV_CONFIG: Record<UserRole, { section: string; items: NavItem[] }[]> = {
       items: [
         { label: 'Audit Logs', href: '/admin/audit-logs', icon: FileText },
         { label: 'Settlements', href: '/admin/finance', icon: DollarSign },
+        { label: 'Notifications', href: '/admin/settings/notifications', icon: Bell },
         { label: 'System Settings', href: '/admin/settings', icon: Settings },
       ],
     },

@@ -24,6 +24,8 @@ const addressRoutes = require('./routes/addresses');
 const manifestRoutes = require('./routes/manifests');
 const developerRoutes = require('./routes/developer');
 const trackingRoutes = require('./routes/tracking');
+const notificationRoutes = require('./routes/notifications');
+const { createWorker: createNotificationWorker } = require('./services/notificationService');
 
 // Initialize Express App
 const app = express();
@@ -67,6 +69,7 @@ app.use('/api/v1/addresses', addressRoutes);
 app.use('/api/v1/operations', manifestRoutes);
 app.use('/api/v1/developer', developerRoutes);
 app.use('/api/v1/tracking', trackingRoutes); // PUBLIC — no auth
+app.use('/api/v1/notifications', notificationRoutes);
 
 // 404 handler
 app.use((req, res) => {
@@ -83,6 +86,14 @@ app.use(errorHandler);
 const start = async () => {
   try {
     await connectWithRetry(5, 2000);
+
+    // Start BullMQ notification worker
+    try {
+      createNotificationWorker(prisma);
+      console.log('📧 Notification worker started (BullMQ)');
+    } catch (err) {
+      logger.warn('Notification worker failed to start:', err.message);
+    }
 
     const server = app.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Shohnaat Core API running on port ${PORT}`);

@@ -695,3 +695,32 @@ model AuditLog {
   @@index([actorId, createdAt])
   @@map("audit_logs")
 }
+
+// ============================================================
+// 15. NOTIFICATION LOGS & SETTINGS
+// ============================================================
+
+model NotificationLog {
+  id          String   @id @default(cuid())
+  event       String
+  channel     String
+  recipient   String
+  status      String   @default("SENT")
+  error       String?
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  @@index([event])
+  @@index([status])
+  @@index([createdAt])
+  @@map("notification_logs")
+}
+
+model NotificationSetting {
+  id        String   @id @default(cuid())
+  config    Json
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+
+  @@map("notification_settings")
+}

@@ -3,6 +3,7 @@ const router = express.Router();
 const { auth, requireRole } = require('../middleware/auth');
 const crypto = require('crypto');
 const { createAuditLog } = require('./auditLogs');
+const { notifyShipmentStatus } = require('../services/notificationService');
 
 // Status state machine - valid transitions
 const VALID_TRANSITIONS = {
@@ -351,6 +352,13 @@ router.post('/', async (req, res, next) => {
       req,
     });
 
+    // Fire notification
+    try {
+      await notifyShipmentStatus(prisma, 'shipment_booked', shipment, {});
+    } catch (notifErr) {
+      // Non-blocking
+    }
+
     res.status(201).json({ success: true, data: shipment });
   } catch (error) {
     next(error);
@@ -500,6 +508,23 @@ router.patch('/:id/status', async (req, res, next) => {
       diff: { from: shipment.currentStatus, to: status, reasonCode },
       req,
     });
+
+    // Fire notification for key status transitions
+    try {
+      const updatedShipment = await prisma.shipment.findUnique({
+        where: { id },
+        include: { consignee: true, merchant: true, pickupAddress: true, deliveryAddress: true },
+      });
+      if (status === 'OUT_FOR_DELIVERY') {
+        await notifyShipmentStatus(prisma, 'out_for_delivery', updatedShipment, {});
+      } else if (status === 'DELIVERED') {
+        await notifyShipmentStatus(prisma, 'delivered', updatedShipment, { deliveredAt: new Date().toISOString() });
+      } else if (status === 'FAILED') {
+        await notifyShipmentStatus(prisma, 'shipment_failed', updatedShipment, { reasonCode });
+      }
+    } catch (notifErr) {
+      // Non-blocking
+    }
 
     res.json({ success: true, data: updated[0] });
   } catch (error) {
