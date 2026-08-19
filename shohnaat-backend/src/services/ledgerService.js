@@ -305,6 +305,140 @@ class LedgerService {
       },
     };
   }
+
+  /**
+   * Export ledger entries as CSV string
+   */
+  async exportEntriesCSV(merchantId, { startDate, endDate } = {}) {
+    const account = await this.getOrCreateAccount(merchantId);
+    if (!account) return '';
+
+    const where = {
+      accountId: account.id,
+      ...(startDate || endDate
+        ? {
+            createdAt: {
+              ...(startDate && { gte: new Date(startDate) }),
+              ...(endDate && { lte: new Date(endDate) }),
+            },
+          }
+        : {}),
+    };
+
+    const entries = await this.prisma.ledgerEntry.findMany({
+      where,
+      include: { shipment: { select: { trackingNumber: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Build CSV
+    const headers = ['Date', 'Type', 'Direction', 'Amount (USD)', 'Shipment', 'Note', 'Transaction ID'];
+    const rows = entries.map((e) => [
+      e.createdAt.toISOString().split('T')[0],
+      e.type.replace(/_/g, ' '),
+      e.direction,
+      parseFloat(e.amount).toFixed(2),
+      e.shipment?.trackingNumber || '',
+      e.note || '',
+      e.transactionId,
+    ]);
+
+    return [headers.join(','), ...rows.map((r) => r.map((v) => `"${v}"`).join(','))].join('\n');
+  }
+
+  /**
+   * Get all settlements (admin view — all merchants)
+   */
+  async getAllSettlements({ page = 1, limit = 20, status, merchantId } = {}) {
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const where = {
+      ...(merchantId && { merchantId }),
+      ...(status && { status }),
+    };
+
+    const [settlements, total] = await Promise.all([
+      this.prisma.settlement.findMany({
+        where,
+        include: {
+          merchant: { select: { id: true, businessName: true, user: { select: { name: true, email: true } } } },
+          _count: { select: { ledgerEntries: true } },
+        },
+        skip,
+        take: parseInt(limit),
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.settlement.count({ where }),
+    ]);
+
+    // Summary stats
+    const stats = await this.prisma.settlement.groupBy({
+      by: ['status'],
+      _count: true,
+      _sum: { totalAmount: true },
+    });
+
+    return {
+      data: settlements,
+      summary: stats.reduce((acc, s) => ({
+        ...acc,
+        [s.status]: { count: s._count, total: parseFloat(s._sum.totalAmount || 0) },
+      }), {}),
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        pages: Math.ceil(total / parseInt(limit)),
+      },
+    };
+  }
+
+  /**
+   * Approve settlement (admin)
+   */
+  async approveSettlement(settlementId, approvedBy) {
+    return this.prisma.settlement.update({
+      where: { id: settlementId },
+      data: { status: 'PROCESSING' },
+    });
+  }
+
+  /**
+   * Process payout (Stripe Connect / PayPal Payouts)
+   */
+  async processPayout(settlementId, { provider, payoutDestination }) {
+    const settlement = await this.prisma.settlement.findUnique({
+      where: { id: settlementId },
+      include: { merchant: true },
+    });
+
+    if (!settlement) throw new Error('Settlement not found');
+    if (settlement.status !== 'PROCESSING') throw new Error('Settlement not in PROCESSING status');
+
+    const crypto = require('crypto');
+    const transactionId = `payout_${provider}_${crypto.randomBytes(8).toString('hex')}`;
+
+    // Record payout in ledger
+    await this.recordSettlementPayout({
+      settlementId,
+      merchantId: settlement.merchantId,
+      amount: parseFloat(settlement.totalAmount),
+      transactionId,
+    });
+
+    // Mark as paid
+    await this.prisma.settlement.update({
+      where: { id: settlementId },
+      data: { status: 'PAID', paidAt: new Date() },
+    });
+
+    return {
+      settlementId,
+      amount: parseFloat(settlement.totalAmount),
+      provider,
+      transactionId,
+      paidAt: new Date(),
+    };
+  }
 }
 
 module.exports = LedgerService;

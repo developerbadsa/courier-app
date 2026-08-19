@@ -4,10 +4,11 @@ import React, { useState } from 'react';
 import {
   DollarSign, Download, CreditCard, ArrowUpRight, ArrowDownRight,
   Wallet, TrendingUp, FileText, CheckCircle, Clock, ExternalLink,
+  Send, Building2, Mail, AlertTriangle, Shield,
 } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout';
-import { StatCard, StatusBadge, Button, Card, DataTable, Column, Badge, Tabs, EmptyState } from '@/components/ui';
+import { StatCard, StatusBadge, Button, Card, DataTable, Column, Badge, Tabs, Modal, Input } from '@/components/ui';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                               */
@@ -41,6 +42,7 @@ const MOCK_WALLET = {
   fees: 1642.00,
   pendingPayout: 12198.00,
   totalPaid: 3778.00,
+  pendingClearance: 2340.00,
 };
 
 const MOCK_ENTRIES: LedgerEntry[] = [
@@ -51,18 +53,16 @@ const MOCK_ENTRIES: LedgerEntry[] = [
   { id: '5', type: 'SETTLEMENT_PAYOUT', amount: 12198.00, direction: 'DEBIT', note: 'Weekly settlement payout', createdAt: 'Yesterday' },
   { id: '6', type: 'COD_COLLECTED', amount: 215.00, direction: 'CREDIT', note: 'COD collected — Liam Davis', trackingNumber: 'SHN-90208-US', createdAt: 'Yesterday 4:00 PM' },
   { id: '7', type: 'COD_COLLECTED', amount: 89.90, direction: 'CREDIT', note: 'COD collected — Emily Thornton', trackingNumber: 'SHN-90201-US', createdAt: 'Aug 18' },
+  { id: '8', type: 'DELIVERY_CHARGE', amount: 12.50, direction: 'DEBIT', note: 'Shipping fee — 3 parcels', trackingNumber: 'SHN-90200-US', createdAt: 'Aug 18' },
 ];
 
 const MOCK_SETTLEMENTS: Settlement[] = [
-  { id: 'STL-042', periodStart: 'Aug 12, 2026', periodEnd: 'Aug 18, 2026', totalAmount: 12198.00, status: 'PAID', entryCount: 186, createdAt: 'Aug 19, 2026' },
-  { id: 'STL-041', periodStart: 'Aug 5, 2026', periodEnd: 'Aug 11, 2026', totalAmount: 9840.00, status: 'PAID', entryCount: 152, createdAt: 'Aug 12, 2026' },
-  { id: 'STL-040', periodStart: 'Jul 29, 2026', periodEnd: 'Aug 4, 2026', totalAmount: 11250.00, status: 'PAID', entryCount: 178, createdAt: 'Aug 5, 2026' },
-  { id: 'STL-043', periodStart: 'Aug 19, 2026', periodEnd: 'Aug 25, 2026', totalAmount: 0, status: 'PENDING', entryCount: 24, createdAt: 'In Progress' },
+  { id: 'STL-042', periodStart: 'Aug 12', periodEnd: 'Aug 18', totalAmount: 12198.00, status: 'PAID', entryCount: 186, createdAt: 'Aug 19' },
+  { id: 'STL-041', periodStart: 'Aug 5', periodEnd: 'Aug 11', totalAmount: 9840.00, status: 'PAID', entryCount: 152, createdAt: 'Aug 12' },
+  { id: 'STL-040', periodStart: 'Jul 29', periodEnd: 'Aug 4', totalAmount: 11250.00, status: 'PAID', entryCount: 178, createdAt: 'Aug 5' },
+  { id: 'STL-043', periodStart: 'Aug 19', periodEnd: 'Aug 25', totalAmount: 2340.00, status: 'PENDING', entryCount: 24, createdAt: 'In Progress' },
 ];
 
-/* ------------------------------------------------------------------ */
-/*  Entry Type Config                                                   */
-/* ------------------------------------------------------------------ */
 const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   COD_COLLECTED: { label: 'COD Collected', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200' },
   DELIVERY_CHARGE: { label: 'Shipping Fee', color: 'text-red-600', bg: 'bg-red-50 border-red-200' },
@@ -76,89 +76,108 @@ const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string }> 
 /* ------------------------------------------------------------------ */
 export default function FinancePage() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [payoutModal, setPayoutModal] = useState(false);
+  const [payoutForm, setPayoutForm] = useState({ amount: '', method: 'bank_transfer', bankAccount: '', paypalEmail: '', notes: '' });
+  const [payoutSubmitted, setPayoutSubmitted] = useState(false);
+  const [payoutProcessing, setPayoutProcessing] = useState(false);
+
+  const handlePayoutRequest = async () => {
+    setPayoutProcessing(true);
+    await new Promise((r) => setTimeout(r, 1500));
+    setPayoutProcessing(false);
+    setPayoutModal(false);
+    setPayoutSubmitted(true);
+    setTimeout(() => setPayoutSubmitted(false), 5000);
+  };
+
+  const handleExportCSV = () => {
+    // Build CSV from mock entries
+    const headers = ['Date', 'Type', 'Direction', 'Amount (USD)', 'Shipment', 'Description'];
+    const rows = MOCK_ENTRIES.map((e) => [
+      e.createdAt, e.type.replace(/_/g, ' '), e.direction,
+      e.amount.toFixed(2), e.trackingNumber || '', e.note,
+    ]);
+    const csv = [headers.join(','), ...rows.map((r) => r.map((v) => `"${v}"`).join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `shohnaat-ledger-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const entryColumns: Column<LedgerEntry>[] = [
     {
       key: 'type', header: 'Type', sortable: true, accessor: (r) => r.type,
       render: (row) => {
         const cfg = TYPE_CONFIG[row.type] || { label: row.type, color: 'text-slate-600', bg: 'bg-slate-50 border-slate-200' };
-        return (
-          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${cfg.bg} ${cfg.color}`}>
-            {cfg.label}
-          </span>
-        );
+        return <span className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold border ${cfg.bg} ${cfg.color}`}>{cfg.label}</span>;
       },
     },
     {
-      key: 'direction', header: 'Direction',
+      key: 'direction', header: 'Dir',
       render: (row) => (
         <div className="flex items-center gap-1">
-          {row.direction === 'CREDIT' ? (
-            <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600" />
-          ) : (
-            <ArrowDownRight className="w-3.5 h-3.5 text-red-600" />
-          )}
-          <span className={`text-xs font-semibold ${row.direction === 'CREDIT' ? 'text-emerald-600' : 'text-red-600'}`}>
-            {row.direction}
-          </span>
+          {row.direction === 'CREDIT' ? <ArrowUpRight className="w-3.5 h-3.5 text-emerald-600" /> : <ArrowDownRight className="w-3.5 h-3.5 text-red-600" />}
+          <span className={`text-xs font-semibold ${row.direction === 'CREDIT' ? 'text-emerald-600' : 'text-red-600'}`}>{row.direction}</span>
         </div>
       ),
     },
     {
       key: 'amount', header: 'Amount (USD)', sortable: true, accessor: (r) => r.amount,
-      render: (row) => (
-        <span className={`font-mono font-bold ${row.direction === 'CREDIT' ? 'text-emerald-600' : 'text-red-600'}`}>
-          {row.direction === 'CREDIT' ? '+' : '-'}${row.amount.toFixed(2)}
-        </span>
-      ),
+      render: (row) => <span className={`font-mono font-bold ${row.direction === 'CREDIT' ? 'text-emerald-600' : 'text-red-600'}`}>{row.direction === 'CREDIT' ? '+' : '-'}${row.amount.toFixed(2)}</span>,
     },
     { key: 'note', header: 'Description', render: (row) => <span className="text-slate-600 text-[11px]">{row.note}</span> },
     {
       key: 'trackingNumber', header: 'Shipment',
-      render: (row) => row.trackingNumber
-        ? <span className="font-mono text-[11px] text-blue-600 font-semibold">{row.trackingNumber}</span>
-        : <span className="text-slate-300">—</span>,
+      render: (row) => row.trackingNumber ? <span className="font-mono text-[11px] text-blue-600 font-semibold">{row.trackingNumber}</span> : <span className="text-slate-300">—</span>,
     },
     { key: 'createdAt', header: 'Time', sortable: true, accessor: (r) => r.createdAt, render: (row) => <span className="text-[11px] text-slate-500">{row.createdAt}</span> },
   ];
 
   const settlementColumns: Column<Settlement>[] = [
-    { key: 'id', header: 'Settlement ID', render: (row) => <span className="font-mono text-xs font-semibold text-blue-600">{row.id}</span> },
+    { key: 'id', header: 'ID', render: (row) => <span className="font-mono text-xs font-semibold text-blue-600">{row.id}</span> },
     { key: 'period', header: 'Period', render: (row) => <span className="text-xs text-slate-600">{row.periodStart} — {row.periodEnd}</span> },
     { key: 'entryCount', header: 'Entries', render: (row) => <Badge variant="blue" size="sm">{row.entryCount}</Badge> },
-    { key: 'totalAmount', header: 'Amount (USD)', sortable: true, accessor: (r) => r.totalAmount,
+    { key: 'totalAmount', header: 'Amount', sortable: true, accessor: (r) => r.totalAmount,
       render: (row) => <span className="font-mono font-bold text-slate-900">${row.totalAmount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>,
     },
     { key: 'status', header: 'Status', render: (row) => <StatusBadge status={row.status === 'PAID' ? 'DELIVERED' : 'PENDING'} size="sm" /> },
-    {
-      key: 'actions', header: '', className: 'text-right', headerClassName: 'text-right',
-      render: (row) => (
-        <button className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded transition-colors">
-          <Download className="w-3 h-3" /> Export
-        </button>
-      ),
-    },
   ];
 
   return (
     <DashboardLayout role="merchant" title="Financial Overview" subtitle="COD settlements, wallet balance, and transaction history">
+      {/* Payout Success Toast */}
+      {payoutSubmitted && (
+        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3">
+          <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+          <div>
+            <div className="text-xs font-bold text-emerald-700">Payout Request Submitted</div>
+            <div className="text-[11px] text-emerald-600">Your payout request is being processed. You&apos;ll receive a notification when complete.</div>
+          </div>
+        </div>
+      )}
+
       {/* Wallet KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Available Balance" value={`$${MOCK_WALLET.balance.toLocaleString()}`} icon={Wallet} iconColor="text-emerald-600" iconBg="bg-emerald-50 border-emerald-100" change={{ value: 'Ready for payout', isPositive: true }} />
         <StatCard title="COD Collected" value={`$${MOCK_WALLET.collected.toLocaleString()}`} icon={DollarSign} iconColor="text-blue-600" iconBg="bg-blue-50 border-blue-100" change={{ value: '+$1,240 this week', isPositive: true }} />
-        <StatCard title="Shipping Fees" value={`-$${MOCK_WALLET.fees.toLocaleString()}`} icon={CreditCard} iconColor="text-red-600" iconBg="bg-red-50 border-red-100" subtext="Delivery charges" />
+        <StatCard title="Pending Clearance" value={`$${MOCK_WALLET.pendingClearance.toLocaleString()}`} icon={Clock} iconColor="text-amber-600" iconBg="bg-amber-50 border-amber-100" subtext="In 2-3 business days" />
         <StatCard title="Total Paid Out" value={`$${MOCK_WALLET.totalPaid.toLocaleString()}`} icon={TrendingUp} iconColor="text-purple-600" iconBg="bg-purple-50 border-purple-100" subtext="All settlements" />
       </div>
 
-      {/* Quick Actions Bar */}
+      {/* Quick Actions */}
       <div className="flex items-center justify-between">
-        <div />
         <div className="flex items-center gap-2">
+          <Button variant="primary" size="sm" onClick={() => setPayoutModal(true)} leftIcon={<Send className="w-3.5 h-3.5" />}>
+            Request Payout
+          </Button>
           <Link href="/dashboard/finance/topup">
-            <Button variant="primary" size="sm" leftIcon={<Wallet className="w-3.5 h-3.5" />}>Top Up Wallet</Button>
+            <Button variant="outline" size="sm" leftIcon={<Wallet className="w-3.5 h-3.5" />}>Top Up</Button>
           </Link>
-          <Button variant="outline" size="sm" leftIcon={<Download className="w-3.5 h-3.5" />}>Export All</Button>
         </div>
+        <Button variant="ghost" size="sm" onClick={handleExportCSV} leftIcon={<Download className="w-3.5 h-3.5" />}>Export CSV</Button>
       </div>
 
       {/* Tabs */}
@@ -172,29 +191,132 @@ export default function FinancePage() {
         className="mb-0"
       />
 
-      {/* Ledger Entries Tab */}
       {activeTab === 'overview' && (
         <DataTable
           data={MOCK_ENTRIES as unknown as Record<string, unknown>[]}
           columns={entryColumns as unknown as Column<Record<string, unknown>>[]}
-          searchable
-          searchPlaceholder="Search transactions..."
-          pageSize={10}
-          emptyMessage="No transactions found."
+          searchable searchPlaceholder="Search transactions..."
+          pageSize={10} emptyMessage="No transactions found."
           headerRight={<Badge variant="blue" size="sm">{MOCK_ENTRIES.length} entries</Badge>}
         />
       )}
 
-      {/* Settlements Tab */}
       {activeTab === 'settlements' && (
         <DataTable
           data={MOCK_SETTLEMENTS as unknown as Record<string, unknown>[]}
           columns={settlementColumns as unknown as Column<Record<string, unknown>>[]}
-          pageSize={10}
-          emptyMessage="No settlements found."
+          pageSize={10} emptyMessage="No settlements found."
           headerRight={<Badge variant="blue" size="sm">{MOCK_SETTLEMENTS.length} settlements</Badge>}
         />
       )}
+
+      {/* ═══ Payout Request Modal ═══ */}
+      <Modal
+        isOpen={payoutModal}
+        onClose={() => setPayoutModal(false)}
+        title="Request Payout"
+        size="lg"
+        footer={
+          <>
+            <Button variant="outline" size="sm" onClick={() => setPayoutModal(false)}>Cancel</Button>
+            <Button variant="primary" size="sm" isLoading={payoutProcessing} onClick={handlePayoutRequest}
+              disabled={!payoutForm.amount || parseFloat(payoutForm.amount) < 10 || (payoutForm.method === 'paypal' && !payoutForm.paypalEmail)}
+              leftIcon={<Send className="w-3.5 h-3.5" />}
+            >
+              Submit Payout Request
+            </Button>
+          </>
+        }
+      >
+        <div className="space-y-5">
+          {/* Available Balance */}
+          <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 text-center">
+            <div className="text-[11px] font-bold text-emerald-600 uppercase">Available for Payout</div>
+            <div className="text-2xl font-bold text-emerald-700 mt-1">${MOCK_WALLET.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+          </div>
+
+          {/* Amount */}
+          <Input
+            label="Payout Amount (USD)"
+            type="number"
+            placeholder="0.00"
+            value={payoutForm.amount}
+            onChange={(e) => setPayoutForm({ ...payoutForm, amount: e.target.value })}
+            leftIcon={<DollarSign className="w-4 h-4" />}
+            min="10"
+            max={MOCK_WALLET.balance}
+          />
+          {payoutForm.amount && parseFloat(payoutForm.amount) > MOCK_WALLET.balance && (
+            <p className="text-xs text-red-600 font-semibold -mt-3">Amount exceeds available balance</p>
+          )}
+
+          {/* Method */}
+          <div>
+            <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">Payout Method</label>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { key: 'bank_transfer', label: 'Bank Transfer', icon: Building2, desc: 'ACH / Wire Transfer' },
+                { key: 'paypal', label: 'PayPal', icon: Mail, desc: 'PayPal Payouts API' },
+              ].map(({ key, label, icon: Icon, desc }) => (
+                <button
+                  key={key}
+                  onClick={() => setPayoutForm({ ...payoutForm, method: key })}
+                  className={`p-4 rounded-xl border-2 text-left transition-all ${
+                    payoutForm.method === key
+                      ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-200'
+                      : 'bg-white border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 mb-2 ${payoutForm.method === key ? 'text-blue-600' : 'text-slate-400'}`} />
+                  <div className={`text-xs font-bold ${payoutForm.method === key ? 'text-blue-700' : 'text-slate-800'}`}>{label}</div>
+                  <div className="text-[10px] text-slate-400">{desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Bank Details */}
+          {payoutForm.method === 'bank_transfer' && (
+            <Input
+              label="Bank Account (last 4 digits or IBAN)"
+              placeholder="e.g. ****4567 or US12 3456 7890"
+              value={payoutForm.bankAccount}
+              onChange={(e) => setPayoutForm({ ...payoutForm, bankAccount: e.target.value })}
+            />
+          )}
+
+          {/* PayPal */}
+          {payoutForm.method === 'paypal' && (
+            <Input
+              label="PayPal Email"
+              type="email"
+              placeholder="merchant@example.com"
+              value={payoutForm.paypalEmail}
+              onChange={(e) => setPayoutForm({ ...payoutForm, paypalEmail: e.target.value })}
+            />
+          )}
+
+          {/* Notes */}
+          <div>
+            <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">Notes (Optional)</label>
+            <textarea
+              placeholder="Any special instructions for this payout..."
+              value={payoutForm.notes}
+              onChange={(e) => setPayoutForm({ ...payoutForm, notes: e.target.value })}
+              rows={2}
+              className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 resize-none"
+            />
+          </div>
+
+          {/* Processing Time Notice */}
+          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-start gap-2">
+            <Shield className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
+            <div className="text-[11px] text-slate-500">
+              Payouts are typically processed within 2-3 business days. Bank transfers use ACH (free) or Wire ($25 fee). PayPal payouts are instant.
+            </div>
+          </div>
+        </div>
+      </Modal>
     </DashboardLayout>
   );
 }

@@ -275,6 +275,78 @@ class PaymentService {
   }
 
   /* ═══════════════════════════════════════════════════════════════════
+   *  STRIPE CONNECT PAYOUTS
+   * ═══════════════════════════════════════════════════════════════════ */
+
+  /**
+   * Create Stripe Connect payout (transfer to connected account)
+   */
+  async createStripePayout({ amount, destinationAccountId, description }) {
+    const stripeClient = getStripe();
+    if (!stripeClient) {
+      return this._mockPayout(amount, 'stripe');
+    }
+
+    const transfer = await stripeClient.transfers.create({
+      amount: Math.round(amount * 100),
+      currency: 'usd',
+      destination: destinationAccountId,
+      description: description || 'Settlement payout',
+    });
+
+    return {
+      id: transfer.id,
+      amount,
+      status: 'paid',
+      provider: 'stripe',
+    };
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+   *  PAYPAL PAYOUTS API
+   * ═══════════════════════════════════════════════════════════════════ */
+
+  /**
+   * Create PayPal payout (batch payout to merchant)
+   */
+  async createPayPalPayout({ amount, email, note }) {
+    const paypalClient = getPayPal();
+    if (!paypalClient) {
+      return this._mockPayout(amount, 'paypal');
+    }
+
+    return new Promise((resolve, reject) => {
+      const payoutJson = {
+        sender_batch_header: {
+          email_subject: 'Shohnaat Logistics Settlement Payout',
+          note: note || 'Your settlement has been processed',
+        },
+        items: [
+          {
+            recipient_type: 'EMAIL',
+            amount: {
+              value: amount.toFixed(2),
+              currency: 'USD',
+            },
+            receiver: email,
+            note: `Settlement payout - $${amount.toFixed(2)} USD`,
+          },
+        ],
+      };
+
+      paypalClient.payout.create(payoutJson, (error, payout) => {
+        if (error) return reject(error);
+        resolve({
+          id: payout.batch_header?.payout_batch_id,
+          amount,
+          status: payout.batch_header?.status?.toLowerCase() || 'pending',
+          provider: 'paypal',
+        });
+      });
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
    *  SANDBOX MOCKS (when no real keys provided)
    * ═══════════════════════════════════════════════════════════════════ */
 
@@ -306,6 +378,16 @@ class PaymentService {
       approvalUrl: null,
       amount,
       status: 'created',
+      mode: 'sandbox',
+    };
+  }
+
+  _mockPayout(amount, provider) {
+    return {
+      id: `payout_sandbox_${crypto.randomBytes(8).toString('hex')}`,
+      amount,
+      status: 'paid',
+      provider,
       mode: 'sandbox',
     };
   }
