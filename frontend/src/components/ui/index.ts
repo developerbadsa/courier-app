@@ -3,3 +3,4 @@ export * from './Input';
 export * from './Checkbox';
 export * from './Card';
 export * from './StatusBadge';
+export * from './StatCard';

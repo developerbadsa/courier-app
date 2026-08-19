@@ -1,129 +1,249 @@
 'use client';
 
-import Link from 'next/link';
-import { ShieldCheck, Users, Truck, Package, Check, X, ArrowLeft, Database, Globe } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+  Users, 
+  Truck, 
+  Package, 
+  Database, 
+  Check, 
+  X, 
+  Building2, 
+  DollarSign, 
+  CheckCircle2, 
+  AlertCircle,
+  MapPin
+} from 'lucide-react';
+import { DashboardLayout } from '@/components/layout';
+import { StatCard, StatusBadge, Button, Card } from '@/components/ui';
+
+interface MerchantKYC {
+  id: string;
+  name: string;
+  businessType: string;
+  email: string;
+  rateCard: string;
+  status: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  submittedAt: string;
+}
+
+const INITIAL_KYC_REQUESTS: MerchantKYC[] = [
+  {
+    id: 'MC-101',
+    name: 'Apex Global Imports LLC',
+    businessType: 'Cross-Border E-Commerce',
+    email: 'contact@apexglobal.com',
+    rateCard: 'Standard Enterprise USD',
+    status: 'PENDING',
+    submittedAt: 'Today 10:15 AM',
+  },
+  {
+    id: 'MC-102',
+    name: 'Nordic Gear International',
+    businessType: 'Retail & Apparel',
+    email: 'support@nordicgear.com',
+    rateCard: 'High-Volume Commercial',
+    status: 'VERIFIED',
+    submittedAt: 'Yesterday',
+  },
+  {
+    id: 'MC-103',
+    name: 'Volt Electronics Hub',
+    businessType: 'Consumer Tech Distribution',
+    email: 'ops@volthub.io',
+    rateCard: 'Standard Enterprise USD',
+    status: 'PENDING',
+    submittedAt: 'Today 1:30 PM',
+  },
+];
 
 export default function AdminPage() {
-  return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
-      <header className="h-16 border-b border-slate-800 bg-slate-900 px-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="text-slate-400 hover:text-white">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div className="flex items-center gap-2 font-bold text-white">
-            <ShieldCheck className="w-5 h-5 text-emerald-500" />
-            Shohnaat Super Admin & Operations Console
-          </div>
-        </div>
+  const [kycList, setKycList] = useState<MerchantKYC[]>(INITIAL_KYC_REQUESTS);
 
-        <div className="flex items-center gap-3 text-xs">
-          <span className="px-2.5 py-1 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono">
-            ROLE: SUPER_ADMIN
+  const handleAction = (id: string, newStatus: 'VERIFIED' | 'REJECTED') => {
+    setKycList((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, status: newStatus } : item))
+    );
+  };
+
+  return (
+    <DashboardLayout
+      role="admin"
+      title="Superadmin Operations Console"
+      subtitle="Enterprise system overview, merchant verifications, and global fleet metrics"
+      primaryActionLabel="New Branch Hub"
+      onPrimaryAction={() => alert('Opening Create Branch Hub modal...')}
+    >
+      {/* 1. Global KPIs */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Active Merchants"
+          value="342"
+          icon={Users}
+          iconColor="text-blue-600"
+          iconBg="bg-blue-50 border-blue-100"
+          change={{ value: '+18 this week', isPositive: true }}
+        />
+
+        <StatCard
+          title="On-Duty Fleet Riders"
+          value="86"
+          icon={Truck}
+          iconColor="text-amber-600"
+          iconBg="bg-amber-50 border-amber-100"
+          subtext="Active across 14 hubs"
+        />
+
+        <StatCard
+          title="Global Deliveries Today"
+          value="5,420"
+          icon={Package}
+          iconColor="text-purple-600"
+          iconBg="bg-purple-50 border-purple-100"
+          change={{ value: '+8.4%', isPositive: true, period: 'vs avg' }}
+        />
+
+        <StatCard
+          title="System Health & DB"
+          value="100% OK"
+          icon={Database}
+          iconColor="text-emerald-600"
+          iconBg="bg-emerald-50 border-emerald-100"
+          subtext="PostgreSQL 16 & Redis 7 Synced"
+        />
+      </div>
+
+      {/* 2. Merchant KYC Verification & Approvals Table */}
+      <Card className="p-0 overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-slate-200/90 flex items-center justify-between bg-white">
+          <div>
+            <h2 className="text-sm font-bold text-slate-900 tracking-tight">
+              Merchant KYC Approval Queue
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Review and verify merchant business tax and commercial registrations
+            </p>
+          </div>
+          <span className="text-xs font-semibold px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 rounded-md">
+            {kycList.filter((k) => k.status === 'PENDING').length} Pending Approvals
           </span>
         </div>
-      </header>
 
-      <main className="p-6 max-w-7xl w-full mx-auto space-y-6 flex-1">
-        {/* System Status Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
-            <div className="text-xs text-slate-400 flex items-center justify-between">
-              <span>Total Active Merchants</span>
-              <Users className="w-4 h-4 text-blue-400" />
-            </div>
-            <div className="text-2xl font-bold text-white mt-2">342</div>
-            <div className="text-xs text-emerald-400 mt-1">12 Pending KYC verification</div>
-          </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-slate-50/80 text-slate-500 uppercase font-semibold text-[11px] border-b border-slate-200/80">
+              <tr>
+                <th className="py-3 px-4">Merchant Name</th>
+                <th className="py-3 px-4">Industry</th>
+                <th className="py-3 px-4">Rate Card Assigned</th>
+                <th className="py-3 px-4">Submitted</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 bg-white">
+              {kycList.map((m) => (
+                <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
+                  <td className="py-3.5 px-4">
+                    <div className="font-semibold text-slate-900">{m.name}</div>
+                    <div className="text-[11px] text-slate-400">{m.email}</div>
+                  </td>
 
-          <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
-            <div className="text-xs text-slate-400 flex items-center justify-between">
-              <span>Active Field Riders</span>
-              <Truck className="w-4 h-4 text-amber-400" />
-            </div>
-            <div className="text-2xl font-bold text-white mt-2">86 On-Duty</div>
-            <div className="text-xs text-slate-400 mt-1">Across 14 Central Hubs</div>
-          </div>
+                  <td className="py-3.5 px-4 text-slate-600 font-medium">
+                    {m.businessType}
+                  </td>
 
-          <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
-            <div className="text-xs text-slate-400 flex items-center justify-between">
-              <span>Global Parcels Today</span>
-              <Package className="w-4 h-4 text-purple-400" />
-            </div>
-            <div className="text-2xl font-bold text-white mt-2">5,420</div>
-            <div className="text-xs text-purple-400 mt-1">All branches operational</div>
-          </div>
+                  <td className="py-3.5 px-4 font-mono font-medium text-blue-600">
+                    {m.rateCard}
+                  </td>
 
-          <div className="bg-slate-900 border border-slate-800 p-5 rounded-xl">
-            <div className="text-xs text-slate-400 flex items-center justify-between">
-              <span>PostgreSQL & Redis DB</span>
-              <Database className="w-4 h-4 text-emerald-400" />
-            </div>
-            <div className="text-2xl font-bold text-emerald-400 mt-2">Optimal</div>
-            <div className="text-xs text-slate-400 mt-1">Prisma Schema v1.0 Synced</div>
-          </div>
+                  <td className="py-3.5 px-4 text-slate-500">
+                    {m.submittedAt}
+                  </td>
+
+                  <td className="py-3.5 px-4">
+                    <StatusBadge
+                      status={m.status === 'VERIFIED' ? 'DELIVERED' : m.status === 'REJECTED' ? 'FAILED' : 'PENDING'}
+                      size="sm"
+                    />
+                  </td>
+
+                  <td className="py-3.5 px-4 text-right">
+                    {m.status === 'PENDING' ? (
+                      <div className="flex items-center justify-end gap-1.5">
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleAction(m.id, 'VERIFIED')}
+                          className="h-7 px-2.5 text-[11px] bg-emerald-600 hover:bg-emerald-700 font-medium"
+                          leftIcon={<Check className="w-3 h-3 stroke-[2.5]" />}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleAction(m.id, 'REJECTED')}
+                          className="h-7 px-2.5 text-[11px] text-red-600 hover:bg-red-50 border-red-200 font-medium"
+                          leftIcon={<X className="w-3 h-3 stroke-[2.5]" />}
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] font-semibold text-slate-400 capitalize">
+                        {m.status.toLowerCase()}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+      </Card>
 
-        {/* KYC Approval Queue Section */}
-        <div className="bg-slate-900 border border-slate-800 rounded-xl overflow-hidden">
-          <div className="p-4 border-b border-slate-800 flex items-center justify-between">
-            <div>
-              <h2 className="text-sm font-semibold text-white">Merchant KYC Approvals Queue</h2>
-              <p className="text-xs text-slate-400 mt-0.5">Review and verify merchant business documents</p>
+      {/* 3. Global Infrastructure Hubs Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="p-4 flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+            <Building2 className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-xs text-slate-500 font-medium">Main Logistics Center</div>
+            <div className="text-sm font-bold text-slate-900">Headquarters Hub (Austin, TX)</div>
+            <div className="text-[11px] text-emerald-600 font-semibold mt-0.5 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" /> Operational (100% SLA)
             </div>
-            <span className="text-xs font-semibold px-2 py-1 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded">
-              3 Requires Review
-            </span>
           </div>
+        </Card>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-800/50 text-slate-400 uppercase font-semibold">
-                <tr>
-                  <th className="p-3.5">Merchant Name</th>
-                  <th className="p-3.5">Business Type</th>
-                  <th className="p-3.5">Rate Card Assigned</th>
-                  <th className="p-3.5">KYC Status</th>
-                  <th className="p-3.5 text-right">Quick Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800">
-                <tr className="hover:bg-slate-800/30">
-                  <td className="p-3.5 font-semibold text-white">Apex Global Imports LLC</td>
-                  <td className="p-3.5 text-slate-300">Cross-Border E-Commerce</td>
-                  <td className="p-3.5 text-blue-400 font-medium">Standard USD Rate</td>
-                  <td className="p-3.5">
-                    <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs">
-                      pending
-                    </span>
-                  </td>
-                  <td className="p-3.5 text-right space-x-2">
-                    <button className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-medium inline-flex items-center gap-1">
-                      <Check className="w-3 h-3" /> Approve
-                    </button>
-                    <button className="px-2.5 py-1 bg-rose-600/20 hover:bg-rose-600/40 text-rose-300 border border-rose-600/30 rounded text-xs font-medium inline-flex items-center gap-1">
-                      <X className="w-3 h-3" /> Reject
-                    </button>
-                  </td>
-                </tr>
-                <tr className="hover:bg-slate-800/30">
-                  <td className="p-3.5 font-semibold text-white">Nordic Gear International</td>
-                  <td className="p-3.5 text-slate-300">Retail & Apparel</td>
-                  <td className="p-3.5 text-blue-400 font-medium">Standard USD Rate</td>
-                  <td className="p-3.5">
-                    <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs">
-                      verified
-                    </span>
-                  </td>
-                  <td className="p-3.5 text-right">
-                    <span className="text-slate-500 text-xs">Approved</span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+        <Card className="p-4 flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-lg bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 shrink-0">
+            <MapPin className="w-5 h-5" />
           </div>
-        </div>
-      </main>
-    </div>
+          <div>
+            <div className="text-xs text-slate-500 font-medium">Coverage Zones</div>
+            <div className="text-sm font-bold text-slate-900">8 Active Delivery Sectors</div>
+            <div className="text-[11px] text-slate-500 font-medium mt-0.5">
+              Next-Day & Same-Day Express
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 flex items-center gap-3.5">
+          <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+            <DollarSign className="w-5 h-5" />
+          </div>
+          <div>
+            <div className="text-xs text-slate-500 font-medium">Currency & Billing Gateway</div>
+            <div className="text-sm font-bold text-slate-900">USD ($) • Stripe & PayPal</div>
+            <div className="text-[11px] text-emerald-600 font-semibold mt-0.5">
+              Automated COD Settlements
+            </div>
+          </div>
+        </Card>
+      </div>
+    </DashboardLayout>
   );
 }
