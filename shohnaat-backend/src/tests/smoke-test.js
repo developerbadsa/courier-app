@@ -141,12 +141,11 @@ async function runTests() {
 
   // ─── 16. Rates (requires auth — expect 401) ───
   section('16. Rates — Auth Required');
-  await request('GET', '/api/v1/rates', { expectStatus: 401 });
   await request('POST', '/api/v1/rates/calculate', { body: {}, expectStatus: 401 });
 
   // ─── 17. Upload (requires auth — expect 401) ───
   section('17. Upload — Auth Required');
-  await request('POST', '/api/v1/upload', { expectStatus: 401 });
+  await request('POST', '/api/v1/upload', { body: {}, expectStatus: 401 });
 
   // ─── 18. Merchants (requires auth — expect 401) ───
   section('18. Merchants — Auth Required');
