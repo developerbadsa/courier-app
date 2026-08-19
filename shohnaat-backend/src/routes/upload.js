@@ -1,18 +1,89 @@
 const express = require('express');
 const router = express.Router();
-const { upload } = require('../middleware/upload');
+const rateLimit = require('express-rate-limit');
+const { upload, processImage, processImages } = require('../middleware/upload');
 const uploadController = require('../controllers/uploadController');
 
-// Upload single file (image, avatar, general document)
-router.post('/single', upload.single('file'), uploadController.uploadSingle);
+// ──────────────────────────────────────────────────────────────
+// ⚠️  AUTH NOTE: Authentication middleware intentionally skipped
+//     for upload routes during initial development phase.
+//     TODO: Add `authMiddleware` to all routes below before
+//     production launch. Endpoints are currently PUBLIC.
+// ──────────────────────────────────────────────────────────────
 
-// Upload multiple files (e.g. damaged parcel photos)
-router.post('/multiple', upload.array('files', 10), uploadController.uploadMultiple);
+// ──────────────────────────────────────────────────────────────
+// Rate Limiting — prevent abuse
+// ──────────────────────────────────────────────────────────────
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,    // 15 minutes
+  max: 30,                      // 30 uploads per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many upload requests. Please try again after 15 minutes.',
+  },
+  keyGenerator: (req) => {
+    return req.ip || req.headers['x-forwarded-for'] || 'unknown';
+  },
+});
 
-// Upload KYC Verification Document (Trade License / Tax ID)
-router.post('/kyc', upload.single('document'), uploadController.uploadKYCDocument);
+const deleteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 50,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: 'Too many delete requests. Please try again later.',
+  },
+});
 
-// Upload Rider Proof of Delivery (Signature / Parcel Doorstep Photo)
-router.post('/pod', upload.single('asset'), uploadController.uploadPOD);
+// ──────────────────────────────────────────────────────────────
+// Routes
+// ──────────────────────────────────────────────────────────────
+
+// Upload single file (auto-resize images)
+router.post(
+  '/single',
+  uploadLimiter,
+  upload.single('file'),
+  processImage,
+  uploadController.uploadSingle
+);
+
+// Upload multiple files (max 10, auto-resize images)
+router.post(
+  '/multiple',
+  uploadLimiter,
+  upload.array('files', 10),
+  processImages,
+  uploadController.uploadMultiple
+);
+
+// Upload KYC document (Trade License / Tax ID)
+router.post(
+  '/kyc',
+  uploadLimiter,
+  upload.single('document'),
+  processImage,
+  uploadController.uploadKYCDocument
+);
+
+// Upload Rider Proof of Delivery (Signature / Photo)
+router.post(
+  '/pod',
+  uploadLimiter,
+  upload.single('asset'),
+  processImage,
+  uploadController.uploadPOD
+);
+
+// Delete uploaded file
+router.delete(
+  '/:category/:filename',
+  deleteLimiter,
+  uploadController.deleteFile
+);
 
 module.exports = router;

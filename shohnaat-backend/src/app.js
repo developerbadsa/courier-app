@@ -1,8 +1,9 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const { PrismaClient } = require('@prisma/client');
+const path = require('path');
 const logger = require('./lib/logger');
+const { prisma, connectWithRetry, disconnect } = require('./lib/prisma');
 const errorHandler = require('./middleware/errorHandler');
 
 // Routes
@@ -13,14 +14,12 @@ const shipmentRoutes = require('./routes/shipments');
 const riderRoutes = require('./routes/riders');
 const pickupRoutes = require('./routes/pickups');
 const uploadRoutes = require('./routes/upload');
-const path = require('path');
 
-// Initialize
+// Initialize Express App
 const app = express();
-const prisma = new PrismaClient();
 const PORT = process.env.PORT || 5000;
 
-// Make prisma available globally
+// Make prisma available globally to route handlers
 app.locals.prisma = prisma;
 
 // Middleware
@@ -53,26 +52,36 @@ app.use('/api/v1/upload', uploadRoutes);
 app.use((req, res) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    message: `API endpoint not found: ${req.method} ${req.path}`,
   });
 });
 
-// Error handler
+// Central Error handler
 app.use(errorHandler);
 
-// Start server
+// Start server with resilient DB retry
 const start = async () => {
   try {
-    console.log('Connecting to database...');
-    await prisma.$connect();
-    console.log('Database connected successfully!');
-    
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server running on port ${PORT}`);
+    await connectWithRetry(5, 2000);
+
+    const server = app.listen(PORT, '0.0.0.0', () => {
+      console.log(`🚀 Shohnaat Core API running on port ${PORT}`);
       logger.info(`Server running on port ${PORT}`);
     });
+
+    // Graceful Shutdown Handlers
+    const shutdown = async (signal) => {
+      logger.info(`Received ${signal}. Shutting down gracefully...`);
+      server.close(async () => {
+        logger.info('HTTP server closed.');
+        await disconnect();
+        process.exit(0);
+      });
+    };
+
+    process.on('SIGTERM', () => shutdown('SIGTERM'));
+    process.on('SIGINT', () => shutdown('SIGINT'));
   } catch (error) {
-    console.error('Failed to start server:', error);
     logger.error('Failed to start server:', error);
     process.exit(1);
   }
