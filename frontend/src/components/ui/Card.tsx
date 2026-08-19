@@ -12,16 +12,10 @@ export const Card: React.FC<CardProps> = ({
 }) => {
   return (
     <div
-      className={`relative bg-white rounded-[24px] p-8 sm:p-9 shadow-card-soft border border-slate-100/80 overflow-hidden ${className}`}
+      className={`relative bg-white rounded-xl p-6 sm:p-8 shadow-[0_4px_20px_-2px_rgba(0,0,0,0.06),0_2px_6px_-1px_rgba(0,0,0,0.04)] border border-slate-200/80 ${className}`}
       {...props}
     >
-      {withGlow && (
-        <div
-          className="absolute top-0 right-0 w-36 h-36 bg-blue-100/50 rounded-full blur-2xl pointer-events-none -mr-10 -mt-10"
-          aria-hidden="true"
-        />
-      )}
-      <div className="relative z-10">{children}</div>
+      {children}
     </div>
   );
 };

@@ -31,17 +31,17 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-[13px] font-medium text-[#334155] mb-1.5"
+            className="block text-[13px] font-semibold text-slate-700 mb-1.5"
           >
             {label}
           </label>
         )}
 
         <div
-          className={`relative flex items-center bg-[#F0F5FF] border rounded-[12px] px-3.5 py-2.5 transition-all duration-200 focus-within:bg-white focus-within:ring-2 ${
+          className={`relative flex items-center bg-white border rounded-lg px-3.5 py-2.5 shadow-sm transition-all duration-150 ${
             error
-              ? 'border-[#EF4444] focus-within:border-[#EF4444] focus-within:ring-[#EF4444]/20'
-              : 'border-[#E0EAFF] focus-within:border-[#2563EB] focus-within:ring-[#2563EB]/20'
+              ? 'border-red-500 focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-500/20'
+              : 'border-slate-200 hover:border-slate-300 focus-within:border-blue-600 focus-within:ring-2 focus-within:ring-blue-600/15'
           }`}
         >
           {leftIcon && (
@@ -53,7 +53,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           <input
             id={inputId}
             ref={ref}
-            className={`w-full bg-transparent text-sm text-[#0F172A] placeholder:text-slate-400 focus:outline-none ${className}`}
+            className={`w-full bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none ${className}`}
             {...props}
           />
 
@@ -65,9 +65,11 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         </div>
 
         {error ? (
-          <p className="text-xs text-[#EF4444] mt-1.5">{error}</p>
+          <p className="text-xs text-red-600 font-medium mt-1.5 flex items-center gap-1">
+            {error}
+          </p>
         ) : helperText ? (
-          <p className="text-xs text-[#64748B] mt-1.5">{helperText}</p>
+          <p className="text-xs text-slate-500 mt-1.5">{helperText}</p>
         ) : null}
       </div>
     );
