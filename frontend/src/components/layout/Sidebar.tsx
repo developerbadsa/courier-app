@@ -73,8 +73,9 @@ const NAV_CONFIG: Record<UserRole, { section: string; items: NavItem[] }[]> = {
       items: [
         { label: 'Admin Overview', href: '/admin', icon: LayoutDashboard },
         { label: 'All Shipments', href: '/admin/shipments', icon: Package },
-        { label: 'Fleet & Riders', href: '/admin/riders', icon: Truck },
+        { label: 'Fleet & Riders', href: '/admin/fleet', icon: Truck },
         { label: 'Merchants', href: '/admin/merchants', icon: Users },
+        { label: 'Analytics', href: '/admin/analytics', icon: BarChart3 },
       ],
     },
     {
