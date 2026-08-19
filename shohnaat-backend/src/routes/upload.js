@@ -23,9 +23,6 @@ const uploadLimiter = rateLimit({
     success: false,
     message: 'Too many upload requests. Please try again after 15 minutes.',
   },
-  keyGenerator: (req) => {
-    return req.ip || req.headers['x-forwarded-for'] || 'unknown';
-  },
 });
 
 const deleteLimiter = rateLimit({

@@ -1,159 +1,314 @@
+'use client';
+
+import React, { useState } from 'react';
 import Link from 'next/link';
-import { Package, ShieldCheck, Truck, BarChart3, Search, ArrowRight, Layers, Database, Cpu } from 'lucide-react';
+import { 
+  Package, 
+  ShieldCheck, 
+  Truck, 
+  BarChart3, 
+  Search, 
+  ArrowRight, 
+  Database, 
+  CheckCircle2, 
+  DollarSign, 
+  Layers, 
+  Zap,
+  Globe,
+  HardDrive
+} from 'lucide-react';
 
 export default function Home() {
+  const [trackingNumber, setTrackingNumber] = useState('');
+
+  const handleTrackSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (trackingNumber.trim()) {
+      window.location.href = `/track?id=${encodeURIComponent(trackingNumber.trim())}`;
+    } else {
+      window.location.href = '/track';
+    }
+  };
+
   return (
-    <main className="min-h-screen flex flex-col bg-slate-900 text-white selection:bg-blue-600 selection:text-white">
-      {/* Top Navbar */}
-      <header className="border-b border-slate-800 bg-slate-950/80 backdrop-blur sticky top-0 z-50">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] text-[#0F172A] selection:bg-[#2563EB] selection:text-white font-sans">
+      {/* 1. Crisp Top Navbar */}
+      <header className="border-b border-[#E2E8F0] bg-white sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2 rounded-lg text-white font-black shadow-lg shadow-blue-500/20">
-              <Package className="w-5 h-5" />
+          <Link href="/" className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-[#2563EB] flex items-center justify-center text-white shadow-xs">
+              <Truck className="w-5 h-5 stroke-[2.2]" />
             </div>
             <div>
-              <span className="font-bold text-lg tracking-tight text-white">Shohnaat</span>
-              <span className="text-xs text-blue-400 ml-1 font-mono uppercase px-1.5 py-0.5 bg-blue-950/80 rounded border border-blue-800/50">Logistics OS</span>
+              <span className="font-bold text-base tracking-tight text-[#0F172A]">Shohnaat</span>
+              <span className="text-[11px] font-semibold text-[#2563EB] ml-1.5 px-1.5 py-0.5 rounded bg-blue-50 border border-blue-200">
+                Logistics OS
+              </span>
             </div>
-          </div>
+          </Link>
 
-          <div className="flex items-center gap-4">
+          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-[#475569]">
+            <Link href="/track" className="hover:text-[#2563EB] transition-colors">
+              Public Tracking
+            </Link>
+            <Link href="/dashboard" className="hover:text-[#2563EB] transition-colors">
+              Merchant Portal
+            </Link>
+            <Link href="/admin" className="hover:text-[#2563EB] transition-colors">
+              Admin Console
+            </Link>
+            <Link href="/rider" className="hover:text-[#2563EB] transition-colors">
+              Rider App
+            </Link>
+          </nav>
+
+          <div className="flex items-center gap-3">
             <Link
               href="/track"
-              className="text-sm text-slate-300 hover:text-white flex items-center gap-1.5 transition-colors"
+              className="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold text-[#475569] hover:text-[#0F172A] px-3 py-1.5 rounded-md hover:bg-slate-100 transition-colors"
             >
-              <Search className="w-4 h-4 text-blue-400" />
-              Public Tracking
+              <Search className="w-3.5 h-3.5 text-slate-400" />
+              Track Parcel
             </Link>
             <Link
               href="/login"
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-500 rounded-lg shadow-md transition-all flex items-center gap-1"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-white bg-[#2563EB] hover:bg-[#1D4ED8] rounded-md shadow-xs transition-all"
             >
-              Sign In <ArrowRight className="w-4 h-4" />
+              <span>Sign In</span>
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex flex-col items-center justify-center text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-950/60 border border-blue-800/60 text-blue-300 text-xs font-medium mb-6">
-          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          Dockerized Enterprise Environment Ready (PostgreSQL 16 + Redis 7 + Express + Next.js)
+      {/* 2. Hero Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-16 text-center">
+        {/* Release Tag */}
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 border border-blue-200 text-[#2563EB] text-xs font-semibold mb-6 shadow-2xs">
+          <span className="w-2 h-2 rounded-full bg-[#16A34A] animate-pulse" />
+          <span>Global Logistics SaaS • Strictly USD ($) • Multi-Tenant Architecture</span>
         </div>
 
-        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight max-w-4xl text-slate-100 leading-tight">
-          Next-Generation Global Logistics & <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Courier Platform</span>
+        {/* Main Title */}
+        <h1 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-[#0F172A] max-w-4xl mx-auto leading-tight sm:leading-tight">
+          Enterprise Courier & Logistics Platform Engineered for Scale
         </h1>
 
-        <p className="mt-6 text-lg text-slate-400 max-w-2xl">
-          Engineered for 10-year longevity with append-only immutable ledgers, server-enforced state machines, real-time tracking, and multi-role portals.
+        {/* Subtitle */}
+        <p className="mt-4 text-sm sm:text-base text-[#64748B] max-w-2xl mx-auto font-normal leading-relaxed">
+          High-performance supply chain orchestration featuring immutable ledger accounting, server-enforced state machines, live GPS rider dispatch, and automated COD settlements.
         </p>
 
-        {/* Portals Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 w-full mt-14">
+        {/* 3. Hero Quick Tracking Bar */}
+        <div className="max-w-xl mx-auto mt-8 bg-white border border-[#E2E8F0] p-2 rounded-lg shadow-xs">
+          <form onSubmit={handleTrackSubmit} className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 absolute left-3.5 top-3 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Enter Tracking ID (e.g. SHN-90214-US)"
+                value={trackingNumber}
+                onChange={(e) => setTrackingNumber(e.target.value)}
+                className="w-full h-10 pl-9 pr-3 text-xs bg-slate-50 border border-slate-200 rounded-md text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 font-mono"
+              />
+            </div>
+            <button
+              type="submit"
+              className="h-10 px-5 bg-[#2563EB] hover:bg-[#1D4ED8] text-white text-xs font-semibold rounded-md shadow-xs transition-all shrink-0 flex items-center gap-1.5"
+            >
+              <span>Track</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </form>
+        </div>
+
+        {/* 4. Four Core Portals Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-12 text-left">
           {/* Merchant Portal */}
           <Link
             href="/dashboard"
-            className="group p-6 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-blue-500/60 hover:bg-slate-800/90 transition-all text-left flex flex-col justify-between"
+            className="group p-5 rounded-lg bg-white border border-[#E2E8F0] hover:border-[#2563EB] hover:shadow-sm transition-all flex flex-col justify-between"
           >
             <div>
-              <div className="w-10 h-10 rounded-lg bg-blue-950 border border-blue-800 flex items-center justify-center text-blue-400 mb-4 group-hover:scale-105 transition-transform">
-                <BarChart3 className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-md bg-blue-50 border border-blue-100 flex items-center justify-center text-[#2563EB] mb-3 group-hover:scale-105 transition-transform">
+                <BarChart3 className="w-4 h-4" />
               </div>
-              <h3 className="text-lg font-semibold text-white group-hover:text-blue-400 transition-colors">Merchant Portal</h3>
-              <p className="text-xs text-slate-400 mt-2">
-                Create shipments, request bulk pickups, manage address book, rates in USD ($), and view settlement ledgers.
+              <h3 className="text-sm font-bold text-[#0F172A] group-hover:text-[#2563EB] transition-colors">
+                Merchant Portal
+              </h3>
+              <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed font-normal">
+                Book parcel shipments, schedule bulk warehouse pickups, manage address book, and track USD COD balances.
               </p>
             </div>
-            <div className="mt-6 text-xs text-blue-400 font-medium flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              Open Dashboard &rarr;
+            <div className="mt-4 pt-3 border-t border-slate-100 text-xs font-semibold text-[#2563EB] flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              <span>Open Dashboard</span>
+              <span>&rarr;</span>
             </div>
           </Link>
 
           {/* Admin Operations */}
           <Link
             href="/admin"
-            className="group p-6 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-emerald-500/60 hover:bg-slate-800/90 transition-all text-left flex flex-col justify-between"
+            className="group p-5 rounded-lg bg-white border border-[#E2E8F0] hover:border-emerald-500 hover:shadow-sm transition-all flex flex-col justify-between"
           >
             <div>
-              <div className="w-10 h-10 rounded-lg bg-emerald-950 border border-emerald-800 flex items-center justify-center text-emerald-400 mb-4 group-hover:scale-105 transition-transform">
-                <ShieldCheck className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-md bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 mb-3 group-hover:scale-105 transition-transform">
+                <ShieldCheck className="w-4 h-4" />
               </div>
-              <h3 className="text-lg font-semibold text-white group-hover:text-emerald-400 transition-colors">Admin Operations</h3>
-              <p className="text-xs text-slate-400 mt-2">
-                Platform-wide control, merchant KYC approvals, branch & hub dispatching, rider assignment, and rate rules.
+              <h3 className="text-sm font-bold text-[#0F172A] group-hover:text-emerald-600 transition-colors">
+                Operations Console
+              </h3>
+              <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed font-normal">
+                Superadmin oversight, merchant KYC verification queue, central sorting hubs, and rate rules.
               </p>
             </div>
-            <div className="mt-6 text-xs text-emerald-400 font-medium flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              Open Admin Console &rarr;
+            <div className="mt-4 pt-3 border-t border-slate-100 text-xs font-semibold text-emerald-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              <span>Open Admin View</span>
+              <span>&rarr;</span>
             </div>
           </Link>
 
           {/* Rider App */}
           <Link
             href="/rider"
-            className="group p-6 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-amber-500/60 hover:bg-slate-800/90 transition-all text-left flex flex-col justify-between"
+            className="group p-5 rounded-lg bg-white border border-[#E2E8F0] hover:border-amber-500 hover:shadow-sm transition-all flex flex-col justify-between"
           >
             <div>
-              <div className="w-10 h-10 rounded-lg bg-amber-950 border border-amber-800 flex items-center justify-center text-amber-400 mb-4 group-hover:scale-105 transition-transform">
-                <Truck className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-md bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 mb-3 group-hover:scale-105 transition-transform">
+                <Truck className="w-4 h-4" />
               </div>
-              <h3 className="text-lg font-semibold text-white group-hover:text-amber-400 transition-colors">Rider Field App</h3>
-              <p className="text-xs text-slate-400 mt-2">
-                Mobile-first PWA interface for pickups, delivery confirmation, reason code reporting, and COD collection.
+              <h3 className="text-sm font-bold text-[#0F172A] group-hover:text-amber-600 transition-colors">
+                Field Rider App
+              </h3>
+              <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed font-normal">
+                Mobile-first PWA interface for pickups, delivery confirmation, tap-to-call, and real-time COD collection.
               </p>
             </div>
-            <div className="mt-6 text-xs text-amber-400 font-medium flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              Open Rider View &rarr;
+            <div className="mt-4 pt-3 border-t border-slate-100 text-xs font-semibold text-amber-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              <span>Open Rider View</span>
+              <span>&rarr;</span>
             </div>
           </Link>
 
-          {/* Public Parcel Tracking */}
+          {/* Public Tracking */}
           <Link
             href="/track"
-            className="group p-6 rounded-xl bg-slate-800/60 border border-slate-700/60 hover:border-purple-500/60 hover:bg-slate-800/90 transition-all text-left flex flex-col justify-between"
+            className="group p-5 rounded-lg bg-white border border-[#E2E8F0] hover:border-purple-500 hover:shadow-sm transition-all flex flex-col justify-between"
           >
             <div>
-              <div className="w-10 h-10 rounded-lg bg-purple-950 border border-purple-800 flex items-center justify-center text-purple-400 mb-4 group-hover:scale-105 transition-transform">
-                <Search className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-md bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600 mb-3 group-hover:scale-105 transition-transform">
+                <Search className="w-4 h-4" />
               </div>
-              <h3 className="text-lg font-semibold text-white group-hover:text-purple-400 transition-colors">Public Tracking</h3>
-              <p className="text-xs text-slate-400 mt-2">
-                Instant tracking for consignees and recipients without login. Real-time timeline & status updates.
+              <h3 className="text-sm font-bold text-[#0F172A] group-hover:text-purple-600 transition-colors">
+                Live Tracking
+              </h3>
+              <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed font-normal">
+                Instant parcel tracking for global recipients without login. Multi-stage timeline & location stamps.
               </p>
             </div>
-            <div className="mt-6 text-xs text-purple-400 font-medium flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-              Track Parcel &rarr;
+            <div className="mt-4 pt-3 border-t border-slate-100 text-xs font-semibold text-purple-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+              <span>Track Now</span>
+              <span>&rarr;</span>
             </div>
           </Link>
         </div>
+      </section>
 
-        {/* Infrastructure Badges */}
-        <div className="mt-16 pt-8 border-t border-slate-800/80 w-full flex flex-wrap items-center justify-center gap-6 text-xs text-slate-400">
-          <div className="flex items-center gap-2">
-            <Database className="w-4 h-4 text-sky-400" />
-            <span>PostgreSQL 16 (Master Database)</span>
+      {/* 5. Enterprise Feature Highlights */}
+      <section className="bg-white border-y border-[#E2E8F0] py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <h2 className="text-xl sm:text-2xl font-bold text-[#0F172A] tracking-tight">
+              Architected for Reliability & Accuracy
+            </h2>
+            <p className="text-xs sm:text-sm text-[#64748B] mt-1 font-normal">
+              Built with zero compromises on financial ledgers, parcel safety, and API concurrency.
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Cpu className="w-4 h-4 text-red-400" />
-            <span>Redis 7 (BullMQ Job Queues)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-emerald-400" />
-            <span>Node.js / Express Modular API</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Package className="w-4 h-4 text-purple-400" />
-            <span>Next.js 14 App Router</span>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
+              <div className="w-8 h-8 rounded bg-blue-100 text-[#2563EB] flex items-center justify-center mb-3">
+                <DollarSign className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-bold text-[#0F172A]">Double-Entry Accounting</h3>
+              <p className="text-xs text-[#64748B] mt-1 font-normal leading-relaxed">
+                Money balances are never overwritten. Every COD collection and delivery fee is recorded as an immutable ledger transaction.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
+              <div className="w-8 h-8 rounded bg-emerald-100 text-emerald-700 flex items-center justify-center mb-3">
+                <ShieldCheck className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-bold text-[#0F172A]">Locked State Machine</h3>
+              <p className="text-xs text-[#64748B] mt-1 font-normal leading-relaxed">
+                Parcel status transitions are strictly enforced on the server. Illegal status transitions throw an automatic 409 conflict.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
+              <div className="w-8 h-8 rounded bg-purple-100 text-purple-700 flex items-center justify-center mb-3">
+                <HardDrive className="w-4 h-4" />
+              </div>
+              <h3 className="text-sm font-bold text-[#0F172A]">Dedicated Media Microservice</h3>
+              <p className="text-xs text-[#64748B] mt-1 font-normal leading-relaxed">
+                KYC documents and proof-of-delivery signatures are handled by an isolated storage service, keeping core API load at zero.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-800 bg-slate-950 py-6 text-center text-xs text-slate-500">
-        Shohnaat Logistics System &copy; {new Date().getFullYear()} — Enterprise Global SaaS (USD Only)
+      {/* 6. Live Container Infrastructure Strip */}
+      <section className="py-8 bg-[#F8FAFC] border-b border-[#E2E8F0]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center justify-center gap-6 text-xs text-[#64748B]">
+          <div className="flex items-center gap-1.5 font-medium">
+            <Database className="w-3.5 h-3.5 text-[#2563EB]" />
+            <span>PostgreSQL 16 Engine</span>
+          </div>
+          <span className="text-slate-300">•</span>
+          <div className="flex items-center gap-1.5 font-medium">
+            <Zap className="w-3.5 h-3.5 text-amber-500" />
+            <span>Redis 7 Distributed Cache</span>
+          </div>
+          <span className="text-slate-300">•</span>
+          <div className="flex items-center gap-1.5 font-medium">
+            <Layers className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Node.js Modular API (:5001)</span>
+          </div>
+          <span className="text-slate-300">•</span>
+          <div className="flex items-center gap-1.5 font-medium">
+            <HardDrive className="w-3.5 h-3.5 text-purple-600" />
+            <span>Storage Microservice (:5002)</span>
+          </div>
+          <span className="text-slate-300">•</span>
+          <div className="flex items-center gap-1.5 font-medium">
+            <Globe className="w-3.5 h-3.5 text-blue-600" />
+            <span>Next.js 14 Standalone (:3001)</span>
+          </div>
+        </div>
+      </section>
+
+      {/* 7. Clean Global Footer */}
+      <footer className="bg-white py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-[#64748B]">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-800">Shohnaat Logistics OS</span>
+            <span>&copy; {new Date().getFullYear()}</span>
+            <span>•</span>
+            <span>Enterprise Global SaaS (USD Only)</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/login" className="hover:text-[#2563EB] font-medium">
+              Portal Sign In
+            </Link>
+            <Link href="/track" className="hover:text-[#2563EB] font-medium">
+              Public Tracking
+            </Link>
+          </div>
+        </div>
       </footer>
-    </main>
+    </div>
   );
 }
