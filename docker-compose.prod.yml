@@ -15,9 +15,10 @@ services:
       POSTGRES_DB: shohnaat_prod
       POSTGRES_USER: shohnaat
       POSTGRES_PASSWORD: ${DB_PASSWORD:-shohnaat_prod_2026}
+    ports:
+      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-    # No port exposed externally — internal network only
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U shohnaat -d shohnaat_prod"]
       interval: 10s
