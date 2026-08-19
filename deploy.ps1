@@ -40,4 +40,5 @@ Write-Host "  DEPLOY SUCCESSFUL!" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Green
 Write-Host "Frontend: http://localhost:3001" -ForegroundColor Cyan
 Write-Host "Backend:  http://localhost:5001" -ForegroundColor Cyan
+Write-Host "Storage:  http://localhost:5002" -ForegroundColor Cyan
 Write-Host "Health:   http://localhost:5001/health" -ForegroundColor Cyan

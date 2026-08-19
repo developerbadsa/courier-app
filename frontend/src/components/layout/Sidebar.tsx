@@ -3,21 +3,22 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { 
-  Package, 
-  LayoutDashboard, 
-  Truck, 
-  DollarSign, 
-  Users, 
-  Settings, 
-  BarChart3, 
-  MapPin, 
-  LogOut, 
+import {
+  Package,
+  LayoutDashboard,
+  Truck,
+  DollarSign,
+  Users,
+  Settings,
+  BarChart3,
+  MapPin,
+  LogOut,
   X,
   CreditCard,
   Building2,
-  FileText
+  FileText,
 } from 'lucide-react';
+import { Avatar } from '@/components/ui';
 
 export type UserRole = 'merchant' | 'admin' | 'rider' | 'operator';
 
@@ -34,6 +35,7 @@ interface NavItem {
   badge?: string | number;
 }
 
+/* ── Navigation Config ── */
 const NAV_CONFIG: Record<UserRole, { section: string; items: NavItem[] }[]> = {
   merchant: [
     {
@@ -46,7 +48,7 @@ const NAV_CONFIG: Record<UserRole, { section: string; items: NavItem[] }[]> = {
       ],
     },
     {
-      section: 'Financial & Reports',
+      section: 'Financial',
       items: [
         { label: 'COD & Payouts', href: '/dashboard/finance', icon: DollarSign },
         { label: 'Invoices', href: '/dashboard/invoices', icon: FileText },
@@ -72,7 +74,7 @@ const NAV_CONFIG: Record<UserRole, { section: string; items: NavItem[] }[]> = {
       ],
     },
     {
-      section: 'Logistics Control',
+      section: 'Logistics',
       items: [
         { label: 'Branches & Hubs', href: '/admin/branches', icon: Building2 },
         { label: 'Coverage Zones', href: '/admin/zones', icon: MapPin },
@@ -82,19 +84,19 @@ const NAV_CONFIG: Record<UserRole, { section: string; items: NavItem[] }[]> = {
     {
       section: 'Management',
       items: [
-        { label: 'Financial Settlements', href: '/admin/finance', icon: DollarSign },
+        { label: 'Settlements', href: '/admin/finance', icon: DollarSign },
         { label: 'System Settings', href: '/admin/settings', icon: Settings },
       ],
     },
   ],
   rider: [
     {
-      section: 'Rider Tasklist',
+      section: 'Tasklist',
       items: [
-        { label: 'Assigned Deliveries', href: '/rider', icon: Truck, badge: '5' },
-        { label: 'Pickup Tasks', href: '/rider/pickups', icon: Package, badge: '2' },
+        { label: 'Deliveries', href: '/rider', icon: Truck, badge: '5' },
+        { label: 'Pickups', href: '/rider/pickups', icon: Package, badge: '2' },
         { label: 'COD Collection', href: '/rider/cod', icon: DollarSign },
-        { label: 'History & Earnings', href: '/rider/history', icon: BarChart3 },
+        { label: 'History', href: '/rider/history', icon: BarChart3 },
       ],
     },
   ],
@@ -111,13 +113,19 @@ const NAV_CONFIG: Record<UserRole, { section: string; items: NavItem[] }[]> = {
   ],
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({
-  role = 'merchant',
-  isOpen = false,
-  onClose,
-}) => {
+/* ── Profile Info by Role ── */
+const ROLE_PROFILE: Record<UserRole, { name: string; email: string; initials: string }> = {
+  merchant: { name: 'Acme Merchant', email: 'merchant@shohnaat.com', initials: 'AM' },
+  admin: { name: 'System Admin', email: 'admin@shohnaat.com', initials: 'SA' },
+  rider: { name: 'John Rider', email: 'rider@shohnaat.com', initials: 'JR' },
+  operator: { name: 'Branch Operator', email: 'operator@shohnaat.com', initials: 'BO' },
+};
+
+/* ── Sidebar Component ── */
+export const Sidebar: React.FC<SidebarProps> = ({ role = 'merchant', isOpen = false, onClose }) => {
   const pathname = usePathname();
   const navSections = NAV_CONFIG[role] || NAV_CONFIG.merchant;
+  const profile = ROLE_PROFILE[role] || ROLE_PROFILE.merchant;
 
   const handleLogout = () => {
     localStorage.removeItem('shohnaat_token');
@@ -136,30 +144,27 @@ export const Sidebar: React.FC<SidebarProps> = ({
         />
       )}
 
-      {/* Sidebar Container */}
+      {/* Sidebar */}
       <aside
         className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#0F172A] text-slate-200 border-r border-slate-800 flex flex-col justify-between transition-transform duration-200 ease-in-out lg:translate-x-0 ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        {/* Top: Brand Header */}
+        {/* Top Section */}
         <div>
+          {/* Brand */}
           <div className="h-16 px-5 border-b border-slate-800 flex items-center justify-between">
             <Link href="/" className="flex items-center gap-3 group">
               <div className="w-9 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/20 group-hover:bg-blue-500 transition-colors">
                 <Truck className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div>
-                <div className="font-bold text-[14px] text-white tracking-tight flex items-center gap-1.5">
-                  SHOHNAAT
-                </div>
+                <div className="font-bold text-[14px] text-white tracking-tight">SHOHNAAT</div>
                 <div className="text-[11px] text-slate-400 font-medium">
-                  {role === 'admin' ? 'Enterprise Superadmin' : role === 'rider' ? 'Field Rider PWA' : 'Merchant Portal'}
+                  {role === 'admin' ? 'Superadmin' : role === 'rider' ? 'Rider PWA' : role === 'operator' ? 'Operator' : 'Merchant Portal'}
                 </div>
               </div>
             </Link>
-
-            {/* Mobile close button */}
             <button
               onClick={onClose}
               className="p-1.5 text-slate-400 hover:text-white rounded-md hover:bg-slate-800 lg:hidden"
@@ -169,16 +174,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </button>
           </div>
 
-          {/* Navigation Links */}
+          {/* Navigation */}
           <nav className="p-3.5 space-y-6 overflow-y-auto max-h-[calc(100vh-140px)]">
             {navSections.map((section) => (
               <div key={section.section} className="space-y-1">
-                <div className="px-3 text-[10.5px] font-bold uppercase tracking-wider text-slate-400">
+                <div className="px-3 text-[10.5px] font-bold uppercase tracking-wider text-slate-500">
                   {section.section}
                 </div>
                 {section.items.map((item) => {
                   const Icon = item.icon;
-                  const isActive = pathname === item.href || (item.href !== '/dashboard' && item.href !== '/admin' && pathname?.startsWith(item.href));
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== '/dashboard' &&
+                      item.href !== '/admin' &&
+                      pathname?.startsWith(item.href));
 
                   return (
                     <Link
@@ -192,7 +201,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'}`} />
+                        <Icon
+                          className={`w-4 h-4 shrink-0 ${
+                            isActive ? 'text-white' : 'text-slate-400 group-hover:text-slate-200'
+                          }`}
+                        />
                         <span>{item.label}</span>
                       </div>
                       {item.badge && (
@@ -214,23 +227,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </nav>
         </div>
 
-        {/* Bottom: Profile & Logout */}
+        {/* Profile & Logout */}
         <div className="p-3 border-t border-slate-800 bg-[#0c1322]">
           <div className="flex items-center justify-between p-2 rounded-lg bg-slate-900/60 border border-slate-800/80">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-blue-600/30 border border-blue-500/40 text-blue-400 font-bold text-xs flex items-center justify-center shrink-0">
-                {role === 'admin' ? 'SA' : role === 'rider' ? 'RD' : 'MC'}
-              </div>
+              <Avatar name={profile.name} size="sm" />
               <div className="min-w-0">
-                <div className="text-xs font-semibold text-white truncate">
-                  {role === 'admin' ? 'System Admin' : role === 'rider' ? 'John Rider' : 'Acme Merchant'}
-                </div>
-                <div className="text-[11px] text-slate-400 truncate">
-                  {role === 'admin' ? 'admin@shohnaat.com' : role === 'rider' ? 'rider@shohnaat.com' : 'merchant@shohnaat.com'}
-                </div>
+                <div className="text-xs font-semibold text-white truncate">{profile.name}</div>
+                <div className="text-[11px] text-slate-400 truncate">{profile.email}</div>
               </div>
             </div>
-
             <button
               onClick={handleLogout}
               className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-md transition-colors"
