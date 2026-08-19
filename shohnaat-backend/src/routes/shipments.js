@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { auth, requireRole } = require('../middleware/auth');
 const crypto = require('crypto');
+const { createAuditLog } = require('./auditLogs');
 
 // Status state machine - valid transitions
 const VALID_TRANSITIONS = {
@@ -19,6 +20,17 @@ const VALID_TRANSITIONS = {
   RETURNED: []
 };
 
+// Failed delivery reason codes
+const FAILED_REASONS = [
+  'CONSIGNEE_UNREACHABLE',
+  'ADDRESS_NOT_FOUND',
+  'CUSTOMER_REFUSED',
+  'RESCHEDULE_REQUESTED',
+  'DAMAGED_IN_TRANSIT',
+  'WRONG_ADDRESS',
+  'NO_ONE_HOME',
+];
+
 // Generate tracking number
 const generateTrackingNumber = () => {
   const timestamp = Date.now().toString(36).toUpperCase();
@@ -28,19 +40,72 @@ const generateTrackingNumber = () => {
 
 router.use(auth);
 
-// GET /api/v1/shipments
+// GET /api/v1/shipments — Advanced search with filters
 router.get('/', async (req, res, next) => {
   try {
     const prisma = req.app.locals.prisma;
-    const { page = 1, limit = 20, status, merchantId, trackingNumber } = req.query;
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      merchantId,
+      trackingNumber,
+      paymentType,
+      search,
+      startDate,
+      endDate,
+      minWeight,
+      maxWeight,
+      minCod,
+      maxCod,
+      sortBy = 'createdAt',
+      sortOrder = 'desc',
+    } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const where = {
       deletedAt: null,
       ...(status && { currentStatus: status }),
       ...(merchantId && { merchantId }),
-      ...(trackingNumber && { trackingNumber })
+      ...(trackingNumber && { trackingNumber }),
+      ...(paymentType && { paymentType }),
+      ...(startDate || endDate
+        ? {
+            createdAt: {
+              ...(startDate && { gte: new Date(startDate) }),
+              ...(endDate && { lte: new Date(endDate) }),
+            },
+          }
+        : {}),
+      ...(minWeight || maxWeight
+        ? {
+            weightKg: {
+              ...(minWeight && { gte: parseFloat(minWeight) }),
+              ...(maxWeight && { lte: parseFloat(maxWeight) }),
+            },
+          }
+        : {}),
+      ...(minCod || maxCod
+        ? {
+            codAmount: {
+              ...(minCod && { gte: parseFloat(minCod) }),
+              ...(maxCod && { lte: parseFloat(maxCod) }),
+            },
+          }
+        : {}),
+      ...(search && {
+        OR: [
+          { trackingNumber: { contains: search, mode: 'insensitive' } },
+          { consignee: { name: { contains: search, mode: 'insensitive' } } },
+          { consignee: { phone: { contains: search } } },
+        ],
+      }),
     };
+
+    const validSort = ['createdAt', 'currentStatus', 'codAmount', 'weightKg', 'deliveredAt'];
+    const orderBy = validSort.includes(sortBy)
+      ? { [sortBy]: sortOrder === 'asc' ? 'asc' : 'desc' }
+      : { createdAt: 'desc' };
 
     const [shipments, total] = await Promise.all([
       prisma.shipment.findMany({
@@ -48,24 +113,70 @@ router.get('/', async (req, res, next) => {
         include: {
           merchant: { select: { businessName: true } },
           consignee: true,
-          currentBranch: { select: { name: true } }
+          currentBranch: { select: { name: true } },
         },
         skip,
         take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
+        orderBy,
       }),
-      prisma.shipment.count({ where })
+      prisma.shipment.count({ where }),
     ]);
+
+    // Summary stats
+    const stats = await prisma.shipment.aggregate({
+      where: { deletedAt: null, ...((merchantId && { merchantId }) || {}) },
+      _count: true,
+      _sum: { codAmount: true, deliveryCharge: true },
+    });
 
     res.json({
       success: true,
       data: shipments,
+      summary: {
+        totalShipments: stats._count,
+        totalCod: stats._sum.codAmount || 0,
+        totalCharges: stats._sum.deliveryCharge || 0,
+      },
       pagination: {
         total,
         page: parseInt(page),
         limit: parseInt(limit),
-        pages: Math.ceil(total / parseInt(limit))
-      }
+        pages: Math.ceil(total / parseInt(limit)),
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/shipments/stats — Dashboard statistics
+router.get('/stats', async (req, res, next) => {
+  try {
+    const prisma = req.app.locals.prisma;
+    const { merchantId } = req.query;
+
+    const where = { deletedAt: null, ...(merchantId && { merchantId }) };
+
+    const [totalShipments, pending, inTransit, delivered, failed, codSum] = await Promise.all([
+      prisma.shipment.count({ where }),
+      prisma.shipment.count({ where: { ...where, currentStatus: 'PENDING' } }),
+      prisma.shipment.count({ where: { ...where, currentStatus: { in: ['IN_TRANSIT', 'AT_HUB', 'OUT_FOR_DELIVERY'] } } }),
+      prisma.shipment.count({ where: { ...where, currentStatus: 'DELIVERED' } }),
+      prisma.shipment.count({ where: { ...where, currentStatus: 'FAILED' } }),
+      prisma.shipment.aggregate({ where: { ...where, currentStatus: 'DELIVERED' }, _sum: { codAmount: true } }),
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        totalShipments,
+        pending,
+        inTransit,
+        delivered,
+        failed,
+        codCollected: codSum._sum.codAmount || 0,
+        deliveryRate: totalShipments > 0 ? Math.round((delivered / totalShipments) * 100) : 0,
+      },
     });
   } catch (error) {
     next(error);
@@ -87,31 +198,25 @@ router.get('/:id', async (req, res, next) => {
         deliveryAddress: true,
         currentBranch: { select: { name: true } },
         statusHistory: {
-          orderBy: { createdAt: 'desc' }
+          orderBy: { createdAt: 'desc' },
         },
         riderAssignments: {
           include: {
             rider: {
-              include: { user: { select: { name: true, phone: true } } }
-            }
+              include: { user: { select: { name: true, phone: true } } },
+            },
           },
           orderBy: { assignedAt: 'desc' },
-          take: 1
-        }
-      }
+          take: 1,
+        },
+      },
     });
 
     if (!shipment) {
-      return res.status(404).json({
-        success: false,
-        message: 'Shipment not found'
-      });
+      return res.status(404).json({ success: false, message: 'Shipment not found' });
     }
 
-    res.json({
-      success: true,
-      data: shipment
-    });
+    res.json({ success: true, data: shipment });
   } catch (error) {
     next(error);
   }
@@ -126,26 +231,21 @@ router.get('/track/:trackingNumber', async (req, res, next) => {
     const shipment = await prisma.shipment.findUnique({
       where: { trackingNumber },
       include: {
-        statusHistory: {
-          orderBy: { createdAt: 'desc' }
-        },
+        statusHistory: { orderBy: { createdAt: 'desc' } },
         riderAssignments: {
           include: {
             rider: {
-              include: { user: { select: { name: true } } }
-            }
+              include: { user: { select: { name: true } } },
+            },
           },
           orderBy: { assignedAt: 'desc' },
-          take: 1
-        }
-      }
+          take: 1,
+        },
+      },
     });
 
     if (!shipment) {
-      return res.status(404).json({
-        success: false,
-        message: 'Shipment not found'
-      });
+      return res.status(404).json({ success: false, message: 'Shipment not found' });
     }
 
     res.json({
@@ -153,18 +253,19 @@ router.get('/track/:trackingNumber', async (req, res, next) => {
       data: {
         trackingNumber: shipment.trackingNumber,
         currentStatus: shipment.currentStatus,
-        pickupAddress: shipment.pickupAddress,
-        deliveryAddress: shipment.deliveryAddress,
+        pickupAddress: shipment.pickupAddressSnap || shipment.pickupAddress,
+        deliveryAddress: shipment.deliveryAddressSnap || shipment.deliveryAddress,
         statusHistory: shipment.statusHistory,
-        rider: shipment.riderAssignments[0]?.rider?.user?.name
-      }
+        rider: shipment.riderAssignments[0]?.rider?.user?.name,
+        estimatedDelivery: shipment.deliveredAt || null,
+      },
     });
   } catch (error) {
     next(error);
   }
 });
 
-// POST /api/v1/shipments
+// POST /api/v1/shipments — Create single shipment
 router.post('/', async (req, res, next) => {
   try {
     const prisma = req.app.locals.prisma;
@@ -175,14 +276,21 @@ router.post('/', async (req, res, next) => {
       consigneeAltPhone,
       pickupAddressId,
       deliveryAddressId,
+      pickupAddressSnap,
+      deliveryAddressSnap,
       weightKg,
+      lengthCm,
+      widthCm,
+      heightCm,
       paymentType,
-      codAmount
+      codAmount,
+      deliveryCharge,
+      serviceType,
     } = req.body;
 
     // Create or find consignee
     let consignee = await prisma.consignee.findFirst({
-      where: { phone: consigneePhone }
+      where: { phone: consigneePhone },
     });
 
     if (!consignee) {
@@ -190,12 +298,11 @@ router.post('/', async (req, res, next) => {
         data: {
           name: consigneeName,
           phone: consigneePhone,
-          altPhone: consigneeAltPhone
-        }
+          altPhone: consigneeAltPhone,
+        },
       });
     }
 
-    // Create shipment
     const shipment = await prisma.shipment.create({
       data: {
         trackingNumber: generateTrackingNumber(),
@@ -203,15 +310,25 @@ router.post('/', async (req, res, next) => {
         consigneeId: consignee.id,
         pickupAddressId,
         deliveryAddressId,
+        pickupAddressSnap: pickupAddressSnap || undefined,
+        deliveryAddressSnap: deliveryAddressSnap || undefined,
         weightKg: weightKg ? parseFloat(weightKg) : null,
         paymentType: paymentType || 'COD',
         codAmount: codAmount ? parseFloat(codAmount) : 0,
-        currentStatus: 'PENDING'
+        deliveryCharge: deliveryCharge ? parseFloat(deliveryCharge) : 0,
+        chargeSnapshot: {
+          weightKg: weightKg ? parseFloat(weightKg) : null,
+          lengthCm,
+          widthCm,
+          heightCm,
+          serviceType: serviceType || 'STANDARD',
+        },
+        currentStatus: 'PENDING',
       },
       include: {
         merchant: { select: { businessName: true } },
-        consignee: true
-      }
+        consignee: true,
+      },
     });
 
     // Create initial status history
@@ -219,13 +336,105 @@ router.post('/', async (req, res, next) => {
       data: {
         shipmentId: shipment.id,
         status: 'PENDING',
-        note: 'Shipment created'
+        note: 'Shipment created',
+        actorUserId: req.user.id,
+      },
+    });
+
+    // Audit log
+    await createAuditLog(prisma, {
+      actorId: req.user.id,
+      action: 'SHIPMENT_CREATED',
+      entityType: 'Shipment',
+      entityId: shipment.id,
+      diff: { trackingNumber: shipment.trackingNumber, codAmount },
+      req,
+    });
+
+    res.status(201).json({ success: true, data: shipment });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/v1/shipments/bulk — Bulk CSV upload (max 500)
+router.post('/bulk', auth, requireRole('super_admin', 'merchant'), async (req, res, next) => {
+  try {
+    const prisma = req.app.locals.prisma;
+    const { shipments: bulkData, merchantId } = req.body;
+
+    if (!Array.isArray(bulkData) || bulkData.length === 0) {
+      return res.status(400).json({ success: false, message: 'shipments array is required' });
+    }
+
+    if (bulkData.length > 500) {
+      return res.status(400).json({ success: false, message: 'Maximum 500 shipments per batch' });
+    }
+
+    const results = { created: 0, errors: [] };
+
+    for (let i = 0; i < bulkData.length; i++) {
+      const item = bulkData[i];
+      try {
+        // Validate required fields
+        if (!item.consigneeName || !item.consigneePhone) {
+          results.errors.push({ row: i + 1, error: 'Missing consigneeName or consigneePhone' });
+          continue;
+        }
+
+        // Find or create consignee
+        let consignee = await prisma.consignee.findFirst({
+          where: { phone: item.consigneePhone },
+        });
+        if (!consignee) {
+          consignee = await prisma.consignee.create({
+            data: { name: item.consigneeName, phone: item.consigneePhone },
+          });
+        }
+
+        const shipment = await prisma.shipment.create({
+          data: {
+            trackingNumber: generateTrackingNumber(),
+            merchantId: merchantId || req.user.merchantId,
+            consigneeId: consignee.id,
+            pickupAddressId: item.pickupAddressId || '',
+            deliveryAddressId: item.deliveryAddressId || '',
+            weightKg: item.weightKg ? parseFloat(item.weightKg) : null,
+            paymentType: item.paymentType || 'COD',
+            codAmount: item.codAmount ? parseFloat(item.codAmount) : 0,
+            deliveryCharge: item.deliveryCharge ? parseFloat(item.deliveryCharge) : 0,
+            currentStatus: 'PENDING',
+          },
+        });
+
+        await prisma.shipmentStatusHistory.create({
+          data: {
+            shipmentId: shipment.id,
+            status: 'PENDING',
+            note: 'Bulk shipment created',
+            actorUserId: req.user.id,
+          },
+        });
+
+        results.created++;
+      } catch (err) {
+        results.errors.push({ row: i + 1, error: err.message });
       }
+    }
+
+    await createAuditLog(prisma, {
+      actorId: req.user.id,
+      action: 'SHIPMENT_BULK_CREATED',
+      entityType: 'Shipment',
+      entityId: 'bulk',
+      diff: { count: results.created, errors: results.errors.length },
+      req,
     });
 
     res.status(201).json({
       success: true,
-      data: shipment
+      data: results,
+      message: `${results.created} shipments created, ${results.errors.length} errors`,
     });
   } catch (error) {
     next(error);
@@ -239,28 +448,29 @@ router.patch('/:id/status', async (req, res, next) => {
     const { id } = req.params;
     const { status, note, reasonCode } = req.body;
 
-    // Get current shipment
-    const shipment = await prisma.shipment.findUnique({
-      where: { id }
-    });
+    const shipment = await prisma.shipment.findUnique({ where: { id } });
 
     if (!shipment) {
-      return res.status(404).json({
-        success: false,
-        message: 'Shipment not found'
-      });
+      return res.status(404).json({ success: false, message: 'Shipment not found' });
     }
 
     // Validate transition
     const validNextStatuses = VALID_TRANSITIONS[shipment.currentStatus];
     if (!validNextStatuses.includes(status)) {
-      return res.status(400).json({
+      return res.status(409).json({
         success: false,
-        message: `Cannot transition from ${shipment.currentStatus} to ${status}`
+        message: `Cannot transition from ${shipment.currentStatus} to ${status}`,
       });
     }
 
-    // Update status in transaction
+    // Validate reason code for FAILED
+    if (status === 'FAILED' && reasonCode && !FAILED_REASONS.includes(reasonCode)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid reason code. Allowed: ${FAILED_REASONS.join(', ')}`,
+      });
+    }
+
     const updated = await prisma.$transaction([
       prisma.shipment.update({
         where: { id },
@@ -268,8 +478,8 @@ router.patch('/:id/status', async (req, res, next) => {
           currentStatus: status,
           ...(status === 'DELIVERED' && { deliveredAt: new Date() }),
           ...(status === 'PICKED_UP' && { pickedUpAt: new Date() }),
-          ...(status === 'FAILED' && { deliveryAttempts: { increment: 1 } })
-        }
+          ...(status === 'FAILED' && { deliveryAttempts: { increment: 1 } }),
+        },
       }),
       prisma.shipmentStatusHistory.create({
         data: {
@@ -277,15 +487,21 @@ router.patch('/:id/status', async (req, res, next) => {
           status,
           note,
           reasonCode,
-          actorUserId: req.user.id
-        }
-      })
+          actorUserId: req.user.id,
+        },
+      }),
     ]);
 
-    res.json({
-      success: true,
-      data: updated[0]
+    await createAuditLog(prisma, {
+      actorId: req.user.id,
+      action: `STATUS_${status}`,
+      entityType: 'Shipment',
+      entityId: id,
+      diff: { from: shipment.currentStatus, to: status, reasonCode },
+      req,
     });
+
+    res.json({ success: true, data: updated[0] });
   } catch (error) {
     next(error);
   }

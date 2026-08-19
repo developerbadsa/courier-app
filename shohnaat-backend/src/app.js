@@ -14,6 +14,10 @@ const shipmentRoutes = require('./routes/shipments');
 const riderRoutes = require('./routes/riders');
 const pickupRoutes = require('./routes/pickups');
 const uploadRoutes = require('./routes/upload');
+const rateRoutes = require('./routes/rates');
+const hubRoutes = require('./routes/hubs');
+const zoneRoutes = require('./routes/zones');
+const auditLogRoutes = require('./routes/auditLogs');
 
 // Initialize Express App
 const app = express();
@@ -47,6 +51,10 @@ app.use('/api/v1/shipments', shipmentRoutes);
 app.use('/api/v1/riders', riderRoutes);
 app.use('/api/v1/pickups', pickupRoutes);
 app.use('/api/v1/upload', uploadRoutes);
+app.use('/api/v1/rates', rateRoutes);
+app.use('/api/v1/hubs', hubRoutes);
+app.use('/api/v1/zones', zoneRoutes);
+app.use('/api/v1/audit-logs', auditLogRoutes);
 
 // 404 handler
 app.use((req, res) => {

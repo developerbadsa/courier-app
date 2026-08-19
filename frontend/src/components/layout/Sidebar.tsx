@@ -43,6 +43,8 @@ const NAV_CONFIG: Record<UserRole, { section: string; items: NavItem[] }[]> = {
       items: [
         { label: 'Overview', href: '/dashboard', icon: LayoutDashboard },
         { label: 'Shipments', href: '/dashboard/shipments', icon: Package, badge: '128' },
+        { label: 'Create Shipment', href: '/dashboard/shipments/new', icon: Package },
+        { label: 'Bulk Upload', href: '/dashboard/shipments/bulk', icon: FileText },
         { label: 'Pickup Requests', href: '/dashboard/pickups', icon: Truck, badge: '3' },
         { label: 'Tracking', href: '/track', icon: MapPin },
       ],
@@ -76,7 +78,7 @@ const NAV_CONFIG: Record<UserRole, { section: string; items: NavItem[] }[]> = {
     {
       section: 'Logistics',
       items: [
-        { label: 'Branches & Hubs', href: '/admin/branches', icon: Building2 },
+        { label: 'Branches & Hubs', href: '/admin/hubs', icon: Building2 },
         { label: 'Coverage Zones', href: '/admin/zones', icon: MapPin },
         { label: 'Rate Cards', href: '/admin/rates', icon: CreditCard },
       ],
@@ -84,6 +86,7 @@ const NAV_CONFIG: Record<UserRole, { section: string; items: NavItem[] }[]> = {
     {
       section: 'Management',
       items: [
+        { label: 'Audit Logs', href: '/admin/audit-logs', icon: FileText },
         { label: 'Settlements', href: '/admin/finance', icon: DollarSign },
         { label: 'System Settings', href: '/admin/settings', icon: Settings },
       ],

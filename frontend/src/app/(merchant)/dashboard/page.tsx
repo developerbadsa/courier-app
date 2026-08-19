@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Package,
   Truck,
@@ -137,6 +138,7 @@ function useColumns() {
 /*  Page                                                                */
 /* ------------------------------------------------------------------ */
 export default function MerchantDashboard() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('all');
   const columns = useColumns();
 
@@ -148,7 +150,7 @@ export default function MerchantDashboard() {
       title="Merchant Dashboard"
       subtitle="Real-time parcel dispatch, COD settlements, and live logistics overview"
       primaryActionLabel="Create Shipment"
-      onPrimaryAction={() => alert('Opening Create Shipment modal...')}
+      onPrimaryAction={() => router.push('/dashboard/shipments/new')}
     >
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

@@ -74,13 +74,13 @@
 
 ## 🎯 4. Active Sprint (Sprint 2 — In Progress)
 
-| Task ID | Task Description | Priority | Assigned Module |
-|---|---|---|---|
-| **2.1** | **Merchant Multi-Step Shipment Wizard** (`/dashboard/shipments/new`) | 🔴 Critical | Frontend |
-| **2.2** | **Dynamic Rate Calculation Engine API** (`POST /api/v1/rates/calculate`) | 🔴 Critical | Backend |
-| **2.3** | **Thermal Printable Waybill / A4 Shipping Label PDF** (Code128 + QR) | 🟡 High | Frontend/Service |
-| **2.4** | **Merchant Address Book CRUD & Saved Warehouses** (`/dashboard/addresses`) | 🟡 High | Fullstack |
-| **2.5** | **Scheduled First-Mile Pickup Request Flow** (`/dashboard/pickups/new`) | 🟡 High | Fullstack |
+| Task ID | Task Description | Priority | Assigned Module | Status |
+|---|---|---|---|---|
+| **2.1** | **Merchant Multi-Step Shipment Wizard** (`/dashboard/shipments/new`) | 🔴 Critical | Frontend | ✅ Done with Tests |
+| **2.2** | **Dynamic Rate Calculation Engine API** (`POST /api/v1/rates/calculate`) | 🔴 Critical | Backend/UI | ✅ Done with Tests |
+| **2.3** | **Thermal Printable Waybill / A4 Shipping Label PDF** (Code128 + QR) | 🟡 High | Frontend/Service | ✅ Done with Tests |
+| **2.4** | **Merchant Address Book CRUD & Saved Warehouses** (`/dashboard/addresses`) | 🟡 High | Fullstack | 🔄 In Progress |
+| **2.5** | **Scheduled First-Mile Pickup Request Flow** (`/dashboard/pickups/new`) | 🟡 High | Fullstack | 🔄 Next Up |
 
 ---
 
