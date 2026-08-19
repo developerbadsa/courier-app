@@ -22,6 +22,7 @@ const financeRoutes = require('./routes/finance');
 const paymentRoutes = require('./routes/payments');
 const addressRoutes = require('./routes/addresses');
 const manifestRoutes = require('./routes/manifests');
+const developerRoutes = require('./routes/developer');
 
 // Initialize Express App
 const app = express();
@@ -63,6 +64,7 @@ app.use('/api/v1/finance', financeRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/addresses', addressRoutes);
 app.use('/api/v1/operations', manifestRoutes);
+app.use('/api/v1/developer', developerRoutes);
 
 // 404 handler
 app.use((req, res) => {

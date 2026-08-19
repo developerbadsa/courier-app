@@ -63,7 +63,7 @@ const NAV_CONFIG: Record<UserRole, { section: string; items: NavItem[] }[]> = {
       items: [
         { label: 'Address Book', href: '/dashboard/addresses', icon: MapPin },
         { label: 'Store Profile', href: '/dashboard/profile', icon: Building2 },
-        { label: 'API & Webhooks', href: '/dashboard/api', icon: Settings },
+        { label: 'Developer API', href: '/dashboard/developer', icon: Settings },
       ],
     },
   ],
