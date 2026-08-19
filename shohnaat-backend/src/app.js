@@ -12,6 +12,8 @@ const merchantRoutes = require('./routes/merchants');
 const shipmentRoutes = require('./routes/shipments');
 const riderRoutes = require('./routes/riders');
 const pickupRoutes = require('./routes/pickups');
+const uploadRoutes = require('./routes/upload');
+const path = require('path');
 
 // Initialize
 const app = express();
@@ -26,6 +28,12 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve uploaded files statically with cache headers
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
+  maxAge: '7d',
+  etag: true,
+}));
+
 // Request logging
 app.use((req, res, next) => {
   logger.info(`${req.method} ${req.path}`);
@@ -39,6 +47,7 @@ app.use('/api/v1/merchants', merchantRoutes);
 app.use('/api/v1/shipments', shipmentRoutes);
 app.use('/api/v1/riders', riderRoutes);
 app.use('/api/v1/pickups', pickupRoutes);
+app.use('/api/v1/upload', uploadRoutes);
 
 // 404 handler
 app.use((req, res) => {

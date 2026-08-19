@@ -53,6 +53,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production-jwt-shohnaat-2026}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-change-me-in-production-refresh-shohnaat-2026}
       REDIS_URL: redis://redis:6379
+    volumes:
+      - uploads_data:/app/uploads
     depends_on:
       db:
         condition: service_healthy
@@ -91,4 +93,6 @@ services:
 
 volumes:
   pgdata:
+    driver: local
+  uploads_data:
     driver: local
