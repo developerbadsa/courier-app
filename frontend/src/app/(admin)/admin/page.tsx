@@ -247,7 +247,7 @@ export default function AdminPage() {
 
         <DataTable
           data={filtered as unknown as Record<string, unknown>[]}
-          columns={kycWithActions as Column<Record<string, unknown>>[]}
+          columns={kycWithActions as unknown as Column<Record<string, unknown>>[]}
           searchable
           searchPlaceholder="Search merchants..."
           searchKeys={['name', 'email', 'businessType']}
