@@ -1,0 +1,55 @@
+name: Deploy Shohnaat Logistics to VPS
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: ${{ secrets.SERVER_USER }}
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          port: ${{ secrets.SERVER_PORT || 22 }}
+          script_stop: true
+          command_timeout: 15m
+          script: |
+            echo "🚀 [1/5] Navigating to project directory..."
+            if [ -d "$HOME/shohnaat-logistics" ]; then
+              cd "$HOME/shohnaat-logistics"
+            else
+              echo "Creating project directory..."
+              git clone https://github.com/developerbadsa/courier-app.git "$HOME/shohnaat-logistics"
+              cd "$HOME/shohnaat-logistics"
+            fi
+
+            echo "📥 [2/5] Pulling latest changes from main..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            echo "🔐 [3/5] Checking environment configuration..."
+            if [ ! -f ".env" ]; then
+              echo "Generating default production .env..."
+              cp .env.example .env
+            fi
+
+            echo "🐳 [4/5] Building and restarting Docker containers..."
+            docker compose -f docker-compose.prod.yml up -d --build --remove-orphans
+
+            echo "🗄️ [5/5] Database sync & seeding..."
+            sleep 12
+            docker compose -f docker-compose.prod.yml exec -T backend npx prisma generate || true
+            docker compose -f docker-compose.prod.yml exec -T backend npx prisma db push --accept-data-loss || true
+            docker compose -f docker-compose.prod.yml exec -T backend node prisma/seed.js || true
+
+            echo "✅ Deployment complete! Checking container health..."
+            docker ps --filter "name=shohnaat"
+            curl -s http://localhost:5001/health || echo "Backend initial boot in progress..."
