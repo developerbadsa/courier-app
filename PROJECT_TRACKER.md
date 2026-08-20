@@ -517,9 +517,24 @@ courier-app/
 | 7 | **Resilient Frontend API Client** | `frontend/src/lib/api.ts` | ✅ Production Ready | Centralized error normalization, automatic token injection, network error recovery |
 | 8 | **Live Real-Time Financial Ledger Integration** | `frontend/src/app/(merchant)/dashboard/finance/page.tsx` | ✅ Production Ready | Direct PostgreSQL ledger balance, dynamic settlements, live payout modal, CSV export |
 | 9 | **Live Superadmin Settlement Clearinghouse** | `frontend/src/app/(admin)/admin/finance/page.tsx` | ✅ Production Ready | Live payout queue review, batch processing, dynamic merchant balances |
-| 10 | **Microservices Architecture Roadmap** | `ENTERPRISE_MICROSERVICES_AND_RESILIENCE_PLAN.md` | ✅ Master Plan Document | 5-service domain topology, self-healing strategies, high-scale 50k+ parcel roadmap |
-| 11 | **Security Hardening Master Plan** | `SECURITY_AND_HARDENING_MASTER_PLAN.md` | ✅ Master Plan Document | 5-domain enterprise security blueprint (Auth, DB, Network, Application, Compliance) |
+---
+
+## 🎨 10. UI/UX Design System Lockdown & Baseline (Sprint 11)
+
+> **Status:** 🔒 **LOCKED & VERIFIED PRODUCTION BASELINE**  
+> **Master Reference:** [`REUSABLE_DESIGN_SYSTEM_AND_COMPONENTS.md`](./REUSABLE_DESIGN_SYSTEM_AND_COMPONENTS.md)
+
+| # | UI Domain / Feature | Standard Specification | Status | Key Characteristics |
+|---|---|---|---|---|
+| 1 | **Global Page Shell** | `DashboardLayout` | 🔒 LOCKED | Max-width `1600px`, padding `p-6 sm:p-8 lg:p-10`, persistent sidebar, top navigation, user profile |
+| 2 | **Vertical Spacing Rhythm** | `my-8` / `space-y-8` | 🔒 LOCKED | Generous visual breathing room between KPI stats, tables, filters, and action toolbars |
+| 3 | **KPI / Metrics Grid** | `StatCard` + `gap-6` | 🔒 LOCKED | 4-column responsive grid with curated icons, dynamic colors, change metrics, and subtexts |
+| 4 | **Minimal Expandable Cards** | `ExpandableCard` | 🔒 LOCKED | Compact collapsed state (`$ total`, badge, period) with smooth animated accordion detail view |
+| 5 | **Interactive Table Filters** | Select Dropdowns | 🔒 LOCKED | 100% reliable instant-trigger `Status` and `Date Range` dropdowns with active removable chips |
+| 6 | **Certified Statement Engine** | `downloadInvoicePDF` | 🔒 LOCKED | In-browser client PDF generator producing official tax invoices and COD settlement statements |
+| 7 | **Universal Error & Toast Engine** | `showToast` / `api.ts` | 🔒 LOCKED | Zero white-screen errors; normalized status messages (400, 401, 403, 404, 409, 500, timeout) |
 
 ---
 *Last Verified Live on VPS Host (`mydev`) — All 6 Docker Microservices Operational.*
+
 
