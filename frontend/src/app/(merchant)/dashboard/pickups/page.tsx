@@ -10,6 +10,7 @@ import {
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout';
 import { Button, Card, DataTable, Column, Tabs, Badge, StatusBadge, Modal } from '@/components/ui';
+import { api } from '@/lib/api';
 
 /* ── Types ── */
 interface PickupRequest {
@@ -114,18 +115,52 @@ export default function PickupsPage() {
   const [detailModal, setDetailModal] = useState<PickupRequest | null>(null);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem('shohnaat_custom_pickups');
-      if (stored) {
-        const customList: PickupRequest[] = JSON.parse(stored);
-        if (customList && customList.length > 0) {
-          setPickups([...customList, ...MOCK_PICKUPS]);
+    let isMounted = true;
+    const loadData = async () => {
+      let apiItems: PickupRequest[] = [];
+      try {
+        const res = await api.get('/api/v1/pickups');
+        if (res.data?.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+          apiItems = res.data.data.map((item: any) => ({
+            id: item.id?.startsWith('PK-') ? item.id : `PK-${item.id?.slice(-4).toUpperCase() || '001'}`,
+            address: item.pickupAddress?.line1 || item.address || 'Main Warehouse',
+            addressLabel: item.pickupAddress?.label || item.addressLabel || 'Main Warehouse',
+            city: item.pickupAddress?.city || item.city || 'Austin, TX',
+            requestedDate: item.requestedDate ? new Date(item.requestedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Today',
+            timeSlot: item.timeSlot || 'Morning (8AM–12PM)',
+            parcelCount: item.parcelCount || 1,
+            vehicleType: item.vehicleType || 'Van',
+            driverNotes: item.driverNotes || '',
+            status: item.status || 'PENDING',
+            riderName: item.assignments?.[0]?.rider?.user?.name || item.riderName || null,
+            createdAt: item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Today',
+          }));
         }
+      } catch {
+        // Fallback
       }
-    } catch {
-      // Handled
-    }
+
+      let localPickups: PickupRequest[] = [];
+      try {
+        const stored = localStorage.getItem('shohnaat_custom_pickups');
+        if (stored) localPickups = JSON.parse(stored);
+      } catch {}
+
+      if (isMounted) {
+        const seen = new Set<string>();
+        const combined = [...localPickups, ...apiItems, ...MOCK_PICKUPS].filter((p) => {
+          if (seen.has(p.id)) return false;
+          seen.add(p.id);
+          return true;
+        });
+        setPickups(combined);
+      }
+    };
+
+    loadData();
+    return () => { isMounted = false; };
   }, []);
+
 
   const filtered = activeTab === 'all' ? pickups : pickups.filter((p) => p.status === activeTab);
 

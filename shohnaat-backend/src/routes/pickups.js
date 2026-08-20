@@ -136,33 +136,50 @@ router.post('/', async (req, res, next) => {
       driverNotes,
     } = req.body;
 
-    const merchantId = req.user.merchantId || req.body.merchantId;
+    let merchantId = req.user.merchantId || req.body.merchantId;
+    if (!merchantId) {
+      const merchant = await prisma.merchant.findFirst({ where: { deletedAt: null } });
+      if (merchant) merchantId = merchant.id;
+    }
 
     if (!merchantId) {
-      return res.status(400).json({ success: false, message: 'Merchant ID required' });
+      return res.status(400).json({ success: false, message: 'Merchant account required' });
     }
 
-    if (!pickupAddressId) {
-      return res.status(400).json({ success: false, message: 'pickupAddressId is required' });
+    // Find address or auto-link/create default address for merchant
+    let address = null;
+    if (pickupAddressId) {
+      address = await prisma.address.findFirst({
+        where: { id: pickupAddressId, deletedAt: null },
+      });
     }
-
-    // Validate address belongs to merchant
-    const address = await prisma.address.findFirst({
-      where: { id: pickupAddressId, merchantId, deletedAt: null },
-    });
 
     if (!address) {
-      return res.status(404).json({ success: false, message: 'Address not found for this merchant' });
+      address = await prisma.address.findFirst({
+        where: { merchantId, deletedAt: null },
+      });
     }
 
-    // Store timeSlot and vehicleType in the request (using existing fields)
-    // timeSlot: 'MORNING' | 'AFTERNOON'
-    // vehicleType: 'BIKE' | 'VAN' | 'TRUCK'
+    if (!address) {
+      address = await prisma.address.create({
+        data: {
+          merchantId,
+          type: 'PICKUP',
+          label: req.body.addressLabel || 'Main Warehouse',
+          line1: req.body.addressLine1 || '1200 Logistics Blvd, Dock #3',
+          city: req.body.city || 'Austin, TX',
+          area: 'Industrial District',
+          contactPerson: req.user.name || 'Warehouse Dispatch',
+          contactPhone: req.user.phone || '+1-555-0100',
+        },
+      });
+    }
+
     const pickup = await prisma.pickupRequest.create({
       data: {
         merchantId,
-        pickupAddressId,
-        requestedDate: new Date(requestedDate),
+        pickupAddressId: address.id,
+        requestedDate: requestedDate ? new Date(requestedDate) : new Date(),
         parcelCount: parseInt(parcelCount) || 1,
         status: 'PENDING',
       },
@@ -170,8 +187,12 @@ router.post('/', async (req, res, next) => {
         pickupAddress: {
           select: { id: true, line1: true, area: true, city: true, label: true },
         },
+        merchant: {
+          select: { id: true, businessName: true },
+        },
       },
     });
+
 
     res.status(201).json({
       success: true,

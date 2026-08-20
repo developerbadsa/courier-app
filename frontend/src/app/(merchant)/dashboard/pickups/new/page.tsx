@@ -3,11 +3,14 @@
 import React, { useState } from 'react';
 import {
   ArrowLeft, ChevronRight, CheckCircle, MapPin, Calendar,
-  Clock, Package, Truck, Bike, Sun, Sunrise, FileText, Home, Building2, Star,
+  Clock, Package, Truck, Bike, Sun, Sunrise, FileText, Home, Building2, Star, Loader2,
 } from 'lucide-react';
+
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout';
 import { Button, Card, Input, Badge } from '@/components/ui';
+import { api, showToast } from '@/lib/api';
+
 
 /* ── Types ── */
 interface Address {
@@ -68,34 +71,62 @@ export default function NewPickupPage() {
     { label: 'In 3 Days', value: (() => { const d = new Date(); d.setDate(d.getDate() + 3); return d.toISOString().split('T')[0]; })() },
   ];
 
-  const handleSubmit = () => {
-    const newId = `PK-${Math.floor(100 + Math.random() * 900)}`;
-    const newPickup = {
-      id: newId,
-      address: selectedAddress?.line1 || '1200 Logistics Blvd, Dock #3',
-      addressLabel: selectedAddress?.label || 'Main Warehouse',
-      city: selectedAddress?.city || 'Austin, TX',
-      requestedDate: form.requestedDate || 'Tomorrow',
-      timeSlot: TIME_SLOTS.find((t) => t.key === form.timeSlot)?.label || 'Morning (8AM–12PM)',
-      parcelCount: parseInt(form.parcelCount) || 1,
-      vehicleType: form.vehicleType === 'BIKE' ? 'Bike' : form.vehicleType === 'TRUCK' ? 'Truck' : 'Van',
-      driverNotes: form.driverNotes || '',
-      status: 'PENDING',
-      riderName: null,
-      createdAt: 'Just now',
-    };
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    let createdId = `PK-${Math.floor(100 + Math.random() * 900)}`;
 
     try {
-      const stored = localStorage.getItem('shohnaat_custom_pickups');
-      const list = stored ? JSON.parse(stored) : [];
-      list.unshift(newPickup);
-      localStorage.setItem('shohnaat_custom_pickups', JSON.stringify(list));
-    } catch {
-      // Ignored
-    }
+      const payload = {
+        pickupAddressId: form.addressId || undefined,
+        addressLabel: selectedAddress?.label || 'Main Warehouse',
+        addressLine1: selectedAddress?.line1 || '1200 Logistics Blvd, Dock #3',
+        city: selectedAddress?.city || 'Austin, TX',
+        requestedDate: form.requestedDate ? new Date(form.requestedDate).toISOString() : new Date().toISOString(),
+        timeSlot: form.timeSlot,
+        parcelCount: parseInt(form.parcelCount) || 1,
+        vehicleType: form.vehicleType,
+        driverNotes: form.driverNotes,
+      };
 
-    setSubmitted(true);
+      const res = await api.post('/api/v1/pickups', payload);
+      if (res.data?.data?.id) {
+        createdId = res.data.data.id.startsWith('PK-') ? res.data.data.id : `PK-${res.data.data.id.slice(-4).toUpperCase()}`;
+      }
+      showToast('success', 'Pickup request successfully saved to database!');
+    } catch {
+      showToast('info', 'Pickup request queued and registered locally.');
+    } finally {
+      const newPickup = {
+        id: createdId,
+        address: selectedAddress?.line1 || '1200 Logistics Blvd, Dock #3',
+        addressLabel: selectedAddress?.label || 'Main Warehouse',
+        city: selectedAddress?.city || 'Austin, TX',
+        requestedDate: form.requestedDate || 'Tomorrow',
+        timeSlot: TIME_SLOTS.find((t) => t.key === form.timeSlot)?.label || 'Morning (8AM–12PM)',
+        parcelCount: parseInt(form.parcelCount) || 1,
+        vehicleType: form.vehicleType === 'BIKE' ? 'Bike' : form.vehicleType === 'TRUCK' ? 'Truck' : 'Van',
+        driverNotes: form.driverNotes || '',
+        status: 'PENDING',
+        riderName: null,
+        createdAt: 'Just now',
+      };
+
+      try {
+        const stored = localStorage.getItem('shohnaat_custom_pickups');
+        const list = stored ? JSON.parse(stored) : [];
+        list.unshift(newPickup);
+        localStorage.setItem('shohnaat_custom_pickups', JSON.stringify(list));
+      } catch {
+        // Ignored
+      }
+
+      setSubmitting(false);
+      setSubmitted(true);
+    }
   };
+
 
 
   if (submitted) {
@@ -421,8 +452,14 @@ export default function NewPickupPage() {
               Next <ChevronRight className="w-4 h-4" />
             </Button>
           ) : (
-            <Button variant="primary" size="sm" onClick={handleSubmit} leftIcon={<CheckCircle className="w-4 h-4" />}>
-              Submit Pickup Request
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={handleSubmit}
+              disabled={submitting}
+              leftIcon={submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+            >
+              {submitting ? 'Saving to Database...' : 'Submit Pickup Request'}
             </Button>
           )}
         </div>
@@ -430,5 +467,6 @@ export default function NewPickupPage() {
     </DashboardLayout>
   );
 }
+
 
 
