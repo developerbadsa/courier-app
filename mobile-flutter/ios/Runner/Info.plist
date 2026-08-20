@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Shohnaat</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>shohnaat_mobile</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+
+	<!-- Location & GPS Background Usage -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Shohnaat requires GPS location to provide turn-by-turn navigation and broadcast real-time delivery tracking to customers.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Shohnaat tracks field rider delivery routes in the background to ensure accurate ETA calculations.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
+
+	<!-- Camera & Barcode Scanner Usage -->
+	<key>NSCameraUsageDescription</key>
+	<string>Shohnaat requires camera access to scan parcel 4x6" shipping barcodes and capture proof-of-delivery photos.</string>
+
+	<!-- Bluetooth Thermal Printer Usage -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Shohnaat uses Bluetooth to connect directly with portable thermal label printers for on-demand receipt printing.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Shohnaat requires Bluetooth access to connect to wireless thermal barcode printers.</string>
+</dict>
+</plist>
