@@ -27,6 +27,7 @@ const developerRoutes = require('./routes/developer');
 const trackingRoutes = require('./routes/tracking');
 const notificationRoutes = require('./routes/notifications');
 const securityRoutes = require('./routes/security');
+const liveTrackingRoutes = require('./routes/liveTracking');
 const { createWorker: createNotificationWorker } = require('./services/notificationService');
 
 // Initialize Express App
@@ -78,6 +79,7 @@ app.use('/api/v1/developer', developerRoutes);
 app.use('/api/v1/tracking', trackingRoutes); // PUBLIC — no auth
 app.use('/api/v1/notifications', notificationRoutes);
 app.use('/api/v1/security', securityRoutes);
+app.use('/api/v1/live', liveTrackingRoutes); // SSE live tracking
 
 // 404 handler
 app.use((req, res) => {

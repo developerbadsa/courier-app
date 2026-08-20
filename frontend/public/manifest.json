@@ -1,0 +1,28 @@
+{
+  "name": "Shohnaat Logistics — Rider PWA",
+  "short_name": "Shohnaat Rider",
+  "description": "Field rider delivery app with offline support, GPS navigation, and COD collection",
+  "start_url": "/rider",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait",
+  "scope": "/rider",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "logistics"],
+  "lang": "en",
+  "dir": "ltr"
+}

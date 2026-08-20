@@ -69,6 +69,17 @@ const MOCK_COD_HISTORY: CODHistoryEntry[] = [
 /*  Page                                                                */
 /* ------------------------------------------------------------------ */
 export default function RiderPage() {
+  // Register service worker for PWA
+  React.useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+    // Request notification permission
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, []);
+
   const [isOnDuty, setIsOnDuty] = useState(true);
   const [tasks, setTasks] = useState<DeliveryTask[]>(INITIAL_TASKS);
   const [activeTab, setActiveTab] = useState<'tasks' | 'history' | 'balance'>('tasks');

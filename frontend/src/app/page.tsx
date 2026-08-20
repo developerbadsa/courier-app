@@ -15,6 +15,7 @@ import {
   Phone,
   Mail,
 } from 'lucide-react';
+import { LanguageToggle } from '@/contexts/I18nContext';
 
 export default function Home() {
   const [trackingNumber, setTrackingNumber] = useState('');
@@ -48,6 +49,7 @@ export default function Home() {
           </nav>
 
           <div className="flex items-center gap-2">
+            <LanguageToggle />
             <Link
               href="/login"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[13px] font-semibold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
@@ -195,6 +197,7 @@ export default function Home() {
               <Link href="/track" className="hover:text-blue-600 font-medium transition-colors">Track</Link>
               <Link href="/dashboard" className="hover:text-blue-600 font-medium transition-colors">Merchant</Link>
               <Link href="/login" className="hover:text-blue-600 font-medium transition-colors">Sign In</Link>
+              <Link href="/register" className="hover:text-blue-600 font-medium transition-colors">Register</Link>
             </div>
           </div>
         </div>
