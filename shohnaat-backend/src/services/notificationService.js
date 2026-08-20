@@ -23,16 +23,27 @@ const notificationQueue = new Queue('notifications', {
 
 /* ──────────────────────────────────────────────────────────────────────
    Email Transporter (SMTP — configurable)
+   Falls back to console logging when no real SMTP configured
    ────────────────────────────────────────────────────────────────────── */
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.mailtrap.io',
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER || '',
-    pass: process.env.SMTP_PASS || '',
-  },
-});
+const SMTP_CONFIGURED = process.env.SMTP_USER && 
+  !process.env.SMTP_USER.includes('placeholder') &&
+  process.env.SMTP_USER.length > 3;
+
+const transporter = SMTP_CONFIGURED
+  ? nodemailer.createTransport({
+      host: process.env.SMTP_HOST || 'smtp.mailtrap.io',
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: process.env.SMTP_SECURE === 'true',
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASS,
+      },
+    })
+  : null;
+
+if (!SMTP_CONFIGURED) {
+  logger.warn('[Email] SMTP not configured — emails will be logged to console only');
+}
 
 /* ──────────────────────────────────────────────────────────────────────
    HTML Email Templates
@@ -268,12 +279,18 @@ async function enqueueNotification({ event, recipients, data, channels }) {
 }
 
 /**
- * Send email via SMTP
+ * Send email via SMTP (or console log if not configured)
  */
 async function sendEmail(to, subject, html) {
   try {
+    if (!transporter) {
+      // Console fallback — no real SMTP configured
+      logger.info(`[Email:CONSOLE] To: ${to} | Subject: ${subject}`);
+      return { success: true, provider: 'console', messageId: `console_${Date.now()}` };
+    }
+
     const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM || '"Shohnaat Logistics" <notifications@shohnaat.com>',
+      from: process.env.EMAIL_FROM || process.env.SMTP_FROM || '"Shohnaat Logistics" <notifications@shohnaat.com>',
       to,
       subject,
       html,
@@ -287,16 +304,29 @@ async function sendEmail(to, subject, html) {
 }
 
 /**
- * Send SMS (stub — integrate with Twilio/Vonage/Plivo in production)
+ * Send SMS via Twilio (or console log if not configured)
  */
 async function sendSMS(to, message) {
   try {
-    // Production: Use Twilio/Vonage/Plivo SDK
-    // const twilio = require('twilio')(ACCOUNT_SID, AUTH_TOKEN);
-    // await twilio.messages.create({ body: message, to, from: TWILIO_NUMBER });
+    const TWILIO_SID = process.env.TWILIO_ACCOUNT_SID;
+    const TWILIO_TOKEN = process.env.TWILIO_AUTH_TOKEN;
+    const TWILIO_PHONE = process.env.TWILIO_PHONE_NUMBER;
 
-    logger.info(`[SMS] Stub sent to ${to}: ${message.substring(0, 60)}...`);
-    return { success: true, provider: 'stub' };
+    if (TWILIO_SID && !TWILIO_SID.includes('placeholder') && TWILIO_TOKEN && !TWILIO_TOKEN.includes('placeholder')) {
+      // Real Twilio integration
+      const twilio = require('twilio')(TWILIO_SID, TWILIO_TOKEN);
+      const result = await twilio.messages.create({
+        body: message,
+        to,
+        from: TWILIO_PHONE,
+      });
+      logger.info(`[SMS] Sent to ${to}: ${result.sid}`);
+      return { success: true, provider: 'twilio', sid: result.sid };
+    }
+
+    // Console fallback
+    logger.info(`[SMS:CONSOLE] To: ${to} | Message: ${message.substring(0, 80)}...`);
+    return { success: true, provider: 'console' };
   } catch (error) {
     logger.error(`[SMS] Failed to ${to}: ${error.message}`);
     return { success: false, error: error.message };
