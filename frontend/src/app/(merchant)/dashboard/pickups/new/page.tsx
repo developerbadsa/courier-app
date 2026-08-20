@@ -9,8 +9,7 @@ import {
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout';
 import { Button, Card, Input, Badge } from '@/components/ui';
-import { api, showToast } from '@/lib/api';
-
+import { api, apiGet, showToast } from '@/lib/api';
 
 /* ── Types ── */
 interface Address {
@@ -21,13 +20,6 @@ interface Address {
   city: string;
   isDefault: boolean;
 }
-
-/* ── Mock Data ── */
-const MOCK_ADDRESSES: Address[] = [
-  { id: 'addr-1', label: 'Main Warehouse', type: 'PICKUP', line1: '1200 Logistics Blvd, Dock #3', city: 'Austin, TX 78704', isDefault: true },
-  { id: 'addr-2', label: 'Downtown Store', type: 'PICKUP', line1: '456 Congress Ave, Suite 100', city: 'Austin, TX 78701', isDefault: false },
-  { id: 'addr-4', label: 'Weekend Warehouse', type: 'PICKUP', line1: '3400 Comanche Trail', city: 'Austin, TX 78702', isDefault: false },
-];
 
 const STEPS = ['Warehouse', 'Schedule', 'Details', 'Review'];
 
@@ -47,6 +39,19 @@ const VEHICLE_TYPES = [
 export default function NewPickupPage() {
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+
+  React.useEffect(() => {
+    apiGet<any>('/api/v1/addresses').then((res) => {
+      if (res.success && res.data) {
+        setAddresses(res.data.map((a: any) => ({
+          id: a.id, label: a.label || 'Unnamed', type: a.type || 'PICKUP',
+          line1: a.line1 || '', city: a.city || '', isDefault: a.isDefault || false,
+        })));
+      }
+    }).catch(() => {});
+  }, []);
+
   const [form, setForm] = useState({
     addressId: '',
     requestedDate: '',
@@ -57,7 +62,7 @@ export default function NewPickupPage() {
   });
 
   const update = (field: string, value: string) => setForm((prev) => ({ ...prev, [field]: value }));
-  const selectedAddress = MOCK_ADDRESSES.find((a) => a.id === form.addressId);
+  const selectedAddress = addresses.find((a) => a.id === form.addressId);
 
   // Generate tomorrow's date as minimum
   const tomorrow = new Date();
@@ -226,7 +231,8 @@ export default function NewPickupPage() {
               <MapPin className="w-4 h-4 text-blue-600" /> Select Pickup Location
             </h3>
             <div className="space-y-3">
-              {MOCK_ADDRESSES.map((addr) => (
+              {addresses.length === 0 && <p className="text-xs text-slate-400 text-center py-4">No pickup addresses found. Add one in Address Book first.</p>}
+              {addresses.map((addr) => (
                 <button
                   key={addr.id}
                   onClick={() => update('addressId', addr.id)}

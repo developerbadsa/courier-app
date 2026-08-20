@@ -28,39 +28,7 @@ interface PickupRequest {
   createdAt: string;
 }
 
-/* ── Mock Data ── */
-const MOCK_PICKUPS: PickupRequest[] = [
-  {
-    id: 'PK-001', address: '1200 Logistics Blvd, Dock #3', addressLabel: 'Main Warehouse',
-    city: 'Austin, TX', requestedDate: 'Today, Aug 20', timeSlot: 'Morning (8AM–12PM)',
-    parcelCount: 18, vehicleType: 'Van', driverNotes: 'Use loading dock entrance',
-    status: 'ASSIGNED', riderName: 'David Miller', createdAt: '2h ago',
-  },
-  {
-    id: 'PK-002', address: '456 Congress Ave, Suite 100', addressLabel: 'Downtown Store',
-    city: 'Austin, TX', requestedDate: 'Today, Aug 20', timeSlot: 'Afternoon (1PM–5PM)',
-    parcelCount: 5, vehicleType: 'Bike', driverNotes: 'Ring bell at front desk',
-    status: 'PENDING', riderName: null, createdAt: '4h ago',
-  },
-  {
-    id: 'PK-003', address: '3400 Comanche Trail', addressLabel: 'Weekend Warehouse',
-    city: 'Austin, TX', requestedDate: 'Tomorrow, Aug 21', timeSlot: 'Morning (8AM–12PM)',
-    parcelCount: 24, vehicleType: 'Truck', driverNotes: 'Call ahead for large shipment',
-    status: 'PENDING', riderName: null, createdAt: 'Yesterday',
-  },
-  {
-    id: 'PK-004', address: '1200 Logistics Blvd, Dock #3', addressLabel: 'Main Warehouse',
-    city: 'Austin, TX', requestedDate: 'Aug 18', timeSlot: 'Morning (8AM–12PM)',
-    parcelCount: 12, vehicleType: 'Van', driverNotes: '',
-    status: 'COMPLETED', riderName: 'Sarah Johnson', createdAt: 'Aug 17',
-  },
-  {
-    id: 'PK-005', address: '456 Congress Ave, Suite 100', addressLabel: 'Downtown Store',
-    city: 'Austin, TX', requestedDate: 'Aug 17', timeSlot: 'Afternoon (1PM–5PM)',
-    parcelCount: 3, vehicleType: 'Bike', driverNotes: 'Small items only',
-    status: 'COMPLETED', riderName: 'Mike Chen', createdAt: 'Aug 16',
-  },
-];
+
 
 const STATUS_TABS = [
   { key: 'all', label: 'All' },
@@ -110,7 +78,7 @@ const renderVehicle = (type: string) => {
 
 /* ── Page ── */
 export default function PickupsPage() {
-  const [pickups, setPickups] = useState<PickupRequest[]>(MOCK_PICKUPS);
+  const [pickups, setPickups] = useState<PickupRequest[]>([]);
   const [activeTab, setActiveTab] = useState('all');
   const [detailModal, setDetailModal] = useState<PickupRequest | null>(null);
 
@@ -148,7 +116,7 @@ export default function PickupsPage() {
 
       if (isMounted) {
         const seen = new Set<string>();
-        const combined = [...localPickups, ...apiItems, ...MOCK_PICKUPS].filter((p) => {
+        const combined = [...localPickups, ...apiItems].filter((p) => {
           if (seen.has(p.id)) return false;
           seen.add(p.id);
           return true;

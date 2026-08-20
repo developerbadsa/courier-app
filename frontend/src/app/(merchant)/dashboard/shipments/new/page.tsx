@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Package, ArrowLeft, ChevronRight, CheckCircle, User, MapPin, Weight, CreditCard } from 'lucide-react';
+import { Package, ArrowLeft, ChevronRight, CheckCircle, User, MapPin, Weight, CreditCard, Loader2, Copy, Check } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout';
-import { Button, Card, Input, StatusBadge } from '@/components/ui';
+import { Button, Card, Input } from '@/components/ui';
+import { apiPost, showToast } from '@/lib/api';
 
 /* ------------------------------------------------------------------ */
 /*  Multi-Step Shipment Creation Wizard                                 */
@@ -12,8 +14,12 @@ import { Button, Card, Input, StatusBadge } from '@/components/ui';
 const STEPS = ['Shipper Info', 'Consignee', 'Package Specs', 'Review & Submit'];
 
 export default function CreateShipmentPage() {
+  const router = useRouter();
   const [step, setStep] = useState(0);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [trackingNumber, setTrackingNumber] = useState('');
+  const [copied, setCopied] = useState(false);
   const [form, setForm] = useState({
     // Shipper
     shipperName: '',
@@ -42,9 +48,55 @@ export default function CreateShipmentPage() {
   const canNext = step < STEPS.length - 1;
   const canPrev = step > 0;
 
-  const handleSubmit = () => {
-    // TODO: POST /api/v1/shipments
-    setSubmitted(true);
+  const handleSubmit = async () => {
+    if (!form.consigneeName || !form.consigneePhone) {
+      showToast('error', 'Consignee name and phone are required.');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const payload = {
+        consigneeName: form.consigneeName,
+        consigneePhone: form.consigneePhone,
+        consigneeAltPhone: form.consigneeAltPhone || undefined,
+        pickupAddressSnap: {
+          street: form.pickupAddress || undefined,
+          city: form.pickupCity || undefined,
+          contactName: form.shipperName || undefined,
+          contactPhone: form.shipperPhone || undefined,
+        },
+        deliveryAddressSnap: {
+          street: form.deliveryAddress || undefined,
+          city: form.deliveryCity || undefined,
+        },
+        weightKg: form.weightKg ? parseFloat(form.weightKg) : undefined,
+        paymentType: form.paymentType,
+        codAmount: form.paymentType === 'COD' ? (form.codAmount ? parseFloat(form.codAmount) : 0) : 0,
+        serviceType: form.serviceType,
+      };
+
+      const res = await apiPost<any>('/api/v1/shipments', payload);
+
+      if (res.success && res.data) {
+        const tn = res.data.trackingNumber || res.data.id || '—';
+        setTrackingNumber(tn);
+        setSubmitted(true);
+        showToast('success', `Shipment booked! Tracking: ${tn}`);
+      } else {
+        showToast('error', res.message || 'Failed to create shipment. Please try again.');
+      }
+    } catch {
+      showToast('error', 'Network error. Please check your connection and try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleCopyTracking = () => {
+    navigator.clipboard.writeText(trackingNumber);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   if (submitted) {
@@ -55,16 +107,34 @@ export default function CreateShipmentPage() {
             <CheckCircle className="w-8 h-8 text-emerald-600" />
           </div>
           <h2 className="text-lg font-bold text-slate-900">Shipment Booked Successfully</h2>
-          <p className="text-sm text-slate-500 mt-1">Tracking number will be generated after confirmation.</p>
+          <p className="text-sm text-slate-500 mt-1">Your parcel has been registered in the system.</p>
+
+          {trackingNumber && (
+            <div className="mt-6 p-4 bg-slate-50 rounded border border-slate-200">
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tracking Number</div>
+              <div className="flex items-center justify-center gap-2">
+                <span className="font-mono text-lg font-bold text-primary">{trackingNumber}</span>
+                <button onClick={handleCopyTracking} className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-white rounded border border-slate-200">
+                  {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-3 mt-6 justify-center">
-            <Link href="/dashboard">
-              <Button variant="outline" size="sm">Back to Dashboard</Button>
+            <Link href="/dashboard/shipments">
+              <Button variant="outline" size="sm">View Shipments</Button>
             </Link>
-            <Button variant="primary" size="sm" onClick={() => { setSubmitted(false); setStep(0); setForm({
-              shipperName: '', shipperPhone: '', pickupAddress: '', pickupCity: '',
-              consigneeName: '', consigneePhone: '', consigneeAltPhone: '', deliveryAddress: '', deliveryCity: '',
-              weightKg: '', lengthCm: '', widthCm: '', heightCm: '', paymentType: 'COD', codAmount: '', serviceType: 'STANDARD', notes: '',
-            }); }}>
+            <Button variant="primary" size="sm" onClick={() => {
+              setSubmitted(false);
+              setTrackingNumber('');
+              setStep(0);
+              setForm({
+                shipperName: '', shipperPhone: '', pickupAddress: '', pickupCity: '',
+                consigneeName: '', consigneePhone: '', consigneeAltPhone: '', deliveryAddress: '', deliveryCity: '',
+                weightKg: '', lengthCm: '', widthCm: '', heightCm: '', paymentType: 'COD', codAmount: '', serviceType: 'STANDARD', notes: '',
+              });
+            }}>
               Create Another
             </Button>
           </div>
@@ -80,8 +150,8 @@ export default function CreateShipmentPage() {
       subtitle="Book a new parcel for pickup and delivery"
     >
       <div className="mb-2">
-        <Link href="/dashboard" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900">
-          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+        <Link href="/dashboard/shipments" className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900">
+          <ArrowLeft className="w-4 h-4" /> Back to Shipments
         </Link>
       </div>
       {/* Step Progress */}
@@ -224,17 +294,19 @@ export default function CreateShipmentPage() {
             variant="outline"
             size="sm"
             onClick={() => setStep(step - 1)}
-            disabled={!canPrev}
+            disabled={!canPrev || submitting}
           >
             Previous
           </Button>
           {canNext ? (
-            <Button variant="primary" size="sm" onClick={() => setStep(step + 1)}>
+            <Button variant="primary" size="sm" onClick={() => setStep(step + 1)}
+              disabled={step === 1 && (!form.consigneeName || !form.consigneePhone)}>
               Next <ChevronRight className="w-4 h-4" />
             </Button>
           ) : (
-            <Button variant="primary" size="sm" onClick={handleSubmit}>
-              <CheckCircle className="w-4 h-4" /> Book Shipment
+            <Button variant="primary" size="sm" onClick={handleSubmit} disabled={submitting}
+              leftIcon={submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}>
+              {submitting ? 'Booking...' : 'Book Shipment'}
             </Button>
           )}
         </div>

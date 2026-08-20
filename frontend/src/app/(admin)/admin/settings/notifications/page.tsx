@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import { Button, Card, Badge, Input, Modal } from '@/components/ui';
+import { apiGet, apiPatch, showToast } from '@/lib/api';
 
 /* ── Types ── */
 interface NotificationSettings {
@@ -72,71 +73,55 @@ const EVENT_DEFINITIONS = [
   { key: 'pickup_scheduled', label: 'Pickup Scheduled', icon: Clock, color: 'purple', description: 'When pickup is scheduled' },
 ] as const;
 
-/* ── Mock Data ── */
-const MOCK_SETTINGS: NotificationSettings = {
-  email: {
-    enabled: true,
-    shipment_booked: true,
-    out_for_delivery: true,
-    delivered: true,
-    shipment_failed: true,
-    pickup_scheduled: true,
-  },
-  sms: {
-    enabled: false,
-    shipment_booked: false,
-    out_for_delivery: true,
-    delivered: true,
-    shipment_failed: true,
-    pickup_scheduled: false,
-  },
-  channels: {
-    merchantEmail: true,
-    consigneeEmail: true,
-    merchantSms: false,
-    consigneeSms: false,
-  },
+/* ── Default empty state ── */
+const DEFAULT_SETTINGS: NotificationSettings = {
+  email: { enabled: true, shipment_booked: true, out_for_delivery: true, delivered: true, shipment_failed: true, pickup_scheduled: true },
+  sms: { enabled: false, shipment_booked: false, out_for_delivery: false, delivered: false, shipment_failed: false, pickup_scheduled: false },
+  channels: { merchantEmail: true, consigneeEmail: true, merchantSms: false, consigneeSms: false },
 };
-
-const MOCK_QUEUE: QueueStats = { waiting: 3, active: 1, completed: 1247, failed: 12, total: 1263 };
-
-const MOCK_LOGS: NotificationStat[] = [
-  { event: 'delivered', count: 8420, channel: 'email' },
-  { event: 'out_for_delivery', count: 3240, channel: 'email' },
-  { event: 'shipment_booked', count: 2890, channel: 'email' },
-  { event: 'shipment_failed', count: 362, channel: 'email' },
-  { event: 'delivered', count: 1840, channel: 'sms' },
-  { event: 'out_for_delivery', count: 1200, channel: 'sms' },
-];
+const DEFAULT_QUEUE: QueueStats = { waiting: 0, active: 0, completed: 0, failed: 0, total: 0 };
 
 export default function NotificationsSettingsPage() {
-  const [settings, setSettings] = useState<NotificationSettings>(MOCK_SETTINGS);
-  const [queue] = useState<QueueStats>(MOCK_QUEUE);
+  const [settings, setSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
+  const [queue, setQueue] = useState<QueueStats>(DEFAULT_QUEUE);
+  const [statsLogs, setStatsLogs] = useState<NotificationStat[]>([]);
+
+  React.useEffect(() => {
+    Promise.all([
+      apiGet<any>('/api/v1/notifications/settings'),
+      apiGet<any>('/api/v1/notifications/queue'),
+      apiGet<any>('/api/v1/notifications/stats'),
+    ]).then(([settingsRes, queueRes, statsRes]) => {
+      if (settingsRes.success && settingsRes.data) setSettings(settingsRes.data);
+      if (queueRes.success && queueRes.data) setQueue({ waiting: queueRes.data.waiting || 0, active: queueRes.data.active || 0, completed: queueRes.data.completed || 0, failed: queueRes.data.failed || 0, total: queueRes.data.total || 0 });
+      if (statsRes.success && statsRes.data) setStatsLogs(statsRes.data.map((s: any) => ({ event: s.event || '', count: s.count || 0, channel: s.channel || 'email' })));
+    }).catch(() => {});
+  }, []);
   const [testModalOpen, setTestModalOpen] = useState(false);
   const [testEmail, setTestEmail] = useState('');
   const [testEvent, setTestEvent] = useState('delivered');
   const [testSending, setTestSending] = useState(false);
   const [testResult, setTestResult] = useState<'success' | 'error' | null>(null);
 
+  const saveSettings = async (updated: NotificationSettings) => {
+    setSettings(updated);
+    const res = await apiPatch<any>('/api/v1/notifications/settings', updated);
+    if (!res.success) showToast('error', 'Failed to save settings.');
+  };
+
   const toggleEmailEvent = (event: keyof NotificationSettings['email']) => {
-    setSettings((prev) => ({
-      ...prev,
-      email: { ...prev.email, [event]: !prev.email[event] },
-    }));
+    const updated = { ...settings, email: { ...settings.email, [event]: !settings.email[event] } };
+    saveSettings(updated);
   };
 
   const toggleSmsEvent = (event: keyof NotificationSettings['sms']) => {
-    setSettings((prev) => ({
-      ...prev,
-      sms: { ...prev.sms, [event]: !prev.sms[event] },
-    }));
+    const updated = { ...settings, sms: { ...settings.sms, [event]: !settings.sms[event] } };
+    saveSettings(updated);
   };
 
   const toggleChannel = (channel: keyof NotificationSettings['channels']) => {
-    setSettings((prev) => ({
-      ...prev,
-      channels: { ...prev.channels, [channel]: !prev.channels[channel] },
-    }));
+    const updated = { ...settings, channels: { ...settings.channels, [channel]: !settings.channels[channel] } };
+    saveSettings(updated);
   };
 
   const sendTestNotification = async () => {
@@ -312,8 +297,8 @@ export default function NotificationsSettingsPage() {
             </thead>
             <tbody>
               {EVENT_DEFINITIONS.map((event) => {
-                const emailCount = MOCK_LOGS.find(l => l.event === event.key && l.channel === 'email')?.count || 0;
-                const smsCount = MOCK_LOGS.find(l => l.event === event.key && l.channel === 'sms')?.count || 0;
+                const emailCount = statsLogs.find(l => l.event === event.key && l.channel === 'email')?.count || 0;
+                const smsCount = statsLogs.find(l => l.event === event.key && l.channel === 'sms')?.count || 0;
                 return (
                   <tr key={event.key} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="py-2.5 px-3">

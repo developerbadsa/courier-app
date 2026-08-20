@@ -19,6 +19,7 @@ import {
   Wallet,
 } from 'lucide-react';
 import { StatusBadge, Button, Card, Modal, Badge } from '@/components/ui';
+import { apiGet, apiPost, showToast } from '@/lib/api';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                               */
@@ -53,17 +54,7 @@ const FAILED_REASONS = [
   { code: 'WRONG_ADDRESS', label: 'Wrong Address', desc: 'Consignee provided incorrect address' },
 ];
 
-const INITIAL_TASKS: DeliveryTask[] = [
-  { id: 'SHN-90214-US', type: 'DELIVERY', name: 'Alexander Wright', phone: '+1 (512) 492-8190', address: '4502 Elm Street, Suite #4B, Austin, TX 78701', cod: 64.50, status: 'OUT_FOR_DELIVERY' },
-  { id: 'SHN-90215-US', type: 'DELIVERY', name: 'Sophia Martinez', phone: '+1 (305) 881-2309', address: '1200 Main Street, Apt 7C, Miami, FL 33101', cod: 120.00, status: 'OUT_FOR_DELIVERY' },
-  { id: 'SHN-90216-US', type: 'PICKUP', name: 'Apex Global Warehouse', phone: '+1 (512) 884-9021', address: '1200 Logistics Blvd, Dock #3, Austin, TX 78704', cod: 0, status: 'PICKED_UP' },
-];
 
-const MOCK_COD_HISTORY: CODHistoryEntry[] = [
-  { trackingNumber: 'SHN-90200-US', consignee: 'Marcus Vance', amount: 32.00, time: '9:15 AM' },
-  { trackingNumber: 'SHN-90201-US', consignee: 'Emily Thornton', amount: 89.90, time: '10:45 AM' },
-  { trackingNumber: 'SHN-90208-US', consignee: 'Liam Davis', amount: 215.00, time: '11:30 AM' },
-];
 
 /* ------------------------------------------------------------------ */
 /*  Page                                                                */
@@ -81,8 +72,43 @@ export default function RiderPage() {
   }, []);
 
   const [isOnDuty, setIsOnDuty] = useState(true);
-  const [tasks, setTasks] = useState<DeliveryTask[]>(INITIAL_TASKS);
+  const [tasks, setTasks] = useState<DeliveryTask[]>([]);
+  const [codHistory, setCodHistory] = useState<CODHistoryEntry[]>([]);
   const [activeTab, setActiveTab] = useState<'tasks' | 'history' | 'balance'>('tasks');
+
+  // Fetch rider tasks and COD summary from backend
+  React.useEffect(() => {
+    async function loadData() {
+      try {
+        const tasksRes = await apiGet<any>('/api/v1/riders/me/tasks');
+        if (tasksRes.success && tasksRes.data) {
+          const mapped = tasksRes.data.map((a: any) => ({
+            id: a.shipment?.trackingNumber || a.id,
+            type: 'DELIVERY' as const,
+            name: a.shipment?.consignee?.name || 'Unknown',
+            phone: a.shipment?.consignee?.phone || '',
+            address: a.shipment?.deliveryAddress?.line1 || a.shipment?.deliveryAddressSnap?.street || '',
+            cod: parseFloat(a.shipment?.codAmount || 0),
+            status: (a.shipment?.currentStatus || 'OUT_FOR_DELIVERY') as DeliveryTask['status'],
+          }));
+          setTasks(mapped);
+        }
+      } catch { /* graceful */ }
+      try {
+        const codRes = await apiGet<any>('/api/v1/riders/me/cod-summary');
+        if (codRes.success && codRes.data?.shipments) {
+          const mapped = codRes.data.shipments.map((s: any) => ({
+            trackingNumber: s.trackingNumber,
+            consignee: s.consignee?.name || 'Unknown',
+            amount: parseFloat(s.codAmount || 0),
+            time: new Date(s.deliveredAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+          }));
+          setCodHistory(mapped);
+        }
+      } catch { /* graceful */ }
+    }
+    loadData();
+  }, []);
 
   // Failed delivery modal state
   const [failedModal, setFailedModal] = useState<{ open: boolean; taskId: string }>({ open: false, taskId: '' });
@@ -95,7 +121,7 @@ export default function RiderPage() {
 
   const pendingCount = tasks.filter((t) => t.status !== 'DELIVERED' && t.status !== 'FAILED').length;
   const totalCod = tasks.filter((t) => t.type === 'DELIVERY').reduce((s, t) => s + t.cod, 0);
-  const collectedCod = MOCK_COD_HISTORY.reduce((s, e) => s + e.amount, 0);
+  const collectedCod = codHistory.reduce((s, e) => s + e.amount, 0);
 
   /* ── Handle Delivery Complete ── */
   const handleDeliver = (id: string, cod: number) => {
@@ -103,11 +129,13 @@ export default function RiderPage() {
       setCodModal({ open: true, taskId: id, amount: cod });
     } else {
       setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'DELIVERED' } : t)));
+      apiPost('/api/v1/riders/complete-delivery', { shipmentId: id, codCollected: 0 }).catch(() => {});
     }
   };
 
   const confirmCOD = () => {
     setTasks((prev) => prev.map((t) => (t.id === codModal.taskId ? { ...t, status: 'DELIVERED' } : t)));
+    apiPost('/api/v1/riders/complete-delivery', { shipmentId: codModal.taskId, codCollected: codModal.amount, otpVerified: true }).catch(() => {});
     setCodModal({ open: false, taskId: '', amount: 0 });
     setCodCollected('');
   };
@@ -121,6 +149,7 @@ export default function RiderPage() {
 
   const confirmFailed = () => {
     setTasks((prev) => prev.map((t) => (t.id === failedModal.taskId ? { ...t, status: 'FAILED' } : t)));
+    apiPost('/api/v1/riders/report-failure', { shipmentId: failedModal.taskId, reasonCode: selectedReason, notes: failedNotes }).catch(() => {});
     setFailedModal({ open: false, taskId: '' });
     setSelectedReason('');
     setFailedNotes('');
@@ -312,7 +341,7 @@ export default function RiderPage() {
                 <div className="text-center">
                   <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Cash Collected Today</div>
                   <div className="text-3xl font-bold text-emerald-700 mt-1">${collectedCod.toFixed(2)}</div>
-                  <div className="text-xs text-emerald-500 mt-0.5">USD — {MOCK_COD_HISTORY.length} deliveries</div>
+                  <div className="text-xs text-emerald-500 mt-0.5">USD — {codHistory.length} deliveries</div>
                 </div>
               </Card>
 
@@ -321,7 +350,7 @@ export default function RiderPage() {
                   <h3 className="text-xs font-bold text-slate-900">Collection History</h3>
                 </div>
                 <div className="divide-y divide-slate-100">
-                  {MOCK_COD_HISTORY.map((entry) => (
+                  {codHistory.map((entry) => (
                     <div key={entry.trackingNumber} className="px-4 py-3 flex items-center justify-between">
                       <div>
                         <div className="font-mono text-xs font-semibold text-blue-600">{entry.trackingNumber}</div>

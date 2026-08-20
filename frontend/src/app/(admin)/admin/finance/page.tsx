@@ -31,41 +31,17 @@ interface MerchantBalance {
   shipments: number;
 }
 
-/* ── Mock Data ── */
-const MOCK_PAYOUTS: PayoutRequest[] = [
-  { id: 'PAY-001', merchantName: 'Apex Global Imports LLC', merchantId: 'mc-1', amount: 8420.00, method: 'bank_transfer', status: 'PENDING', requestedAt: '2 hours ago' },
-  { id: 'PAY-002', merchantName: 'Nordic Gear International', merchantId: 'mc-2', amount: 5640.00, method: 'paypal', status: 'PENDING', requestedAt: '5 hours ago' },
-  { id: 'PAY-003', merchantName: 'Volt Electronics Hub', merchantId: 'mc-3', amount: 3200.00, method: 'bank_transfer', status: 'PROCESSING', requestedAt: 'Yesterday', processedAt: 'Today 9:00 AM' },
-  { id: 'PAY-004', merchantName: 'Apex Global Imports LLC', merchantId: 'mc-1', amount: 12198.00, method: 'bank_transfer', status: 'PAID', requestedAt: 'Aug 17', processedAt: 'Aug 19' },
-  { id: 'PAY-005', merchantName: 'Metro Goods Co.', merchantId: 'mc-4', amount: 9840.00, method: 'paypal', status: 'PAID', requestedAt: 'Aug 12', processedAt: 'Aug 14' },
-  { id: 'PAY-006', merchantName: 'Nordic Gear International', merchantId: 'mc-2', amount: 7650.00, method: 'bank_transfer', status: 'FAILED', requestedAt: 'Aug 10' },
-];
-
-const MOCK_MERCHANT_BALANCES: MerchantBalance[] = [
-  { id: 'mc-1', name: 'Apex Global Imports LLC', balance: 8420, collected: 24580, fees: 1642, shipments: 890 },
-  { id: 'mc-2', name: 'Nordic Gear International', balance: 5640, collected: 18200, fees: 1280, shipments: 645 },
-  { id: 'mc-3', name: 'Volt Electronics Hub', balance: 3200, collected: 9800, fees: 720, shipments: 312 },
-  { id: 'mc-4', name: 'Metro Goods Co.', balance: 2100, collected: 7600, fees: 540, shipments: 234 },
-  { id: 'mc-5', name: 'Pacific Trading LLC', balance: 1850, collected: 5400, fees: 380, shipments: 178 },
-];
-
-const MOCK_STATS = {
-  activeMerchants: 342,
-  totalPaidOut: 284500,
-  payoutsCompleted: 156,
-  pendingPayoutAmount: 17260,
-  pendingPayoutCount: 2,
-  totalCODCollected: 524000,
-};
+/* ── Default empty state (data fetched from API) ── */
+const EMPTY_STATS = { activeMerchants: 0, totalPaidOut: 0, payoutsCompleted: 0, pendingPayoutAmount: 0, pendingPayoutCount: 0, totalCODCollected: 0 };
 
 import { apiGet, apiPost } from '@/lib/api';
 
 /* ── Page ── */
 export default function AdminFinancePage() {
   const [activeTab, setActiveTab] = useState('payouts');
-  const [payouts, setPayouts] = useState<PayoutRequest[]>(MOCK_PAYOUTS);
-  const [merchantBalances, setMerchantBalances] = useState<MerchantBalance[]>(MOCK_MERCHANT_BALANCES);
-  const [stats, setStats] = useState(MOCK_STATS);
+  const [payouts, setPayouts] = useState<PayoutRequest[]>([]);
+  const [merchantBalances, setMerchantBalances] = useState<MerchantBalance[]>([]);
+  const [stats, setStats] = useState(EMPTY_STATS);
   const [processModal, setProcessModal] = useState<PayoutRequest | null>(null);
   const [batchModal, setBatchModal] = useState(false);
   const [processing, setProcessing] = useState(false);

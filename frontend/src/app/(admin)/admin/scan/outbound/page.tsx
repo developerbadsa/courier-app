@@ -8,6 +8,7 @@ import {
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout';
 import { Button, Card, Badge, Input, Modal } from '@/components/ui';
+import { apiGet } from '@/lib/api';
 
 /* ── Types ── */
 interface ScannedParcel {
@@ -24,13 +25,6 @@ interface Branch {
   code: string;
 }
 
-/* ── Mock Data ── */
-const MOCK_BRANCHES: Branch[] = [
-  { id: 'br-1', name: 'Miami Sorting Center', code: 'MIA-002' },
-  { id: 'br-2', name: 'Seattle Distribution', code: 'SEA-003' },
-  { id: 'br-3', name: 'Chicago Satellite', code: 'CHI-004' },
-];
-
 /* ── Page ── */
 export default function ScanOutboundPage() {
   const [destination, setDestination] = useState('');
@@ -39,9 +33,15 @@ export default function ScanOutboundPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [dispatchModal, setDispatchModal] = useState(false);
   const [dispatched, setDispatched] = useState(false);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { inputRef.current?.focus(); }, [parcels]);
+  useEffect(() => {
+    inputRef.current?.focus();
+    apiGet<any>('/api/v1/hubs').then((res) => {
+      if (res.success && res.data) setBranches(res.data.map((b: any) => ({ id: b.id, name: b.name, code: b.code })));
+    }).catch(() => {});
+  }, []);
 
   const handleScan = async (tn: string) => {
     if (!tn.trim()) return;
@@ -102,7 +102,7 @@ export default function ScanOutboundPage() {
             <CheckCircle2 className="w-8 h-8 text-emerald-600" />
           </div>
           <h2 className="text-lg font-bold text-slate-900">Outbound Manifest Dispatched</h2>
-          <p className="text-sm text-slate-500 mt-1">{addedParcels.length} parcels dispatched to {MOCK_BRANCHES.find((b) => b.id === destination)?.name}</p>
+          <p className="text-sm text-slate-500 mt-1">{addedParcels.length} parcels dispatched to {branches.find((b) => b.id === destination)?.name}</p>
           <div className="mt-4 grid grid-cols-3 gap-4">
             <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
               <div className="text-lg font-bold text-slate-900">{addedParcels.length}</div>
@@ -147,7 +147,7 @@ export default function ScanOutboundPage() {
               <MapPin className="w-4 h-4 text-blue-600" /> Destination Hub
             </h3>
             <div className="space-y-2">
-              {MOCK_BRANCHES.map((branch) => (
+              {branches.map((branch) => (
                 <button
                   key={branch.id}
                   onClick={() => setDestination(branch.id)}
@@ -299,7 +299,7 @@ export default function ScanOutboundPage() {
           <div className="p-4 bg-blue-50 rounded border border-blue-200">
             <div className="text-xs font-bold text-blue-700 mb-1">Dispatch Details</div>
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div><span className="text-blue-500">Destination:</span> <span className="font-semibold">{MOCK_BRANCHES.find((b) => b.id === destination)?.name}</span></div>
+              <div><span className="text-blue-500">Destination:</span> <span className="font-semibold">{branches.find((b) => b.id === destination)?.name}</span></div>
               <div><span className="text-blue-500">Parcels:</span> <span className="font-semibold">{addedParcels.length}</span></div>
               <div><span className="text-blue-500">Total Weight:</span> <span className="font-semibold">{totalWeight.toFixed(1)} kg</span></div>
               <div><span className="text-blue-500">Total COD:</span> <span className="font-semibold">${totalCod.toFixed(2)}</span></div>

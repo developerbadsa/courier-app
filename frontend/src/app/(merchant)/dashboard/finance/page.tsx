@@ -34,34 +34,9 @@ interface Settlement {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Mock Data                                                           */
+/*  Default empty state (mock removed — data fetched from API)          */
 /* ------------------------------------------------------------------ */
-const MOCK_WALLET = {
-  balance: 8420.00,
-  collected: 24580.00,
-  fees: 1642.00,
-  pendingPayout: 12198.00,
-  totalPaid: 3778.00,
-  pendingClearance: 2340.00,
-};
-
-const MOCK_ENTRIES: LedgerEntry[] = [
-  { id: '1', type: 'COD_COLLECTED', amount: 64.50, direction: 'CREDIT', note: 'COD collected — Alexander Wright', trackingNumber: 'SHN-90214-US', createdAt: 'Today 2:15 PM' },
-  { id: '2', type: 'DELIVERY_CHARGE', amount: 5.00, direction: 'DEBIT', note: 'Shipping fee deducted', trackingNumber: 'SHN-90214-US', createdAt: 'Today 2:15 PM' },
-  { id: '3', type: 'COD_COLLECTED', amount: 120.00, direction: 'CREDIT', note: 'COD collected — Sophia Martinez', trackingNumber: 'SHN-90215-US', createdAt: 'Today 1:30 PM' },
-  { id: '4', type: 'DELIVERY_CHARGE', amount: 7.50, direction: 'DEBIT', note: 'Shipping fee deducted', trackingNumber: 'SHN-90215-US', createdAt: 'Today 1:30 PM' },
-  { id: '5', type: 'SETTLEMENT_PAYOUT', amount: 12198.00, direction: 'DEBIT', note: 'Weekly settlement payout', createdAt: 'Yesterday' },
-  { id: '6', type: 'COD_COLLECTED', amount: 215.00, direction: 'CREDIT', note: 'COD collected — Liam Davis', trackingNumber: 'SHN-90208-US', createdAt: 'Yesterday 4:00 PM' },
-  { id: '7', type: 'COD_COLLECTED', amount: 89.90, direction: 'CREDIT', note: 'COD collected — Emily Thornton', trackingNumber: 'SHN-90201-US', createdAt: 'Aug 18' },
-  { id: '8', type: 'DELIVERY_CHARGE', amount: 12.50, direction: 'DEBIT', note: 'Shipping fee — 3 parcels', trackingNumber: 'SHN-90200-US', createdAt: 'Aug 18' },
-];
-
-const MOCK_SETTLEMENTS: Settlement[] = [
-  { id: 'STL-042', periodStart: 'Aug 12', periodEnd: 'Aug 18', totalAmount: 12198.00, status: 'PAID', entryCount: 186, createdAt: 'Aug 19' },
-  { id: 'STL-041', periodStart: 'Aug 5', periodEnd: 'Aug 11', totalAmount: 9840.00, status: 'PAID', entryCount: 152, createdAt: 'Aug 12' },
-  { id: 'STL-040', periodStart: 'Jul 29', periodEnd: 'Aug 4', totalAmount: 11250.00, status: 'PAID', entryCount: 178, createdAt: 'Aug 5' },
-  { id: 'STL-043', periodStart: 'Aug 19', periodEnd: 'Aug 25', totalAmount: 2340.00, status: 'PENDING', entryCount: 24, createdAt: 'In Progress' },
-];
+const EMPTY_WALLET = { balance: 0, collected: 0, fees: 0, pendingPayout: 0, totalPaid: 0, pendingClearance: 0 };
 
 const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string }> = {
   COD_COLLECTED: { label: 'COD Collected', color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-200' },
@@ -78,9 +53,9 @@ import { apiGet, apiPost } from '@/lib/api';
 /* ------------------------------------------------------------------ */
 export default function FinancePage() {
   const [activeTab, setActiveTab] = useState('overview');
-  const [wallet, setWallet] = useState(MOCK_WALLET);
-  const [entries, setEntries] = useState<LedgerEntry[]>(MOCK_ENTRIES);
-  const [settlements, setSettlements] = useState<Settlement[]>(MOCK_SETTLEMENTS);
+  const [wallet, setWallet] = useState(EMPTY_WALLET);
+  const [entries, setEntries] = useState<LedgerEntry[]>([]);
+  const [settlements, setSettlements] = useState<Settlement[]>([]);
   const [loading, setLoading] = useState(true);
   const [payoutModal, setPayoutModal] = useState(false);
   const [payoutForm, setPayoutForm] = useState({ amount: '', method: 'bank_transfer', bankAccount: '', paypalEmail: '', notes: '' });
@@ -320,9 +295,9 @@ export default function FinancePage() {
             onChange={(e) => setPayoutForm({ ...payoutForm, amount: e.target.value })}
             leftIcon={<DollarSign className="w-4 h-4" />}
             min="10"
-            max={MOCK_WALLET.balance}
+            max={wallet.balance}
           />
-          {payoutForm.amount && parseFloat(payoutForm.amount) > MOCK_WALLET.balance && (
+          {payoutForm.amount && parseFloat(payoutForm.amount) > wallet.balance && (
             <p className="text-xs text-red-600 font-semibold -mt-3">Amount exceeds available balance</p>
           )}
 
