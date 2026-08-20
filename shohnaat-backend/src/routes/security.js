@@ -147,7 +147,13 @@ router.get('/dependencies', async (req, res, next) => {
         summary: parsed.metadata?.vulnerabilities || { total: 0 },
       },
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // GET /api/v1/security/backups — List all database backups
+
 router.get('/backups', async (req, res, next) => {
   try {
     const { listBackups } = require('../services/backupService');
