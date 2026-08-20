@@ -1,0 +1,70 @@
+services:
+  # ── PostgreSQL Database ──
+  db:
+    image: postgres:16-alpine
+    container_name: shohnaat-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-shohnaat}
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-shohnaat}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis Cache ──
+  redis:
+    image: redis:7-alpine
+    container_name: shohnaat-redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend API (Node.js) ──
+  backend:
+    build:
+      context: ./shohnaat-backend
+      dockerfile: Dockerfile
+    container_name: shohnaat-backend
+    restart: unless-stopped
+    ports:
+      - "5001:5000"
+    env_file:
+      - ./shohnaat-backend/.env
+    volumes:
+      - ./shohnaat-backend:/app
+      - /app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5000/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) })"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ── Frontend (Next.js) ──
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: shohnaat-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:5001}
+    depends_on:
+      - backend
+
+volumes:
+  pgdata:
