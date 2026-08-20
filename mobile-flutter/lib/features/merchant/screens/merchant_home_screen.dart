@@ -1,9 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/constants/api_constants.dart';
+import '../../../core/services/connectivity_service.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/status_badge_widget.dart';
@@ -23,10 +26,13 @@ class MerchantHomeScreen extends StatefulWidget {
 class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
   List<Map<String, dynamic>> _recentShipments = [];
   bool _isLoading = true;
+  bool _isFromCache = false;
   String? _error;
   int _totalShipments = 0;
   double _totalCod = 0;
   int _totalDelivered = 0;
+
+  static const String _cacheKey = 'merchant_shipments_cache';
 
   @override
   void initState() {
@@ -37,35 +43,82 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
   Future<void> _loadDashboard() async {
     setState(() { _isLoading = true; _error = null; });
 
+    final isOnline = context.read<ConnectivityService>().isOnline;
+
+    if (!isOnline) {
+      // Offline — serve from cache
+      await _loadFromCache();
+      return;
+    }
+
     try {
       final client = DioClient();
       final response = await client.get(ApiConstants.merchantShipments);
 
       if (response.data?['data'] is List) {
         final data = response.data['data'] as List;
+        final shipments = data.take(10).map((s) => {
+          'tracking': s['trackingNumber'] ?? '',
+          'recipient': s['consignee']?['name'] ?? 'Customer',
+          'city': s['deliveryAddressSnap']?['city'] ?? '',
+          'status': s['currentStatus'] ?? 'PENDING',
+          'cod': double.tryParse(s['codAmount']?.toString() ?? '0') ?? 0,
+          'id': s['id'] ?? '',
+        }).toList();
+
         setState(() {
-          _recentShipments = data.take(10).map((s) => {
-            'tracking': s['trackingNumber'] ?? '',
-            'recipient': s['consignee']?['name'] ?? 'Customer',
-            'city': s['deliveryAddressSnap']?['city'] ?? '',
-            'status': s['currentStatus'] ?? 'PENDING',
-            'cod': double.tryParse(s['codAmount']?.toString() ?? '0') ?? 0,
-            'id': s['id'] ?? '',
-          }).toList();
+          _recentShipments = shipments;
           _totalShipments = response.data?['pagination']?['total'] ?? data.length;
-          _totalCod = _recentShipments.fold(0.0, (sum, s) => sum + (s['cod'] as double));
-          _totalDelivered = _recentShipments.where((s) => s['status'] == 'DELIVERED').length;
+          _totalCod = shipments.fold(0.0, (sum, s) => sum + (s['cod'] as double));
+          _totalDelivered = shipments.where((s) => s['status'] == 'DELIVERED').length;
           _isLoading = false;
+          _isFromCache = false;
         });
+
+        // Cache for offline use
+        await _saveToCache(shipments, _totalShipments);
       } else {
         setState(() { _isLoading = false; });
       }
     } catch (e) {
-      setState(() {
-        _error = 'Failed to load shipments';
-        _isLoading = false;
-      });
+      // API failed — try cache
+      await _loadFromCache();
     }
+  }
+
+  Future<void> _loadFromCache() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(_cacheKey);
+      if (raw != null) {
+        final data = jsonDecode(raw) as Map<String, dynamic>;
+        final shipments = (data['shipments'] as List).cast<Map<String, dynamic>>();
+        setState(() {
+          _recentShipments = shipments;
+          _totalShipments = data['total'] ?? shipments.length;
+          _totalCod = shipments.fold(0.0, (sum, s) => sum + (s['cod'] as double));
+          _totalDelivered = shipments.where((s) => s['status'] == 'DELIVERED').length;
+          _isLoading = false;
+          _isFromCache = true;
+        });
+        return;
+      }
+    } catch (_) {}
+    setState(() {
+      _error = 'No internet. Pull down to retry.';
+      _isLoading = false;
+    });
+  }
+
+  Future<void> _saveToCache(List<Map<String, dynamic>> shipments, int total) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_cacheKey, jsonEncode({
+        'shipments': shipments,
+        'total': total,
+        'cachedAt': DateTime.now().toIso8601String(),
+      }));
+    } catch (_) {}
   }
 
   void _onLogout() {
@@ -194,6 +247,24 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
             const SizedBox(height: 20),
 
             // Recent Shipments
+            if (_isFromCache) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                margin: const EdgeInsets.only(bottom: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEFF6FF),
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: const [
+                    Icon(LucideIcons.database, size: 12, color: Color(0xFF3B82F6)),
+                    SizedBox(width: 6),
+                    Text('Cached data — refresh when online', style: TextStyle(color: Color(0xFF1E40AF), fontSize: 11)),
+                  ],
+                ),
+              ),
+            ],
             const Text('Recent Shipments', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
             const SizedBox(height: 8),
 

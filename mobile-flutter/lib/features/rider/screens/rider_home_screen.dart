@@ -393,6 +393,29 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
             const SizedBox(height: 12),
           ],
 
+          // Cached Data Indicator
+          if (state.isFromCache) ...[
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFFEFF6FF),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.3)),
+              ),
+              child: Row(
+                children: const [
+                  Icon(LucideIcons.database, size: 14, color: Color(0xFF3B82F6)),
+                  SizedBox(width: 8),
+                  Text(
+                    'Showing cached tasks — will refresh when online',
+                    style: TextStyle(color: Color(0xFF1E40AF), fontSize: 11, fontWeight: FontWeight.w500),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+
           // Metric Summary Pills & AI Route Optimizer Button
           Row(
             children: [

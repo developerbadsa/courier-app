@@ -17,12 +17,14 @@ class RunsheetLoaded extends RunsheetState {
   final double totalCodCollected;
   final int completedCount;
   final int pendingCount;
+  final bool isFromCache;
 
   const RunsheetLoaded({
     required this.tasks,
     required this.totalCodCollected,
     required this.completedCount,
     required this.pendingCount,
+    this.isFromCache = false,
   });
 
   List<DeliveryTaskModel> get activeTasks =>
