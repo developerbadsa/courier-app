@@ -462,4 +462,71 @@ router.post('/report-failure', async (req, res, next) => {
   }
 });
 
+// POST /api/v1/riders/optimize-route — AI route optimization
+router.post('/optimize-route', async (req, res, next) => {
+  try {
+    const prisma = req.app.locals.prisma;
+    const { hubLat, hubLng } = req.body;
+
+    if (!hubLat || !hubLng) {
+      return res.status(400).json({ success: false, message: 'Hub coordinates (hubLat, hubLng) required' });
+    }
+
+    // Get rider's active assignments
+    const rider = await prisma.rider.findFirst({
+      where: { userId: req.user.id, deletedAt: null },
+    });
+
+    if (!rider) {
+      return res.status(404).json({ success: false, message: 'Rider profile not found' });
+    }
+
+    const assignments = await prisma.assignment.findMany({
+      where: {
+        riderId: rider.id,
+        status: { in: ['PICKED_UP', 'IN_TRANSIT'] },
+        shipment: { status: { in: ['IN_TRANSIT', 'OUT_FOR_DELIVERY'] } },
+      },
+      include: {
+        shipment: {
+          select: {
+            id: true,
+            trackingNumber: true,
+            deliveryLat: true,
+            deliveryLng: true,
+            priority: true,
+          },
+        },
+      },
+    });
+
+    const stops = assignments
+      .filter((a) => a.shipment.deliveryLat && a.shipment.deliveryLng)
+      .map((a) => ({
+        shipmentId: a.shipment.id,
+        trackingNumber: a.shipment.trackingNumber,
+        lat: parseFloat(a.shipment.deliveryLat),
+        lng: parseFloat(a.shipment.deliveryLng),
+        priority: a.shipment.priority || 'STANDARD',
+      }));
+
+    if (stops.length === 0) {
+      return res.json({
+        success: true,
+        data: { optimized: [], totalDistanceKm: 0, estimatedDriveMinutes: 0, saved: { distanceKm: 0, minutes: 0 } },
+      });
+    }
+
+    const { optimizeRoute } = require('../services/routeOptimizer');
+    const result = optimizeRoute({
+      hub: { lat: parseFloat(hubLat), lng: parseFloat(hubLng) },
+      stops,
+    });
+
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;

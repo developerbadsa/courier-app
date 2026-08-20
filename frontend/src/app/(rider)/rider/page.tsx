@@ -17,9 +17,16 @@ import {
   Clock,
   History,
   Wallet,
+  Sparkles,
+  Wifi,
+  WifiOff,
+  ScanLine,
+  Route,
 } from 'lucide-react';
 import { StatusBadge, Button, Card, Modal, Badge } from '@/components/ui';
 import { apiGet, apiPost, showToast } from '@/lib/api';
+import { initOfflineSync, isOnline, enqueueAction, getPendingCount } from '@/lib/offlineQueue';
+import CameraBarcodeScanner from '@/components/scanner/CameraBarcodeScanner';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                               */
@@ -60,15 +67,16 @@ const FAILED_REASONS = [
 /*  Page                                                                */
 /* ------------------------------------------------------------------ */
 export default function RiderPage() {
-  // Register service worker for PWA
+  // Register service worker + offline sync
   React.useEffect(() => {
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js').catch(() => {});
     }
-    // Request notification permission
     if ('Notification' in window && Notification.permission === 'default') {
       Notification.requestPermission().catch(() => {});
     }
+    // Initialize offline sync
+    initOfflineSync();
   }, []);
 
   const [isOnDuty, setIsOnDuty] = useState(true);
@@ -119,40 +127,124 @@ export default function RiderPage() {
   const [codModal, setCodModal] = useState<{ open: boolean; taskId: string; amount: number }>({ open: false, taskId: '', amount: 0 });
   const [codCollected, setCodCollected] = useState('');
 
+  // Sprint 16: AI Route Optimization
+  const [routeResult, setRouteResult] = useState<any>(null);
+  const [optimizing, setOptimizing] = useState(false);
+
+  // Sprint 16: Offline Mode
+  const [offlinePendingCount, setOfflinePendingCount] = useState(0);
+  const [online, setOnline] = useState(true);
+
+  // Sprint 16: Camera Scanner
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const [scannerTaskId, setScannerTaskId] = useState('');
+
   const pendingCount = tasks.filter((t) => t.status !== 'DELIVERED' && t.status !== 'FAILED').length;
   const totalCod = tasks.filter((t) => t.type === 'DELIVERY').reduce((s, t) => s + t.cod, 0);
   const collectedCod = codHistory.reduce((s, e) => s + e.amount, 0);
 
-  /* ── Handle Delivery Complete ── */
-  const handleDeliver = (id: string, cod: number) => {
+  // Track online/offline status
+  React.useEffect(() => {
+    const checkOnline = () => {
+      setOnline(navigator.onLine);
+      getPendingCount().then(setOfflinePendingCount);
+    };
+    window.addEventListener('online', checkOnline);
+    window.addEventListener('offline', checkOnline);
+    checkOnline();
+    return () => {
+      window.removeEventListener('online', checkOnline);
+      window.removeEventListener('offline', checkOnline);
+    };
+  }, []);
+
+  /* ── AI Route Optimization ── */
+  const handleOptimizeRoute = async () => {
+    setOptimizing(true);
+    try {
+      const res = await apiPost<any>('/api/v1/riders/optimize-route', { hubLat: 23.8103, hubLng: 90.4125 });
+      if (res.success && res.data) {
+        setRouteResult(res.data);
+        showToast('success', `Route optimized: Saves ${res.data.saved?.minutes || 0} mins & ${res.data.saved?.distanceKm || 0} km`);
+      } else {
+        showToast('error', res.message || 'Optimization failed');
+      }
+    } catch {
+      showToast('error', 'Failed to optimize route — check connection');
+    } finally {
+      setOptimizing(false);
+    }
+  };
+
+  const openGoogleMapsRoute = () => {
+    if (!routeResult?.optimized?.length) return;
+    const origin = '23.8103,90.4125'; // Hub
+    const waypoints = routeResult.optimized.map((s: any) => `${s.lat},${s.lng}`).join('|');
+    const url = `https://www.google.com/maps/dir/${origin}/${waypoints.replace(/\|/g, '/')}?travelmode=driving`;
+    window.open(url, '_blank');
+  };
+
+  /* ── Handle Delivery Complete (with offline support) ── */
+  const handleDeliver = async (id: string, cod: number) => {
     if (cod > 0) {
       setCodModal({ open: true, taskId: id, amount: cod });
     } else {
       setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: 'DELIVERED' } : t)));
-      apiPost('/api/v1/riders/complete-delivery', { shipmentId: id, codCollected: 0 }).catch(() => {});
+      if (isOnline()) {
+        apiPost('/api/v1/riders/complete-delivery', { shipmentId: id, codCollected: 0 }).catch(() => {});
+      } else {
+        await enqueueAction('DELIVERED', id, { codCollected: 0 });
+        const count = await getPendingCount();
+        setOfflinePendingCount(count);
+      }
     }
   };
 
-  const confirmCOD = () => {
+  const confirmCOD = async () => {
     setTasks((prev) => prev.map((t) => (t.id === codModal.taskId ? { ...t, status: 'DELIVERED' } : t)));
-    apiPost('/api/v1/riders/complete-delivery', { shipmentId: codModal.taskId, codCollected: codModal.amount, otpVerified: true }).catch(() => {});
+    if (isOnline()) {
+      apiPost('/api/v1/riders/complete-delivery', { shipmentId: codModal.taskId, codCollected: codModal.amount, otpVerified: true }).catch(() => {});
+    } else {
+      await enqueueAction('CASH_COLLECTED', codModal.taskId, { amount: codModal.amount });
+      await enqueueAction('DELIVERED', codModal.taskId, { otpVerified: true });
+      const count = await getPendingCount();
+      setOfflinePendingCount(count);
+    }
     setCodModal({ open: false, taskId: '', amount: 0 });
     setCodCollected('');
   };
 
-  /* ── Handle Failed Delivery ── */
+  /* ── Handle Failed Delivery (with offline support) ── */
   const handleFailed = (id: string) => {
     setFailedModal({ open: true, taskId: id });
     setSelectedReason('');
     setFailedNotes('');
   };
 
-  const confirmFailed = () => {
+  const confirmFailed = async () => {
     setTasks((prev) => prev.map((t) => (t.id === failedModal.taskId ? { ...t, status: 'FAILED' } : t)));
-    apiPost('/api/v1/riders/report-failure', { shipmentId: failedModal.taskId, reasonCode: selectedReason, notes: failedNotes }).catch(() => {});
+    if (isOnline()) {
+      apiPost('/api/v1/riders/report-failure', { shipmentId: failedModal.taskId, reasonCode: selectedReason, notes: failedNotes }).catch(() => {});
+    } else {
+      await enqueueAction('FAILED', failedModal.taskId, { reasonCode: selectedReason, notes: failedNotes });
+      const count = await getPendingCount();
+      setOfflinePendingCount(count);
+    }
     setFailedModal({ open: false, taskId: '' });
     setSelectedReason('');
     setFailedNotes('');
+  };
+
+  /* ── Camera Scanner Handlers ── */
+  const handleScannerScan = (code: string) => {
+    // Find task matching scanned code
+    const task = tasks.find((t) => t.id === code || t.id.includes(code));
+    if (task) {
+      setScannerTaskId(code);
+      showToast('success', `Scanned: ${code}`);
+    } else {
+      showToast('warning', `No task found for: ${code}`);
+    }
   };
 
   return (
@@ -184,6 +276,29 @@ export default function RiderPage() {
             <span>{isOnDuty ? 'ON DUTY' : 'OFF DUTY'}</span>
           </button>
         </header>
+
+        {/* Sprint 16: Offline Mode Banner */}
+        {!online && (
+          <div className="px-3 py-2 bg-amber-500 text-white flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <WifiOff className="w-4 h-4" />
+              <span className="text-xs font-bold">Offline Mode</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Badge variant="amber" size="sm" className="bg-amber-600 text-white border-amber-400">
+                {offlinePendingCount} queued
+              </Badge>
+            </div>
+          </div>
+        )}
+        {online && offlinePendingCount > 0 && (
+          <div className="px-3 py-2 bg-blue-500 text-white flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Wifi className="w-4 h-4" />
+              <span className="text-xs font-bold">Syncing {offlinePendingCount} offline action{offlinePendingCount !== 1 ? 's' : ''}...</span>
+            </div>
+          </div>
+        )}
 
         {/* Quick Stats Bar */}
         <div className="grid grid-cols-3 gap-2 p-3 bg-white border-b border-slate-200">
@@ -233,6 +348,65 @@ export default function RiderPage() {
                 <Badge variant="blue" size="sm">{pendingCount} Pending</Badge>
               </div>
 
+              {/* Sprint 16: AI Route Optimizer */}
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="flex-1 h-9 text-[11px] font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                  onClick={handleOptimizeRoute}
+                  isLoading={optimizing}
+                  leftIcon={<Sparkles className="w-3.5 h-3.5" />}
+                >
+                  {optimizing ? 'Optimizing...' : 'AI Optimize Route'}
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-9 text-[11px] font-semibold"
+                  onClick={() => { setScannerOpen(true); setScannerTaskId(''); }}
+                  leftIcon={<ScanLine className="w-3.5 h-3.5" />}
+                >
+                  Scan
+                </Button>
+              </div>
+
+              {/* Route Optimization Result */}
+              {routeResult && (
+                <Card className="p-3 bg-blue-50 border-blue-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <Route className="w-3.5 h-3.5 text-blue-600" />
+                      <span className="text-[11px] font-bold text-blue-800">Optimized Route</span>
+                    </div>
+                    <span className="text-[10px] text-blue-600 font-mono">
+                      {routeResult.totalDistanceKm} km &middot; ~{routeResult.estimatedDriveMinutes} min
+                    </span>
+                  </div>
+                  {routeResult.saved && routeResult.saved.minutes > 0 && (
+                    <div className="text-[10px] text-emerald-700 font-semibold mb-2">
+                      Saves {routeResult.saved.minutes} mins & {routeResult.saved.distanceKm} km vs unoptimized
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    {routeResult.optimized?.map((stop: any) => (
+                      <div key={stop.shipmentId} className="flex items-center gap-2 text-[11px]">
+                        <span className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0">
+                          {stop.sequence}
+                        </span>
+                        <span className="font-mono text-slate-700 truncate">{stop.trackingNumber}</span>
+                        {stop.segmentDistanceKm > 0 && (
+                          <span className="text-slate-400 ml-auto shrink-0">{stop.segmentDistanceKm} km</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <Button variant="outline" size="sm" className="mt-2 h-7 text-[10px] w-full" onClick={openGoogleMapsRoute} leftIcon={<Navigation className="w-3 h-3" />}>
+                    Open Full Route in Google Maps
+                  </Button>
+                </Card>
+              )}
+
               {tasks.map((task) => (
                 <Card key={task.id} className="p-4 space-y-3.5 border-slate-200">
                   <div className="flex items-center justify-between">
@@ -279,7 +453,7 @@ export default function RiderPage() {
                       <Button variant="outline" size="sm" onClick={() => handleFailed(task.id)} className="h-9 text-[11px] font-semibold text-red-600 border-red-200 hover:bg-red-50" leftIcon={<XCircle className="w-3.5 h-3.5" />}>
                         Failed
                       </Button>
-                      <Button variant="ghost" size="sm" className="h-9 text-[11px] font-semibold text-slate-500" leftIcon={<Camera className="w-3.5 h-3.5" />}>
+                      <Button variant="ghost" size="sm" className="h-9 text-[11px] font-semibold text-slate-500" leftIcon={<Camera className="w-3.5 h-3.5" />} onClick={() => { setScannerOpen(true); setScannerTaskId(task.id); }}>
                         POD
                       </Button>
                     </div>
@@ -479,6 +653,37 @@ export default function RiderPage() {
             </p>
           </div>
         </Modal>
+
+        {/* ── Sprint 16: Camera Barcode Scanner Modal ── */}
+        {scannerOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+            <div className="w-full max-w-md bg-white rounded overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-slate-200">
+                <div className="flex items-center gap-2">
+                  <ScanLine className="w-4 h-4 text-blue-600" />
+                  <span className="text-sm font-bold text-slate-900">Barcode Scanner</span>
+                </div>
+                <button onClick={() => setScannerOpen(false)} className="p-1 hover:bg-slate-100 rounded">
+                  <XCircle className="w-4 h-4 text-slate-400" />
+                </button>
+              </div>
+              <div className="h-72">
+                <React.Suspense fallback={<div className="h-full flex items-center justify-center bg-slate-100"><span className="text-xs text-slate-400">Loading camera...</span></div>}>
+                  <CameraBarcodeScanner
+                    onScan={handleScannerScan}
+                    onClose={() => setScannerOpen(false)}
+                    continuous={true}
+                  />
+                </React.Suspense>
+              </div>
+              <div className="px-4 py-2.5 border-t border-slate-200 bg-slate-50">
+                <p className="text-[10px] text-slate-500 text-center">
+                  Point camera at parcel barcode or QR code. Scanner beeps on detection.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

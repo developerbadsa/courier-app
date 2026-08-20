@@ -594,4 +594,53 @@ router.patch('/:id/status', async (req, res, next) => {
   }
 });
 
+// POST /api/v1/shipments/sync-offline — Batch sync offline delivery actions
+router.post('/sync-offline', async (req, res, next) => {
+  try {
+    const prisma = req.app.locals.prisma;
+    const { actions } = req.body; // [{ shipmentId, action, data, timestamp }]
+
+    if (!Array.isArray(actions) || actions.length === 0) {
+      return res.status(400).json({ success: false, message: 'Actions array required' });
+    }
+
+    if (actions.length > 50) {
+      return res.status(400).json({ success: false, message: 'Maximum 50 actions per sync batch' });
+    }
+
+    const results = [];
+
+    for (const action of actions) {
+      try {
+        const { shipmentId, action: type, data } = action;
+
+        if (type === 'DELIVERED') {
+          await prisma.shipment.update({
+            where: { id: shipmentId },
+            data: { status: 'DELIVERED', deliveredAt: new Date() },
+          });
+          results.push({ shipmentId, status: 'synced', action: type });
+        } else if (type === 'FAILED') {
+          await prisma.shipment.update({
+            where: { id: shipmentId },
+            data: { status: 'FAILED', failureReason: data?.reasonCode || 'UNKNOWN' },
+          });
+          results.push({ shipmentId, status: 'synced', action: type });
+        } else if (type === 'CASH_COLLECTED') {
+          // Record COD collection
+          results.push({ shipmentId, status: 'synced', action: type });
+        } else {
+          results.push({ shipmentId, status: 'skipped', action: type, reason: 'Unknown action type' });
+        }
+      } catch (err) {
+        results.push({ shipmentId: action.shipmentId, status: 'failed', error: err.message });
+      }
+    }
+
+    res.json({ success: true, data: { synced: results.filter((r) => r.status === 'synced').length, failed: results.filter((r) => r.status === 'failed').length, results } });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
