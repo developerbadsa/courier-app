@@ -84,9 +84,64 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
         foregroundColor: Colors.white,
         title: const Text('Merchant Dashboard', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         actions: [
-          IconButton(
-            icon: const Icon(LucideIcons.logOut, size: 18),
-            onPressed: _onLogout,
+          PopupMenuButton<String>(
+            icon: const Icon(LucideIcons.moreVertical, color: Colors.white, size: 20),
+            onSelected: (value) {
+              if (value == 'privacy') {
+                AppComplianceDialogs.showPrivacyPolicy(context);
+              } else if (value == 'delete_account') {
+                AppComplianceDialogs.showAccountDeletionRequest(
+                  context,
+                  onConfirmDelete: () {
+                    context.read<AuthCubit>().logout();
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Account deletion request submitted.'),
+                        backgroundColor: AppColors.danger,
+                      ),
+                    );
+                  },
+                );
+              } else if (value == 'logout') {
+                _onLogout();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'privacy',
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.shieldCheck, size: 16, color: AppColors.primary),
+                    SizedBox(width: 8),
+                    Text('Privacy Policy'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'delete_account',
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.trash2, size: 16, color: AppColors.danger),
+                    SizedBox(width: 8),
+                    Text('Delete Account', style: TextStyle(color: AppColors.danger)),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.logOut, size: 16, color: AppColors.textSecondary),
+                    SizedBox(width: 8),
+                    Text('Log Out'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),

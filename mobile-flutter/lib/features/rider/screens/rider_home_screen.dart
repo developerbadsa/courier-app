@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/connectivity_service.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/services/offline_sync_service.dart';
+import '../../../core/utils/error_handler.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/status_badge_widget.dart';
@@ -28,13 +31,40 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   bool _isGpsActive = false;
   int _offlineQueueCount = 0;
   final LocationService _locationService = LocationService();
-  final OfflineSyncService _offlineSyncService = OfflineSyncService();
+  late final OfflineSyncService _offlineSyncService;
+  late final ConnectivityService _connectivityService;
+  bool _isOnline = true;
+  StreamSubscription? _connectivitySub;
 
   @override
   void initState() {
     super.initState();
+    _connectivityService = context.read<ConnectivityService>();
+    _offlineSyncService = OfflineSyncService(connectivity: _connectivityService);
+    _isOnline = _connectivityService.isOnline;
+
+    // Listen for connectivity changes
+    _connectivitySub = _connectivityService.onConnectivityChanged.listen((isOnline) {
+      if (mounted) {
+        setState(() => _isOnline = isOnline);
+        if (isOnline) {
+          _syncOfflineQueue();
+        }
+      }
+    });
+
+    // Start auto-sync for offline queue
+    _offlineSyncService.startAutoSync();
+
     context.read<RunsheetCubit>().fetchRunsheet();
     _checkOfflineQueue();
+  }
+
+  @override
+  void dispose() {
+    _connectivitySub?.cancel();
+    _offlineSyncService.dispose();
+    super.dispose();
   }
 
   void _checkOfflineQueue() async {
@@ -77,13 +107,13 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     }
   }
 
-  void _syncOfflineNow() async {
+  void _syncOfflineQueue() async {
     final synced = await _offlineSyncService.syncPendingQueue();
     await _checkOfflineQueue();
-    if (mounted) {
+    if (mounted && synced > 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Database Sync Complete: $synced deliveries synced to server.'),
+          content: Text('$synced offline actions synced to server.'),
           backgroundColor: AppColors.success,
         ),
       );
@@ -130,9 +160,64 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(LucideIcons.logOut, color: AppColors.textMuted, size: 18),
-            onPressed: _onLogout,
+          PopupMenuButton<String>(
+            icon: const Icon(LucideIcons.moreVertical, color: Colors.white, size: 20),
+            onSelected: (value) {
+              if (value == 'privacy') {
+                AppComplianceDialogs.showPrivacyPolicy(context);
+              } else if (value == 'delete_account') {
+                AppComplianceDialogs.showAccountDeletionRequest(
+                  context,
+                  onConfirmDelete: () {
+                    context.read<AuthCubit>().logout();
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Account deletion request submitted.'),
+                        backgroundColor: AppColors.danger,
+                      ),
+                    );
+                  },
+                );
+              } else if (value == 'logout') {
+                _onLogout();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'privacy',
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.shieldCheck, size: 16, color: AppColors.primary),
+                    SizedBox(width: 8),
+                    Text('Privacy Policy'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'delete_account',
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.trash2, size: 16, color: AppColors.danger),
+                    SizedBox(width: 8),
+                    Text('Delete Account', style: TextStyle(color: AppColors.danger)),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(LucideIcons.logOut, size: 16, color: AppColors.textSecondary),
+                    SizedBox(width: 8),
+                    Text('Log Out'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -256,14 +341,37 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           ),
           const SizedBox(height: 12),
 
-          // Offline Queue Indicator Banner (if pending items exist)
-          if (_offlineQueueCount > 0) ...[
+          // Offline/Online Status Banner
+          if (!_isOnline) ...[
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.warningLight,
+                color: const Color(0xFFFEF2F2),
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.warning.withOpacity(0.4)),
+                border: Border.all(color: const Color(0xFFDC2626).withOpacity(0.3)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(LucideIcons.wifiOff, size: 18, color: Color(0xFFDC2626)),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Offline Mode — Actions queued for auto-sync',
+                      style: TextStyle(color: Color(0xFF991B1B), fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+          ]
+          else if (_offlineQueueCount > 0) ...[
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.3)),
               ),
               child: Row(
                 children: [
@@ -271,13 +379,13 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
                   const SizedBox(width: 10),
                   Expanded(
                     child: Text(
-                      '$_offlineQueueCount offline actions stored. Ready to sync.',
+                      '$_offlineQueueCount actions pending sync',
                       style: const TextStyle(color: Color(0xFF92400E), fontSize: 12, fontWeight: FontWeight.w600),
                     ),
                   ),
                   TextButton(
-                    onPressed: _syncOfflineNow,
-                    child: const Text('SYNC DB NOW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11)),
+                    onPressed: _syncOfflineQueue,
+                    child: const Text('SYNC NOW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFFB45309))),
                   ),
                 ],
               ),
