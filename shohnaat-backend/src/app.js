@@ -133,6 +133,16 @@ const start = async () => {
   }
 };
 
+// Global safety traps to prevent process crashes on edge-case async errors
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection caught:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception caught:', error.message, error.stack);
+});
+
 start();
 
 module.exports = app;
+

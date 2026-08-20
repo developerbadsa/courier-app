@@ -7,9 +7,12 @@
 > **Deployment:** Multi-Container Docker Environment on Dedicated VPS
 > **Live Domain:** [https://shohnaat.rahimbadsa.me](https://shohnaat.rahimbadsa.me)
 > **API Health:** [https://api-shohnaat.rahimbadsa.me/health](https://api-shohnaat.rahimbadsa.me/health)
+> **Security Master Plan:** [`SECURITY_AND_HARDENING_MASTER_PLAN.md`](./SECURITY_AND_HARDENING_MASTER_PLAN.md)
+> **Microservices & Resilience Plan:** [`ENTERPRISE_MICROSERVICES_AND_RESILIENCE_PLAN.md`](./ENTERPRISE_MICROSERVICES_AND_RESILIENCE_PLAN.md)
 > **Project Status:** **🎉 100% COMPLETE**
 
 ---
+
 
 ## 📊 1. Overall Progress Summary
 
