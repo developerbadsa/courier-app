@@ -67,7 +67,7 @@ export default function RatesPage() {
       key: 'name', header: 'Rate Card', sortable: true, accessor: (r) => r.name,
       render: (row) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+          <div className="w-8 h-8 rounded bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
             <DollarSign className="w-4 h-4" />
           </div>
           <div>
@@ -84,9 +84,9 @@ export default function RatesPage() {
       key: 'actions', header: '', className: 'text-right', headerClassName: 'text-right',
       render: (row) => (
         <div className="flex items-center justify-end gap-1">
-          <button onClick={(e) => { e.stopPropagation(); setActiveCard(activeCard === row.id ? null : row.id); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
-          <button onClick={(e) => { e.stopPropagation(); const dupe = { ...row, id: String(Date.now()), name: row.name + ' (Copy)', merchantCount: 0, isDefault: false }; setCards((prev) => [...prev, dupe]); }} className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg"><Copy className="w-3.5 h-3.5" /></button>
-          <button onClick={(e) => { e.stopPropagation(); setCards((prev) => prev.filter((c) => c.id !== row.id)); }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+          <button onClick={(e) => { e.stopPropagation(); setActiveCard(activeCard === row.id ? null : row.id); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"><Edit2 className="w-3.5 h-3.5" /></button>
+          <button onClick={(e) => { e.stopPropagation(); const dupe = { ...row, id: String(Date.now()), name: row.name + ' (Copy)', merchantCount: 0, isDefault: false }; setCards((prev) => [...prev, dupe]); }} className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded"><Copy className="w-3.5 h-3.5" /></button>
+          <button onClick={(e) => { e.stopPropagation(); setCards((prev) => prev.filter((c) => c.id !== row.id)); }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-3.5 h-3.5" /></button>
         </div>
       ),
     },
@@ -189,7 +189,7 @@ export default function RatesPage() {
           <Input label="Zone Name" placeholder="e.g. Metro Austin" value={ruleForm.zone} onChange={(e) => setRuleForm({ ...ruleForm, zone: e.target.value })} />
           <div>
             <label className="block text-[13px] font-semibold text-slate-700 mb-1.5">Service Type</label>
-            <select value={ruleForm.service} onChange={(e) => setRuleForm({ ...ruleForm, service: e.target.value })} className="w-full h-[42px] px-3.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-blue-600">
+            <select value={ruleForm.service} onChange={(e) => setRuleForm({ ...ruleForm, service: e.target.value })} className="w-full h-[42px] px-3.5 text-sm bg-white border border-slate-200 rounded text-slate-900 focus:outline-none focus:border-blue-600">
               <option value="STANDARD">Standard</option>
               <option value="EXPRESS">Express</option>
               <option value="ECONOMY">Economy</option>

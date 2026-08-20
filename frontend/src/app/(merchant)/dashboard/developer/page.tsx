@@ -140,21 +140,21 @@ export default function DeveloperPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <Card className="p-5">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600"><Key className="w-4 h-4" /></div>
+                <div className="w-9 h-9 rounded bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600"><Key className="w-4 h-4" /></div>
                 <div><div className="text-sm font-bold text-slate-900">API Keys</div><div className="text-[11px] text-slate-500">{keys.length} keys active</div></div>
               </div>
               <Button variant="outline" size="sm" className="w-full" onClick={() => setActiveTab('keys')}>Manage Keys</Button>
             </Card>
             <Card className="p-5">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600"><Globe className="w-4 h-4" /></div>
+                <div className="w-9 h-9 rounded bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600"><Globe className="w-4 h-4" /></div>
                 <div><div className="text-sm font-bold text-slate-900">Webhooks</div><div className="text-[11px] text-slate-500">{MOCK_WEBHOOKS.length} endpoints</div></div>
               </div>
               <Button variant="outline" size="sm" className="w-full" onClick={() => setActiveTab('webhooks')}>Manage Webhooks</Button>
             </Card>
             <Card className="p-5">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-9 h-9 rounded-lg bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600"><Book className="w-4 h-4" /></div>
+                <div className="w-9 h-9 rounded bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600"><Book className="w-4 h-4" /></div>
                 <div><div className="text-sm font-bold text-slate-900">API Documentation</div><div className="text-[11px] text-slate-500">Interactive docs & snippets</div></div>
               </div>
               <Button variant="outline" size="sm" className="w-full" onClick={() => setActiveTab('docs')}>View Docs</Button>
@@ -166,13 +166,13 @@ export default function DeveloperPage() {
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2"><Code className="w-4 h-4 text-blue-600" /> Quick Start</h3>
               <div className="flex gap-1">
-                <button onClick={() => setSnippetTab('curl')} className={`px-3 py-1 text-[11px] font-semibold rounded-lg ${snippetTab === 'curl' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-slate-500 hover:bg-slate-50'}`}>cURL</button>
-                <button onClick={() => setSnippetTab('node')} className={`px-3 py-1 text-[11px] font-semibold rounded-lg ${snippetTab === 'node' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-slate-500 hover:bg-slate-50'}`}>Node.js</button>
+                <button onClick={() => setSnippetTab('curl')} className={`px-3 py-1 text-[11px] font-semibold rounded ${snippetTab === 'curl' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-slate-500 hover:bg-slate-50'}`}>cURL</button>
+                <button onClick={() => setSnippetTab('node')} className={`px-3 py-1 text-[11px] font-semibold rounded ${snippetTab === 'node' ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-slate-500 hover:bg-slate-50'}`}>Node.js</button>
               </div>
             </div>
             <div className="relative">
-              <pre className="bg-[#0F172A] text-slate-300 p-4 rounded-xl text-[11px] font-mono overflow-x-auto max-h-48">{snippetTab === 'curl' ? CURL_SNIPPET : NODE_SNIPPET}</pre>
-              <button onClick={() => handleCopy(snippetTab === 'curl' ? CURL_SNIPPET : NODE_SNIPPET, 'snippet')} className="absolute top-2 right-2 p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg">
+              <pre className="bg-[#0F172A] text-slate-300 p-4 rounded text-[11px] font-mono overflow-x-auto max-h-48">{snippetTab === 'curl' ? CURL_SNIPPET : NODE_SNIPPET}</pre>
+              <button onClick={() => handleCopy(snippetTab === 'curl' ? CURL_SNIPPET : NODE_SNIPPET, 'snippet')} className="absolute top-2 right-2 p-1.5 text-slate-400 hover:text-white hover:bg-slate-700 rounded">
                 {copiedKey === 'snippet' ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               </button>
             </div>
@@ -191,7 +191,7 @@ export default function DeveloperPage() {
             {keys.map((key) => (
               <Card key={key.id} className="p-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${key.type === 'live' ? 'bg-amber-50 border border-amber-100 text-amber-600' : 'bg-slate-100 border border-slate-200 text-slate-500'}`}>
+                  <div className={`w-9 h-9 rounded flex items-center justify-center ${key.type === 'live' ? 'bg-amber-50 border border-amber-100 text-amber-600' : 'bg-slate-100 border border-slate-200 text-slate-500'}`}>
                     <Key className="w-4 h-4" />
                   </div>
                   <div>
@@ -237,7 +237,7 @@ export default function DeveloperPage() {
             <Card key={wh.id} className="p-4">
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600"><Globe className="w-4 h-4" /></div>
+                  <div className="w-9 h-9 rounded bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600"><Globe className="w-4 h-4" /></div>
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-slate-900 font-mono">{wh.url}</span>
@@ -262,7 +262,7 @@ export default function DeveloperPage() {
           <h3 className="text-sm font-bold text-slate-900 mt-6">Recent Deliveries</h3>
           <div className="space-y-2">
             {MOCK_DELIVERIES.map((del) => (
-              <div key={del.id} className={`flex items-center gap-3 p-3 rounded-xl border ${STATUS_COLORS[del.status] || 'bg-slate-50 border-slate-200'}`}>
+              <div key={del.id} className={`flex items-center gap-3 p-3 rounded border ${STATUS_COLORS[del.status] || 'bg-slate-50 border-slate-200'}`}>
                 <div className="shrink-0">
                   {del.status === 'delivered' ? <CheckCircle2 className="w-4 h-4" /> :
                    del.status === 'failed' ? <XCircle className="w-4 h-4" /> :
@@ -294,7 +294,7 @@ export default function DeveloperPage() {
           <Card className="p-5">
             <h3 className="text-sm font-bold text-slate-900 mb-2">Authentication</h3>
             <p className="text-xs text-slate-600 mb-3">Include your API key in the Authorization header:</p>
-            <div className="bg-[#0F172A] text-slate-300 p-3 rounded-lg text-[11px] font-mono">
+            <div className="bg-[#0F172A] text-slate-300 p-3 rounded text-[11px] font-mono">
               Authorization: Bearer shn_live_your_key_here
             </div>
           </Card>
@@ -310,7 +310,7 @@ export default function DeveloperPage() {
                 { method: 'POST', path: '/api/v1/addresses', desc: 'Create address', color: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
                 { method: 'GET', path: '/api/v1/addresses', desc: 'List addresses', color: 'bg-blue-50 text-blue-700 border-blue-200' },
               ].map((ep, i) => (
-                <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
+                <div key={i} className="flex items-center gap-3 p-3 bg-slate-50 rounded border border-slate-200">
                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${ep.color}`}>{ep.method}</span>
                   <code className="text-xs font-mono font-semibold text-slate-800">{ep.path}</code>
                   <span className="text-[11px] text-slate-500 ml-auto">{ep.desc}</span>
@@ -322,7 +322,7 @@ export default function DeveloperPage() {
           <Card className="p-5">
             <h3 className="text-sm font-bold text-slate-900 mb-2">Webhook Signature Verification</h3>
             <p className="text-xs text-slate-600 mb-3">Verify webhook authenticity using HMAC SHA256:</p>
-            <pre className="bg-[#0F172A] text-slate-300 p-4 rounded-xl text-[11px] font-mono overflow-x-auto">{`const crypto = require('crypto');
+            <pre className="bg-[#0F172A] text-slate-300 p-4 rounded text-[11px] font-mono overflow-x-auto">{`const crypto = require('crypto');
 
 function verifyWebhookSignature(payload, signature, secret) {
   const expected = 'sha256=' + crypto
@@ -351,18 +351,18 @@ app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
       <Modal isOpen={newKeyModal} onClose={() => setNewKeyModal(false)} title="API Key Generated" size="lg"
         footer={<Button variant="primary" size="sm" onClick={() => { setNewKeyModal(false); setNewKeyValue(''); }}>Done</Button>}>
         <div className="space-y-4">
-          <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-3">
+          <div className="p-4 bg-amber-50 rounded border border-amber-200 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
             <div>
               <div className="text-xs font-bold text-amber-700">Save this key now!</div>
               <div className="text-[11px] text-amber-600">This key will not be shown again. Copy and store it securely.</div>
             </div>
           </div>
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+          <div className="p-4 bg-slate-50 rounded border border-slate-200">
             <div className="text-[10px] font-bold text-slate-500 uppercase mb-2">Your API Key</div>
             <div className="flex items-center gap-2">
-              <code className="text-xs font-mono font-bold text-slate-900 bg-white px-3 py-2 rounded-lg border border-slate-200 flex-1 break-all">{newKeyValue}</code>
-              <button onClick={() => handleCopy(newKeyValue, 'newkey')} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white rounded-lg border border-slate-200">
+              <code className="text-xs font-mono font-bold text-slate-900 bg-white px-3 py-2 rounded border border-slate-200 flex-1 break-all">{newKeyValue}</code>
+              <button onClick={() => handleCopy(newKeyValue, 'newkey')} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-white rounded border border-slate-200">
                 {copiedKey === 'newkey' ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
               </button>
             </div>
@@ -384,7 +384,7 @@ app.post('/webhook', express.raw({ type: 'application/json' }), (req, res) => {
             <label className="block text-[13px] font-semibold text-slate-700 mb-2">Subscribe to Events</label>
             <div className="space-y-2">
               {EVENTS.map((ev) => (
-                <label key={ev.key} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${webhookForm.events.includes(ev.key) ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
+                <label key={ev.key} className={`flex items-center gap-3 p-3 rounded border cursor-pointer transition-colors ${webhookForm.events.includes(ev.key) ? 'bg-blue-50 border-blue-300' : 'bg-white border-slate-200 hover:bg-slate-50'}`}>
                   <input type="checkbox" checked={webhookForm.events.includes(ev.key)} onChange={() => toggleWebhookEvent(ev.key)} className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-600" />
                   <span className="text-xs font-semibold text-slate-800">{ev.key}</span>
                 </label>

@@ -48,7 +48,7 @@ export default function TrackPage() {
             <ArrowLeft className="w-4 h-4" /> Home
           </Link>
           <div className="flex items-center gap-2.5 font-bold text-sm text-slate-900">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white">
               <Truck className="w-4 h-4" />
             </div>
             <span>Shohnaat</span>
@@ -64,7 +64,7 @@ export default function TrackPage() {
         <div className="max-w-3xl mx-auto px-4 sm:px-8 pt-12 sm:pt-20 pb-12">
           {/* Hero */}
           <div className="text-center mb-10">
-            <div className="w-14 h-14 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mx-auto mb-4">
+            <div className="w-14 h-14 rounded bg-blue-50 border border-blue-100 flex items-center justify-center mx-auto mb-4">
               <Package className="w-7 h-7 text-blue-600" />
             </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
@@ -115,7 +115,7 @@ export default function TrackPage() {
                     <button
                       key={s}
                       onClick={() => handleQuickSearch(s)}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-mono font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors"
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-slate-200 text-xs font-mono font-semibold text-slate-700 hover:bg-slate-50 hover:border-slate-300 transition-colors"
                     >
                       <Clock className="w-3 h-3 text-slate-400" /> {s}
                     </button>

@@ -150,7 +150,7 @@ export default function FinancePage() {
     <DashboardLayout role="merchant" title="Financial Overview" subtitle="COD settlements, wallet balance, and transaction history">
       {/* Payout Success Toast */}
       {payoutSubmitted && (
-        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3">
+        <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded flex items-center gap-3">
           <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
           <div>
             <div className="text-xs font-bold text-emerald-700">Payout Request Submitted</div>
@@ -230,7 +230,7 @@ export default function FinancePage() {
       >
         <div className="space-y-5">
           {/* Available Balance */}
-          <div className="p-4 bg-emerald-50 rounded-xl border border-emerald-200 text-center">
+          <div className="p-4 bg-emerald-50 rounded border border-emerald-200 text-center">
             <div className="text-[11px] font-bold text-emerald-600 uppercase">Available for Payout</div>
             <div className="text-2xl font-bold text-emerald-700 mt-1">${MOCK_WALLET.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
           </div>
@@ -261,7 +261,7 @@ export default function FinancePage() {
                 <button
                   key={key}
                   onClick={() => setPayoutForm({ ...payoutForm, method: key })}
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${
+                  className={`p-4 rounded border-2 text-left transition-all ${
                     payoutForm.method === key
                       ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-200'
                       : 'bg-white border-slate-200 hover:border-slate-300'
@@ -304,12 +304,12 @@ export default function FinancePage() {
               value={payoutForm.notes}
               onChange={(e) => setPayoutForm({ ...payoutForm, notes: e.target.value })}
               rows={2}
-              className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 resize-none"
+              className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 resize-none"
             />
           </div>
 
           {/* Processing Time Notice */}
-          <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 flex items-start gap-2">
+          <div className="p-3 bg-slate-50 rounded border border-slate-200 flex items-start gap-2">
             <Shield className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
             <div className="text-[11px] text-slate-500">
               Payouts are typically processed within 2-3 business days. Bank transfers use ACH (free) or Wire ($25 fee). PayPal payouts are instant.

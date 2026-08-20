@@ -132,7 +132,7 @@ export default function RiderPage() {
         {/* Top Header */}
         <header className="h-16 px-4 bg-white border-b border-slate-200 flex items-center justify-between sticky top-0 z-30 shadow-xs">
           <div className="flex items-center gap-2.5">
-            <Link href="/" className="p-1.5 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100">
+            <Link href="/" className="p-1.5 text-slate-500 hover:text-slate-900 rounded hover:bg-slate-100">
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
@@ -158,15 +158,15 @@ export default function RiderPage() {
 
         {/* Quick Stats Bar */}
         <div className="grid grid-cols-3 gap-2 p-3 bg-white border-b border-slate-200">
-          <div className="text-center p-2 bg-blue-50 rounded-lg border border-blue-100">
+          <div className="text-center p-2 bg-blue-50 rounded border border-blue-100">
             <div className="text-lg font-bold text-blue-700">{pendingCount}</div>
             <div className="text-[10px] font-semibold text-blue-500 uppercase">Pending</div>
           </div>
-          <div className="text-center p-2 bg-emerald-50 rounded-lg border border-emerald-100">
+          <div className="text-center p-2 bg-emerald-50 rounded border border-emerald-100">
             <div className="text-lg font-bold text-emerald-700">${collectedCod.toFixed(0)}</div>
             <div className="text-[10px] font-semibold text-emerald-500 uppercase">Collected</div>
           </div>
-          <div className="text-center p-2 bg-amber-50 rounded-lg border border-amber-100">
+          <div className="text-center p-2 bg-amber-50 rounded border border-amber-100">
             <div className="text-lg font-bold text-amber-700">${totalCod.toFixed(0)}</div>
             <div className="text-[10px] font-semibold text-amber-500 uppercase">Total COD</div>
           </div>
@@ -227,7 +227,7 @@ export default function RiderPage() {
                     </a>
                   </div>
 
-                  <div className="flex items-start gap-2 text-xs text-slate-700 bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+                  <div className="flex items-start gap-2 text-xs text-slate-700 bg-slate-50 p-2.5 rounded border border-slate-200">
                     <MapPin className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
                     <span className="flex-1 font-medium">{task.address}</span>
                     <a href={`https://maps.google.com/?q=${encodeURIComponent(task.address)}`} target="_blank" rel="noopener noreferrer" className="p-1 text-blue-600 hover:bg-blue-100 rounded" title="GPS Navigation">
@@ -257,13 +257,13 @@ export default function RiderPage() {
                   )}
 
                   {task.status === 'DELIVERED' && (
-                    <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 font-semibold flex items-center justify-center gap-1.5">
+                    <div className="p-2.5 rounded bg-emerald-50 border border-emerald-200 text-xs text-emerald-700 font-semibold flex items-center justify-center gap-1.5">
                       <Check className="w-4 h-4 stroke-[2.5]" /> Successfully Delivered
                     </div>
                   )}
 
                   {task.status === 'FAILED' && (
-                    <div className="p-2.5 rounded-lg bg-red-50 border border-red-200 text-xs text-red-700 font-semibold flex items-center justify-center gap-1.5">
+                    <div className="p-2.5 rounded bg-red-50 border border-red-200 text-xs text-red-700 font-semibold flex items-center justify-center gap-1.5">
                       <AlertTriangle className="w-4 h-4" /> Delivery Failed — Awaiting Reschedule
                     </div>
                   )}
@@ -386,7 +386,7 @@ export default function RiderPage() {
                 <button
                   key={r.code}
                   onClick={() => setSelectedReason(r.code)}
-                  className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                  className={`w-full text-left p-3 rounded border transition-colors ${
                     selectedReason === r.code
                       ? 'bg-red-50 border-red-300 ring-2 ring-red-200'
                       : 'bg-white border-slate-200 hover:bg-slate-50'
@@ -410,7 +410,7 @@ export default function RiderPage() {
               placeholder="Additional notes (optional)..."
               value={failedNotes}
               onChange={(e) => setFailedNotes(e.target.value)}
-              className="w-full h-20 px-3 py-2 text-xs bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-red-500 resize-none"
+              className="w-full h-20 px-3 py-2 text-xs bg-white border border-slate-200 rounded text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-red-500 resize-none"
             />
           </div>
         </Modal>
@@ -430,7 +430,7 @@ export default function RiderPage() {
           }
         >
           <div className="space-y-4">
-            <div className="text-center p-4 bg-emerald-50 rounded-lg border border-emerald-200">
+            <div className="text-center p-4 bg-emerald-50 rounded border border-emerald-200">
               <div className="text-[11px] font-bold text-emerald-600 uppercase">Cash Amount to Collect</div>
               <div className="text-2xl font-bold text-emerald-700 mt-1">${codModal.amount.toFixed(2)}</div>
               <div className="text-xs text-emerald-500">USD</div>
@@ -442,7 +442,7 @@ export default function RiderPage() {
                 placeholder="0.00"
                 value={codCollected}
                 onChange={(e) => setCodCollected(e.target.value)}
-                className="w-full h-11 px-3.5 text-sm font-mono font-bold bg-white border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
+                className="w-full h-11 px-3.5 text-sm font-mono font-bold bg-white border border-slate-200 rounded text-slate-900 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15"
               />
             </div>
             <p className="text-[11px] text-slate-400 text-center">

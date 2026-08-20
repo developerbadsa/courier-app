@@ -157,10 +157,10 @@ export default function FleetPage() {
       key: 'actions', header: '', className: 'text-right', headerClassName: 'text-right',
       render: (row) => (
         <div className="flex items-center justify-end gap-1">
-          <button onClick={(e) => { e.stopPropagation(); toggleDuty(row.id); }} className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors" title={row.isOnDuty ? 'Go Off Duty' : 'Go On Duty'}>
+          <button onClick={(e) => { e.stopPropagation(); toggleDuty(row.id); }} className="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors" title={row.isOnDuty ? 'Go Off Duty' : 'Go On Duty'}>
             {row.isOnDuty ? <ToggleRight className="w-4 h-4 text-emerald-500" /> : <ToggleLeft className="w-4 h-4" />}
           </button>
-          <button onClick={(e) => { e.stopPropagation(); openEdit(row); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
+          <button onClick={(e) => { e.stopPropagation(); openEdit(row); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
         </div>
       ),
     },
@@ -172,7 +172,7 @@ export default function FleetPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600"><Truck className="w-5 h-5" /></div>
+            <div className="w-10 h-10 rounded bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600"><Truck className="w-5 h-5" /></div>
             <div>
               <div className="text-[11px] text-slate-500 font-medium">Total Riders</div>
               <div className="text-lg font-bold text-slate-900">{stats.total}</div>
@@ -181,7 +181,7 @@ export default function FleetPage() {
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600"><CheckCircle2 className="w-5 h-5" /></div>
+            <div className="w-10 h-10 rounded bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600"><CheckCircle2 className="w-5 h-5" /></div>
             <div>
               <div className="text-[11px] text-slate-500 font-medium">On Duty</div>
               <div className="text-lg font-bold text-slate-900">{stats.onDuty}/{stats.total}</div>
@@ -190,7 +190,7 @@ export default function FleetPage() {
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600"><BarChart3 className="w-5 h-5" /></div>
+            <div className="w-10 h-10 rounded bg-purple-50 border border-purple-100 flex items-center justify-center text-purple-600"><BarChart3 className="w-5 h-5" /></div>
             <div>
               <div className="text-[11px] text-slate-500 font-medium">Success Rate</div>
               <div className="text-lg font-bold text-slate-900">{stats.avgSuccessRate}%</div>
@@ -199,7 +199,7 @@ export default function FleetPage() {
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600"><Package className="w-5 h-5" /></div>
+            <div className="w-10 h-10 rounded bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600"><Package className="w-5 h-5" /></div>
             <div>
               <div className="text-[11px] text-slate-500 font-medium">Total COD</div>
               <div className="text-lg font-bold text-slate-900">${stats.totalCOD.toLocaleString()}</div>
@@ -215,7 +215,7 @@ export default function FleetPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${filter === f ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+            className={`px-3 py-1.5 text-xs font-semibold rounded border transition-colors ${filter === f ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
           >
             {f === 'all' ? `All (${stats.total})` : f === 'on-duty' ? `On Duty (${stats.onDuty})` : f === 'off-duty' ? `Off Duty (${stats.total - stats.onDuty})` : f === 'bike' ? `🏍️ Bike (${stats.bikes})` : f === 'van' ? `🚐 Van (${stats.vans})` : `🚛 Truck (${stats.trucks})`}
           </button>
@@ -251,7 +251,7 @@ export default function FleetPage() {
             <label className="text-[13px] font-semibold text-slate-700 mb-2 block">Vehicle Type</label>
             <div className="flex gap-2">
               {(['Bike', 'Van', 'Truck'] as const).map((v) => (
-                <button key={v} onClick={() => setForm({ ...form, vehicleType: v })} className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-lg border transition-colors ${form.vehicleType === v ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+                <button key={v} onClick={() => setForm({ ...form, vehicleType: v })} className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded border transition-colors ${form.vehicleType === v ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
                   {v === 'Bike' ? '🏍️' : v === 'Van' ? '🚐' : '🚛'} {v}
                 </button>
               ))}

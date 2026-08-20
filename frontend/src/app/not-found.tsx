@@ -14,7 +14,7 @@ export default function NotFound() {
             <ArrowLeft className="w-4 h-4" /> Home
           </Link>
           <div className="flex items-center gap-2.5 font-bold text-sm text-slate-900">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white">
               <Truck className="w-4 h-4" />
             </div>
             <span>Shohnaat</span>
@@ -28,7 +28,7 @@ export default function NotFound() {
       {/* Main */}
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="text-center max-w-sm">
-          <div className="w-20 h-20 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center mx-auto mb-6">
+          <div className="w-20 h-20 rounded bg-slate-100 border border-slate-200 flex items-center justify-center mx-auto mb-6">
             <span className="text-4xl font-black text-slate-300">404</span>
           </div>
           <h1 className="text-2xl font-bold text-slate-900 mb-2">Page Not Found</h1>
@@ -38,13 +38,13 @@ export default function NotFound() {
           <div className="flex items-center justify-center gap-3">
             <Link
               href="/"
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors"
             >
               <Home className="w-4 h-4" /> Go Home
             </Link>
             <Link
               href="/track"
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded hover:bg-slate-50 transition-colors"
             >
               <Search className="w-4 h-4" /> Track Parcel
             </Link>

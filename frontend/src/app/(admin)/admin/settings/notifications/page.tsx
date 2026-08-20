@@ -161,7 +161,7 @@ export default function NotificationsSettingsPage() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600"><Clock className="w-5 h-5" /></div>
+            <div className="w-10 h-10 rounded bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600"><Clock className="w-5 h-5" /></div>
             <div>
               <div className="text-[11px] text-slate-500 font-medium">Queued</div>
               <div className="text-lg font-bold text-slate-900">{queue.waiting}</div>
@@ -170,7 +170,7 @@ export default function NotificationsSettingsPage() {
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600"><Zap className="w-5 h-5" /></div>
+            <div className="w-10 h-10 rounded bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600"><Zap className="w-5 h-5" /></div>
             <div>
               <div className="text-[11px] text-slate-500 font-medium">Processing</div>
               <div className="text-lg font-bold text-slate-900">{queue.active}</div>
@@ -179,7 +179,7 @@ export default function NotificationsSettingsPage() {
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600"><CheckCircle2 className="w-5 h-5" /></div>
+            <div className="w-10 h-10 rounded bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600"><CheckCircle2 className="w-5 h-5" /></div>
             <div>
               <div className="text-[11px] text-slate-500 font-medium">Sent</div>
               <div className="text-lg font-bold text-slate-900">{queue.completed.toLocaleString()}</div>
@@ -188,7 +188,7 @@ export default function NotificationsSettingsPage() {
         </Card>
         <Card className="p-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center text-red-600"><AlertTriangle className="w-5 h-5" /></div>
+            <div className="w-10 h-10 rounded bg-red-50 border border-red-100 flex items-center justify-center text-red-600"><AlertTriangle className="w-5 h-5" /></div>
             <div>
               <div className="text-[11px] text-slate-500 font-medium">Failed</div>
               <div className="text-lg font-bold text-slate-900">{queue.failed}</div>
@@ -211,9 +211,9 @@ export default function NotificationsSettingsPage() {
           </div>
           <div className="space-y-3">
             {EVENT_DEFINITIONS.map((event) => (
-              <div key={event.key} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div key={event.key} className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-200">
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg bg-${event.color}-50 border border-${event.color}-100 flex items-center justify-center text-${event.color}-600`}>
+                  <div className={`w-8 h-8 rounded bg-${event.color}-50 border border-${event.color}-100 flex items-center justify-center text-${event.color}-600`}>
                     <event.icon className="w-4 h-4" />
                   </div>
                   <div>
@@ -244,16 +244,16 @@ export default function NotificationsSettingsPage() {
             </button>
           </div>
           {!settings.sms.enabled && (
-            <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-lg border border-amber-200 mb-4">
+            <div className="flex items-center gap-2 p-3 bg-amber-50 rounded border border-amber-200 mb-4">
               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
               <span className="text-[11px] text-amber-700">SMS requires Twilio/Vonage API keys in environment variables</span>
             </div>
           )}
           <div className="space-y-3">
             {EVENT_DEFINITIONS.map((event) => (
-              <div key={event.key} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div key={event.key} className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-200">
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-lg bg-${event.color}-50 border border-${event.color}-100 flex items-center justify-center text-${event.color}-600`}>
+                  <div className={`w-8 h-8 rounded bg-${event.color}-50 border border-${event.color}-100 flex items-center justify-center text-${event.color}-600`}>
                     <event.icon className="w-4 h-4" />
                   </div>
                   <div>
@@ -285,7 +285,7 @@ export default function NotificationsSettingsPage() {
             { key: 'merchantSms', label: 'Merchant SMS', icon: MessageSquare, color: 'emerald' },
             { key: 'consigneeSms', label: 'Consignee SMS', icon: MessageSquare, color: 'emerald' },
           ] as const).map((ch) => (
-            <div key={ch.key} className={`flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer ${settings.channels[ch.key] ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`} onClick={() => toggleChannel(ch.key)}>
+            <div key={ch.key} className={`flex items-center gap-3 p-3 rounded border transition-colors cursor-pointer ${settings.channels[ch.key] ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`} onClick={() => toggleChannel(ch.key)}>
               <ch.icon className={`w-4 h-4 ${settings.channels[ch.key] ? 'text-blue-600' : 'text-slate-400'}`} />
               <span className={`text-[12px] font-semibold ${settings.channels[ch.key] ? 'text-blue-700' : 'text-slate-500'}`}>{ch.label}</span>
               {settings.channels[ch.key] && <CheckCircle2 className="w-4 h-4 text-blue-600 ml-auto" />}
@@ -349,7 +349,7 @@ export default function NotificationsSettingsPage() {
           </div>
           <div className="w-full sm:w-48">
             <label className="text-[11px] font-semibold text-slate-500 mb-1 block">Event Type</label>
-            <select value={testEvent} onChange={(e) => setTestEvent(e.target.value)} className="w-full h-9 px-3 text-[13px] rounded-lg border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+            <select value={testEvent} onChange={(e) => setTestEvent(e.target.value)} className="w-full h-9 px-3 text-[13px] rounded border border-slate-200 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
               {EVENT_DEFINITIONS.map((e) => (
                 <option key={e.key} value={e.key}>{e.label}</option>
               ))}
@@ -360,7 +360,7 @@ export default function NotificationsSettingsPage() {
           </Button>
         </div>
         {testResult && (
-          <div className={`mt-3 p-3 rounded-lg border flex items-center gap-2 ${testResult === 'success' ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+          <div className={`mt-3 p-3 rounded border flex items-center gap-2 ${testResult === 'success' ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
             {testResult === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : <XCircle className="w-4 h-4 text-red-600" />}
             <span className={`text-[12px] font-semibold ${testResult === 'success' ? 'text-emerald-700' : 'text-red-700'}`}>
               {testResult === 'success' ? 'Test notification queued successfully!' : 'Failed to send test notification. Check SMTP config.'}

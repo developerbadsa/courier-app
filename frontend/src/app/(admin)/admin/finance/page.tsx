@@ -187,10 +187,10 @@ export default function AdminFinancePage() {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] font-semibold text-emerald-700">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-emerald-50 border border-emerald-200 text-[11px] font-semibold text-emerald-700">
             <Shield className="w-3.5 h-3.5" /> Stripe Connect: <span className={MOCK_STATS.totalPaidOut > 0 ? 'text-emerald-600' : 'text-slate-400'}>{MOCK_STATS.totalPaidOut > 0 ? 'Sandbox Active' : 'Not Configured'}</span>
           </span>
-          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-[11px] font-semibold text-blue-700">
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-blue-50 border border-blue-200 text-[11px] font-semibold text-blue-700">
             <Shield className="w-3.5 h-3.5" /> PayPal Payouts: <span className="text-blue-600">Sandbox Active</span>
           </span>
         </div>
@@ -252,7 +252,7 @@ export default function AdminFinancePage() {
         {processModal && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="p-4 bg-slate-50 rounded border border-slate-200">
                 <div className="text-[10px] font-bold text-slate-500 uppercase mb-1">Merchant</div>
                 <div className="flex items-center gap-2">
                   <Avatar name={processModal.merchantName} size="sm" />
@@ -262,7 +262,7 @@ export default function AdminFinancePage() {
                   </div>
                 </div>
               </div>
-              <div className="p-4 bg-emerald-50 rounded-lg border border-emerald-200 text-center">
+              <div className="p-4 bg-emerald-50 rounded border border-emerald-200 text-center">
                 <div className="text-[10px] font-bold text-emerald-600 uppercase">Payout Amount</div>
                 <div className="text-2xl font-bold text-emerald-700 mt-1">${processModal.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
                 <div className="text-[10px] text-emerald-500 font-semibold">USD</div>
@@ -270,21 +270,21 @@ export default function AdminFinancePage() {
             </div>
 
             <div className="grid grid-cols-3 gap-3">
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
+              <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
                 <div className="text-[10px] font-bold text-slate-500 uppercase">Method</div>
                 <div className="text-xs font-bold text-slate-800 mt-1">{processModal.method === 'bank_transfer' ? '🏦 Bank' : '📧 PayPal'}</div>
               </div>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
+              <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
                 <div className="text-[10px] font-bold text-slate-500 uppercase">Requested</div>
                 <div className="text-xs font-bold text-slate-800 mt-1">{processModal.requestedAt}</div>
               </div>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
+              <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
                 <div className="text-[10px] font-bold text-slate-500 uppercase">Provider</div>
                 <div className="text-xs font-bold text-slate-800 mt-1">{processModal.method === 'bank_transfer' ? 'Stripe Connect' : 'PayPal Payouts'}</div>
               </div>
             </div>
 
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 text-[11px] text-blue-700">
+            <div className="p-3 bg-blue-50 rounded border border-blue-200 text-[11px] text-blue-700">
               <strong>Processing:</strong> The payout will be routed through {processModal.method === 'bank_transfer' ? 'Stripe Connect Transfers API' : 'PayPal Payouts Batch API'}. Funds typically arrive in 2-3 business days (bank) or instantly (PayPal).
             </div>
           </div>
@@ -309,7 +309,7 @@ export default function AdminFinancePage() {
           <p className="text-xs text-slate-600">
             This will process all {processingCount} approved settlements through their respective payout providers (Stripe Connect / PayPal Payouts).
           </p>
-          <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
+          <div className="p-4 bg-amber-50 rounded border border-amber-200">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="w-4 h-4 text-amber-600" />
               <span className="text-xs font-bold text-amber-700">Batch Processing Details</span>

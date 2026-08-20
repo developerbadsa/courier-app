@@ -104,15 +104,15 @@ export default function ScanOutboundPage() {
           <h2 className="text-lg font-bold text-slate-900">Outbound Manifest Dispatched</h2>
           <p className="text-sm text-slate-500 mt-1">{addedParcels.length} parcels dispatched to {MOCK_BRANCHES.find((b) => b.id === destination)?.name}</p>
           <div className="mt-4 grid grid-cols-3 gap-4">
-            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
+            <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
               <div className="text-lg font-bold text-slate-900">{addedParcels.length}</div>
               <div className="text-[10px] text-slate-500 font-semibold">Parcels</div>
             </div>
-            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
+            <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
               <div className="text-lg font-bold text-slate-900">{totalWeight.toFixed(1)}</div>
               <div className="text-[10px] text-slate-500 font-semibold">Total kg</div>
             </div>
-            <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
+            <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
               <div className="text-lg font-bold text-slate-900">${totalCod.toFixed(0)}</div>
               <div className="text-[10px] text-slate-500 font-semibold">Total COD</div>
             </div>
@@ -151,7 +151,7 @@ export default function ScanOutboundPage() {
                 <button
                   key={branch.id}
                   onClick={() => setDestination(branch.id)}
-                  className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
+                  className={`w-full text-left p-3 rounded border-2 transition-all ${
                     destination === branch.id
                       ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-200'
                       : 'bg-white border-slate-200 hover:border-slate-300'
@@ -198,15 +198,15 @@ export default function ScanOutboundPage() {
             <Card className="p-4">
               <h3 className="text-xs font-bold text-slate-900 mb-3">Manifest Summary</h3>
               <div className="grid grid-cols-3 gap-3 text-center">
-                <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
+                <div className="p-2 bg-blue-50 rounded border border-blue-100">
                   <div className="text-lg font-bold text-blue-700">{addedParcels.length}</div>
                   <div className="text-[10px] text-blue-500 font-semibold">Parcels</div>
                 </div>
-                <div className="p-2 bg-slate-50 rounded-lg border border-slate-200">
+                <div className="p-2 bg-slate-50 rounded border border-slate-200">
                   <div className="text-lg font-bold text-slate-700">{totalWeight.toFixed(1)}</div>
                   <div className="text-[10px] text-slate-500 font-semibold">kg</div>
                 </div>
-                <div className="p-2 bg-emerald-50 rounded-lg border border-emerald-100">
+                <div className="p-2 bg-emerald-50 rounded border border-emerald-100">
                   <div className="text-lg font-bold text-emerald-700">${totalCod.toFixed(0)}</div>
                   <div className="text-[10px] text-emerald-500 font-semibold">COD</div>
                 </div>
@@ -243,13 +243,13 @@ export default function ScanOutboundPage() {
               parcels.map((parcel, i) => (
                 <div
                   key={`${parcel.trackingNumber}-${i}`}
-                  className={`flex items-center gap-3 p-3 rounded-xl border ${
+                  className={`flex items-center gap-3 p-3 rounded border ${
                     parcel.status === 'added'
                       ? 'bg-white border-slate-200 hover:bg-slate-50'
                       : 'bg-red-50/50 border-red-200'
                   }`}
                 >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                  <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${
                     parcel.status === 'added' ? 'bg-blue-50 text-blue-600' : 'bg-red-100 text-red-600'
                   }`}>
                     {parcel.status === 'added' ? <Package className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
@@ -296,7 +296,7 @@ export default function ScanOutboundPage() {
         }
       >
         <div className="space-y-3">
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+          <div className="p-4 bg-blue-50 rounded border border-blue-200">
             <div className="text-xs font-bold text-blue-700 mb-1">Dispatch Details</div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div><span className="text-blue-500">Destination:</span> <span className="font-semibold">{MOCK_BRANCHES.find((b) => b.id === destination)?.name}</span></div>

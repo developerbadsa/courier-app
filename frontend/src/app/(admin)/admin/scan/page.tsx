@@ -129,7 +129,7 @@ export default function ScanInboundPage() {
       {/* Stats Bar */}
       <div className="grid grid-cols-4 gap-3 mb-4">
         <Card className="p-3 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600">
+          <div className="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600">
             <Package className="w-4 h-4" />
           </div>
           <div>
@@ -138,7 +138,7 @@ export default function ScanInboundPage() {
           </div>
         </Card>
         <Card className="p-3 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+          <div className="w-8 h-8 rounded bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
             <CheckCircle2 className="w-4 h-4" />
           </div>
           <div>
@@ -147,7 +147,7 @@ export default function ScanInboundPage() {
           </div>
         </Card>
         <Card className="p-3 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-red-50 border border-red-100 flex items-center justify-center text-red-600">
+          <div className="w-8 h-8 rounded bg-red-50 border border-red-100 flex items-center justify-center text-red-600">
             <XCircle className="w-4 h-4" />
           </div>
           <div>
@@ -156,7 +156,7 @@ export default function ScanInboundPage() {
           </div>
         </Card>
         <Card className="p-3 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+          <div className="w-8 h-8 rounded bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
             <BarChart3 className="w-4 h-4" />
           </div>
           <div>
@@ -171,7 +171,7 @@ export default function ScanInboundPage() {
         <div className="lg:col-span-1 space-y-4">
           {/* Camera/Scanner Zone */}
           <Card className="p-6">
-            <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center bg-slate-50">
+            <div className="border-2 border-dashed border-slate-300 rounded p-8 text-center bg-slate-50">
               <Camera className="w-12 h-12 text-slate-300 mx-auto mb-3" />
               <p className="text-xs font-semibold text-slate-600">Camera Scanner Zone</p>
               <p className="text-[11px] text-slate-400 mt-1">Point camera at barcode or QR code</p>
@@ -185,7 +185,7 @@ export default function ScanInboundPage() {
               <h3 className="text-xs font-bold text-slate-900">Manual Entry / USB Scanner</h3>
               <button
                 onClick={() => setSoundEnabled(!soundEnabled)}
-                className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600"
               >
                 {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
               </button>
@@ -242,13 +242,13 @@ export default function ScanInboundPage() {
               scans.map((scan, i) => (
                 <div
                   key={`${scan.trackingNumber}-${i}`}
-                  className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
+                  className={`flex items-center gap-3 p-3 rounded border transition-colors ${
                     scan.status === 'success'
                       ? 'bg-emerald-50/50 border-emerald-200'
                       : 'bg-red-50/50 border-red-200'
                   }`}
                 >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                  <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${
                     scan.status === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
                   }`}>
                     {scan.status === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}

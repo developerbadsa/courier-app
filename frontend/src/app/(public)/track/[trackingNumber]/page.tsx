@@ -203,7 +203,7 @@ export default function TrackingResultPage() {
           </Link>
 
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#1D68F2] flex items-center justify-center text-white shadow-xs">
+            <div className="w-8 h-8 rounded bg-[#1D68F2] flex items-center justify-center text-white shadow-xs">
               <Truck className="w-4.5 h-4.5 stroke-[2.4]" />
             </div>
             <span className="font-extrabold text-sm tracking-[0.14em] text-slate-900 uppercase">
@@ -214,14 +214,14 @@ export default function TrackingResultPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={fetchTracking}
-              className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer"
               title="Refresh Telemetry"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
             <button
               onClick={handlePrint}
-              className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              className="p-2 text-slate-500 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors cursor-pointer"
               title="Print Receipt"
             >
               <Printer className="w-4 h-4" />
@@ -233,7 +233,7 @@ export default function TrackingResultPage() {
       {/* ── Main Content Container ── */}
       <main className="flex-1 max-w-4xl w-full mx-auto p-4 sm:p-7 space-y-6 print:p-0 print:max-w-full">
         {/* ── 1. Delivery Progress Hero Card ── */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
+        <div className="bg-white rounded border border-slate-200/80 p-6 sm:p-8 shadow-[0_2px_12px_rgba(0,0,0,0.03)] space-y-6">
           {/* Progress Header */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
@@ -255,8 +255,8 @@ export default function TrackingResultPage() {
           {/* 4-Column Key Metrics */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-2">
             {/* Status */}
-            <div className="flex items-center gap-3 bg-slate-50/60 border border-slate-100 rounded-xl p-3.5">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center shrink-0 shadow-2xs">
+            <div className="flex items-center gap-3 bg-slate-50/60 border border-slate-100 rounded p-3.5">
+              <div className="w-10 h-10 rounded bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center shrink-0 shadow-2xs">
                 <Truck className="w-5 h-5 stroke-[2.2]" />
               </div>
               <div className="min-w-0">
@@ -270,7 +270,7 @@ export default function TrackingResultPage() {
             </div>
 
             {/* Tracking ID with Copy */}
-            <div className="bg-slate-50/60 border border-slate-100 rounded-xl p-3.5">
+            <div className="bg-slate-50/60 border border-slate-100 rounded p-3.5">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                 TRACKING ID
               </p>
@@ -293,7 +293,7 @@ export default function TrackingResultPage() {
             </div>
 
             {/* Estimated Delivery */}
-            <div className="bg-slate-50/60 border border-slate-100 rounded-xl p-3.5">
+            <div className="bg-slate-50/60 border border-slate-100 rounded p-3.5">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                 ESTIMATED DELIVERY
               </p>
@@ -308,7 +308,7 @@ export default function TrackingResultPage() {
             </div>
 
             {/* Assigned Rider */}
-            <div className="bg-slate-50/60 border border-slate-100 rounded-xl p-3.5">
+            <div className="bg-slate-50/60 border border-slate-100 rounded p-3.5">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                 ASSIGNED RIDER
               </p>
@@ -323,7 +323,7 @@ export default function TrackingResultPage() {
         </div>
 
         {/* ── 2. Origin ➔ Destination Route Banner ── */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-xs">
+        <div className="bg-white rounded border border-slate-200/80 p-5 sm:p-6 shadow-xs">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
             {/* Origin */}
             <div className="flex-1">
@@ -344,7 +344,7 @@ export default function TrackingResultPage() {
             </div>
 
             {/* Weight Pill / Route Indicator */}
-            <div className="flex sm:flex-col items-center justify-center gap-1.5 shrink-0 px-4 py-2 bg-slate-50 border border-slate-200/80 rounded-xl">
+            <div className="flex sm:flex-col items-center justify-center gap-1.5 shrink-0 px-4 py-2 bg-slate-50 border border-slate-200/80 rounded">
               <div className="flex items-center gap-1.5 text-blue-600 font-bold text-xs">
                 <Truck className="w-4 h-4" />
                 <span>{data.weightKg} KG</span>
@@ -375,7 +375,7 @@ export default function TrackingResultPage() {
         </div>
 
         {/* ── 3. Journey Timeline (Vertical Stepper) ── */}
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="bg-white rounded border border-slate-200/80 p-6 sm:p-8 shadow-xs space-y-6">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <h2 className="text-base font-bold text-slate-900">
               Journey Timeline ({data.eventCount} events)
@@ -459,20 +459,20 @@ export default function TrackingResultPage() {
 
         {/* ── 4. Live ETA Gradient Countdown Card ── */}
         {countdown && (
-          <div className="bg-gradient-to-r from-[#1D68F2] to-[#1E40AF] rounded-2xl p-6 sm:p-7 text-white text-center shadow-lg shadow-blue-600/20">
+          <div className="bg-gradient-to-r from-[#1D68F2] to-[#1E40AF] rounded p-6 sm:p-7 text-white text-center shadow-lg shadow-blue-600/20">
             <p className="text-[11px] font-extrabold uppercase tracking-widest text-blue-200">
               ESTIMATED TIME OF ARRIVAL
             </p>
 
             <div className="flex items-center justify-center gap-4 sm:gap-6 mt-4">
-              <div className="bg-white/10 backdrop-blur-xs rounded-xl px-4 py-2.5 min-w-[70px]">
+              <div className="bg-white/10 backdrop-blur-xs rounded px-4 py-2.5 min-w-[70px]">
                 <p className="text-3xl sm:text-4xl font-extrabold">{countdown.hours}</p>
                 <p className="text-[10px] font-bold text-blue-200 uppercase mt-0.5">Hours</p>
               </div>
 
               <span className="text-2xl font-bold text-blue-300">:</span>
 
-              <div className="bg-white/10 backdrop-blur-xs rounded-xl px-4 py-2.5 min-w-[70px]">
+              <div className="bg-white/10 backdrop-blur-xs rounded px-4 py-2.5 min-w-[70px]">
                 <p className="text-3xl sm:text-4xl font-extrabold">
                   {String(countdown.minutes).padStart(2, '0')}
                 </p>
@@ -481,7 +481,7 @@ export default function TrackingResultPage() {
 
               <span className="text-2xl font-bold text-blue-300">:</span>
 
-              <div className="bg-white/10 backdrop-blur-xs rounded-xl px-4 py-2.5 min-w-[70px]">
+              <div className="bg-white/10 backdrop-blur-xs rounded px-4 py-2.5 min-w-[70px]">
                 <p className="text-3xl sm:text-4xl font-extrabold">
                   {String(countdown.seconds).padStart(2, '0')}
                 </p>
@@ -499,7 +499,7 @@ export default function TrackingResultPage() {
         <div className="flex items-center justify-between print:hidden pt-2">
           <button
             onClick={handlePrint}
-            className="inline-flex items-center gap-2 px-4.5 py-2.5 text-xs font-bold text-slate-700 bg-white border border-slate-200/90 rounded-xl hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
+            className="inline-flex items-center gap-2 px-4.5 py-2.5 text-xs font-bold text-slate-700 bg-white border border-slate-200/90 rounded hover:bg-slate-50 transition-colors shadow-2xs cursor-pointer"
           >
             <Printer className="w-4 h-4" />
             <span>Print Official Receipt</span>
@@ -507,7 +507,7 @@ export default function TrackingResultPage() {
 
           <Link
             href="/track"
-            className="inline-flex items-center gap-2 px-4.5 py-2.5 text-xs font-bold text-white bg-[#1D68F2] hover:bg-blue-700 rounded-xl transition-colors shadow-xs"
+            className="inline-flex items-center gap-2 px-4.5 py-2.5 text-xs font-bold text-white bg-[#1D68F2] hover:bg-blue-700 rounded transition-colors shadow-xs"
           >
             <span>Track Another Shipment</span>
           </Link>

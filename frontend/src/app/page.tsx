@@ -50,13 +50,13 @@ export default function Home() {
           <div className="flex items-center gap-2">
             <Link
               href="/login"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[13px] font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[13px] font-semibold text-slate-700 hover:text-slate-900 hover:bg-slate-100 rounded transition-colors"
             >
               Sign In
             </Link>
             <Link
               href="/track"
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[13px] font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-[13px] font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded transition-colors shadow-xs"
             >
               Track Parcel
             </Link>

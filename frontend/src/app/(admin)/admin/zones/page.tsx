@@ -48,7 +48,7 @@ export default function ZonesPage() {
       key: 'name', header: 'Zone Name', sortable: true, accessor: (r) => r.name,
       render: (row) => (
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
+          <div className="w-8 h-8 rounded bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 shrink-0">
             <MapPin className="w-4 h-4" />
           </div>
           <span className="font-semibold text-slate-900">{row.name}</span>
@@ -62,8 +62,8 @@ export default function ZonesPage() {
       key: 'actions', header: '', className: 'text-right', headerClassName: 'text-right',
       render: (row) => (
         <div className="flex items-center justify-end gap-1">
-          <button onClick={(e) => { e.stopPropagation(); openEdit(row); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 className="w-3.5 h-3.5" /></button>
-          <button onClick={(e) => { e.stopPropagation(); setZones((prev) => prev.filter((z) => z.id !== row.id)); }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+          <button onClick={(e) => { e.stopPropagation(); openEdit(row); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"><Edit2 className="w-3.5 h-3.5" /></button>
+          <button onClick={(e) => { e.stopPropagation(); setZones((prev) => prev.filter((z) => z.id !== row.id)); }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 className="w-3.5 h-3.5" /></button>
         </div>
       ),
     },

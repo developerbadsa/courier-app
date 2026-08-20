@@ -62,7 +62,7 @@ export default function HubsPage() {
       key: 'name', header: 'Hub Name', sortable: true, accessor: (r) => r.name,
       render: (row) => (
         <div className="flex items-center gap-3">
-          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${row.isHub ? 'bg-blue-50 border border-blue-100 text-blue-600' : 'bg-slate-100 border border-slate-200 text-slate-500'}`}>
+          <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${row.isHub ? 'bg-blue-50 border border-blue-100 text-blue-600' : 'bg-slate-100 border border-slate-200 text-slate-500'}`}>
             <Building2 className="w-4 h-4" />
           </div>
           <div>
@@ -104,9 +104,9 @@ export default function HubsPage() {
       key: 'actions', header: '', className: 'text-right', headerClassName: 'text-right',
       render: (row) => (
         <div className="flex items-center justify-end gap-1">
-          <button onClick={(e) => { e.stopPropagation(); setDetailModal(row); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><BarChart3 className="w-3.5 h-3.5" /></button>
-          <button onClick={(e) => { e.stopPropagation(); openEdit(row); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
-          <button onClick={(e) => { e.stopPropagation(); setHubs((prev) => prev.filter((h) => h.id !== row.id)); }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+          <button onClick={(e) => { e.stopPropagation(); setDetailModal(row); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"><BarChart3 className="w-3.5 h-3.5" /></button>
+          <button onClick={(e) => { e.stopPropagation(); openEdit(row); }} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"><Edit2 className="w-3.5 h-3.5" /></button>
+          <button onClick={(e) => { e.stopPropagation(); setHubs((prev) => prev.filter((h) => h.id !== row.id)); }} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
         </div>
       ),
     },
@@ -124,7 +124,7 @@ export default function HubsPage() {
         ].map((stat) => (
           <Card key={stat.label} className="p-4">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg bg-${stat.color}-50 border border-${stat.color}-100 flex items-center justify-center text-${stat.color}-600`}>
+              <div className={`w-10 h-10 rounded bg-${stat.color}-50 border border-${stat.color}-100 flex items-center justify-center text-${stat.color}-600`}>
                 <stat.icon className="w-5 h-5" />
               </div>
               <div>
@@ -165,8 +165,8 @@ export default function HubsPage() {
           <Input label="Zone Coverage" placeholder="e.g. Downtown, North, East" value={form.zones} onChange={(e) => setForm({ ...form, zones: e.target.value })} />
           <div className="flex items-center gap-3">
             <label className="text-[13px] font-semibold text-slate-700">Type:</label>
-            <button onClick={() => setForm({ ...form, isHub: true })} className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${form.isHub ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>Hub (Sorting Center)</button>
-            <button onClick={() => setForm({ ...form, isHub: false })} className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${!form.isHub ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>Branch (Office)</button>
+            <button onClick={() => setForm({ ...form, isHub: true })} className={`px-3 py-1.5 text-xs font-semibold rounded border transition-colors ${form.isHub ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>Hub (Sorting Center)</button>
+            <button onClick={() => setForm({ ...form, isHub: false })} className={`px-3 py-1.5 text-xs font-semibold rounded border transition-colors ${!form.isHub ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>Branch (Office)</button>
           </div>
         </div>
       </Modal>
@@ -181,30 +181,30 @@ export default function HubsPage() {
         {detailModal && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="p-3 bg-slate-50 rounded border border-slate-200">
                 <div className="text-[11px] text-slate-500 font-medium">Capacity Utilization</div>
                 <div className="text-xl font-bold text-slate-900">{detailModal.utilization}%</div>
                 <div className="h-1.5 bg-slate-200 rounded-full mt-2 overflow-hidden">
                   <div className={`h-full rounded-full ${detailModal.utilization > 80 ? 'bg-red-500' : detailModal.utilization > 60 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${detailModal.utilization}%` }} />
                 </div>
               </div>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="p-3 bg-slate-50 rounded border border-slate-200">
                 <div className="text-[11px] text-slate-500 font-medium">Avg Processing</div>
                 <div className="text-xl font-bold text-slate-900">{detailModal.avgProcessingHrs}h</div>
                 <div className="text-[11px] text-slate-400 mt-1">Target: 3.0h</div>
               </div>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="p-3 bg-slate-50 rounded border border-slate-200">
                 <div className="text-[11px] text-slate-500 font-medium">Active Staff</div>
                 <div className="text-xl font-bold text-slate-900">{detailModal.staffCount}</div>
                 <div className="text-[11px] text-slate-400 mt-1">{detailModal.shipmentCount} shipments</div>
               </div>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="p-3 bg-slate-50 rounded border border-slate-200">
                 <div className="text-[11px] text-slate-500 font-medium">Coverage Zones</div>
                 <div className="text-xl font-bold text-slate-900">{detailModal.zones.length}</div>
                 <div className="flex flex-wrap gap-1 mt-1">{detailModal.zones.map(z => <Badge key={z} variant="blue" size="sm">{z}</Badge>)}</div>
               </div>
             </div>
-            <div className="p-3 bg-blue-50 rounded-lg border border-blue-100">
+            <div className="p-3 bg-blue-50 rounded border border-blue-100">
               <div className="text-[11px] text-blue-600 font-semibold">Manager: {detailModal.manager}</div>
               <div className="text-[11px] text-blue-500 mt-1">{detailModal.address}, {detailModal.city}</div>
             </div>

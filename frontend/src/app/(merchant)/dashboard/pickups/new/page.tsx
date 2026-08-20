@@ -82,7 +82,7 @@ export default function NewPickupPage() {
           <h2 className="text-lg font-bold text-slate-900">Pickup Request Submitted</h2>
           <p className="text-sm text-slate-500 mt-1">We&apos;ll assign a rider shortly. You&apos;ll be notified when confirmed.</p>
 
-          <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200 text-left space-y-2">
+          <div className="mt-6 p-4 bg-slate-50 rounded border border-slate-200 text-left space-y-2">
             <div className="flex justify-between text-xs">
               <span className="text-slate-500">Location</span>
               <span className="font-semibold text-slate-800">{selectedAddress?.label || '—'}</span>
@@ -166,7 +166,7 @@ export default function NewPickupPage() {
                 <button
                   key={addr.id}
                   onClick={() => update('addressId', addr.id)}
-                  className={`w-full text-left p-4 rounded-xl border-2 transition-all ${
+                  className={`w-full text-left p-4 rounded border-2 transition-all ${
                     form.addressId === addr.id
                       ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-200'
                       : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50'
@@ -174,7 +174,7 @@ export default function NewPickupPage() {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-3">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                      <div className={`w-9 h-9 rounded flex items-center justify-center shrink-0 ${
                         form.addressId === addr.id ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
                       }`}>
                         {addr.type === 'PICKUP' ? <Home className="w-4 h-4" /> : <Building2 className="w-4 h-4" />}
@@ -209,7 +209,7 @@ export default function NewPickupPage() {
                   <button
                     key={d.value}
                     onClick={() => update('requestedDate', d.value)}
-                    className={`flex-1 py-2.5 rounded-lg text-xs font-bold border-2 transition-colors ${
+                    className={`flex-1 py-2.5 rounded text-xs font-bold border-2 transition-colors ${
                       form.requestedDate === d.value
                         ? 'bg-blue-50 border-blue-400 text-blue-700'
                         : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -237,7 +237,7 @@ export default function NewPickupPage() {
                   <button
                     key={slot.key}
                     onClick={() => update('timeSlot', slot.key)}
-                    className={`p-4 rounded-xl border-2 text-left transition-all ${
+                    className={`p-4 rounded border-2 text-left transition-all ${
                       form.timeSlot === slot.key
                         ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-200'
                         : 'bg-white border-slate-200 hover:border-slate-300'
@@ -280,7 +280,7 @@ export default function NewPickupPage() {
                   <button
                     key={v.key}
                     onClick={() => update('vehicleType', v.key)}
-                    className={`p-4 rounded-xl border-2 text-center transition-all ${
+                    className={`p-4 rounded border-2 text-center transition-all ${
                       form.vehicleType === v.key
                         ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-200'
                         : 'bg-white border-slate-200 hover:border-slate-300'
@@ -302,7 +302,7 @@ export default function NewPickupPage() {
                 value={form.driverNotes}
                 onChange={(e) => update('driverNotes', e.target.value)}
                 rows={3}
-                className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 resize-none"
+                className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 resize-none"
               />
             </div>
           </div>
@@ -315,7 +315,7 @@ export default function NewPickupPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Location Card */}
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="p-4 bg-slate-50 rounded border border-slate-200">
                 <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Pickup Location</div>
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-blue-600" />
@@ -327,7 +327,7 @@ export default function NewPickupPage() {
               </div>
 
               {/* Schedule Card */}
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="p-4 bg-slate-50 rounded border border-slate-200">
                 <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-2">Schedule</div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-blue-600" />
@@ -340,7 +340,7 @@ export default function NewPickupPage() {
             </div>
 
             {/* Details Grid */}
-            <div className="grid grid-cols-3 gap-4 bg-blue-50 rounded-xl border border-blue-200 p-4 text-center">
+            <div className="grid grid-cols-3 gap-4 bg-blue-50 rounded border border-blue-200 p-4 text-center">
               <div>
                 <div className="text-xl font-bold text-blue-700">{form.parcelCount || '—'}</div>
                 <div className="text-[10px] font-bold text-blue-500 uppercase">Parcels</div>
@@ -356,7 +356,7 @@ export default function NewPickupPage() {
             </div>
 
             {form.driverNotes && (
-              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="p-4 bg-slate-50 rounded border border-slate-200">
                 <div className="text-[10px] font-bold text-slate-500 uppercase mb-1">Driver Notes</div>
                 <div className="text-xs text-slate-700">{form.driverNotes}</div>
               </div>

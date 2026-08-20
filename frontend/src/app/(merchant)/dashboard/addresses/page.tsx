@@ -137,7 +137,7 @@ export default function AddressesPage() {
           <button
             key={key}
             onClick={() => setFilterType(key as typeof filterType)}
-            className={`px-4 py-2 rounded-lg text-xs font-semibold transition-colors ${
+            className={`px-4 py-2 rounded text-xs font-semibold transition-colors ${
               filterType === key
                 ? 'bg-blue-50 text-blue-700 border border-blue-200'
                 : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
@@ -155,7 +155,7 @@ export default function AddressesPage() {
             {/* Header */}
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-2.5">
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${
+                <div className={`w-9 h-9 rounded flex items-center justify-center shrink-0 ${
                   addr.type === 'PICKUP' ? 'bg-blue-50 border border-blue-100 text-blue-600' : 'bg-purple-50 border border-purple-100 text-purple-600'
                 }`}>
                   {addr.type === 'PICKUP' ? <Home className="w-4 h-4" /> : <Building2 className="w-4 h-4" />}
@@ -185,7 +185,7 @@ export default function AddressesPage() {
                 <span>{addr.contactPhone}</span>
               </div>
               {addr.instructions && (
-                <div className="flex items-start gap-2 text-xs text-slate-500 bg-slate-50 p-2 rounded-lg mt-2">
+                <div className="flex items-start gap-2 text-xs text-slate-500 bg-slate-50 p-2 rounded mt-2">
                   <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
                   <span className="italic">{addr.instructions}</span>
                 </div>
@@ -210,10 +210,10 @@ export default function AddressesPage() {
               )}
               {addr.isDefault && <div />}
               <div className="flex items-center gap-1">
-                <button onClick={() => openEdit(addr)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                <button onClick={() => openEdit(addr)} className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors">
                   <Edit2 className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => setDeleteConfirm(addr.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                <button onClick={() => setDeleteConfirm(addr.id)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -224,7 +224,7 @@ export default function AddressesPage() {
         {/* Add New Card */}
         <button
           onClick={openCreate}
-          className="border-2 border-dashed border-slate-300 hover:border-blue-400 rounded-xl p-8 flex flex-col items-center justify-center gap-3 transition-colors bg-white hover:bg-blue-50/30 min-h-[240px]"
+          className="border-2 border-dashed border-slate-300 hover:border-blue-400 rounded p-8 flex flex-col items-center justify-center gap-3 transition-colors bg-white hover:bg-blue-50/30 min-h-[240px]"
         >
           <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
             <Plus className="w-5 h-5" />
@@ -257,7 +257,7 @@ export default function AddressesPage() {
                 <button
                   key={t}
                   onClick={() => update('type', t)}
-                  className={`flex-1 py-2.5 rounded-lg text-xs font-bold border-2 transition-colors ${
+                  className={`flex-1 py-2.5 rounded text-xs font-bold border-2 transition-colors ${
                     form.type === t
                       ? t === 'PICKUP' ? 'border-blue-600 bg-blue-50 text-blue-700' : 'border-purple-600 bg-purple-50 text-purple-700'
                       : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
@@ -289,7 +289,7 @@ export default function AddressesPage() {
               value={form.instructions}
               onChange={(e) => update('instructions', e.target.value)}
               rows={3}
-              className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 resize-none"
+              className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-200 rounded text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/15 resize-none"
             />
           </div>
 

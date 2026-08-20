@@ -156,7 +156,7 @@ export default function BulkImportPage() {
             <ArrowLeft className="w-4 h-4" /> Shipments
           </Link>
           <div className="flex items-center gap-2.5 font-bold text-sm text-slate-900">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white">
               <Truck className="w-4 h-4" />
             </div>
             <span>Shohnaat</span>
@@ -186,7 +186,7 @@ export default function BulkImportPage() {
         {/* ── Step 1: Upload ── */}
         {step === 'upload' && (
           <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
+            <div className="bg-white rounded border border-slate-200 p-8 text-center">
               <FileSpreadsheet className="w-12 h-12 text-slate-300 mx-auto mb-4" />
               <h2 className="text-lg font-bold text-slate-900 mb-1">Bulk Shipment Import</h2>
               <p className="text-sm text-slate-500 mb-6">Upload a CSV file to create multiple shipments at once.</p>
@@ -194,7 +194,7 @@ export default function BulkImportPage() {
               {/* Download Template */}
               <button
                 onClick={downloadTemplate}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors mb-6"
+                className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors mb-6"
               >
                 <Download className="w-4 h-4" /> Download CSV Template
               </button>
@@ -204,7 +204,7 @@ export default function BulkImportPage() {
                 onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
                 onDragLeave={() => setDragActive(false)}
                 onDrop={handleDrop}
-                className={`border-2 border-dashed rounded-xl p-10 transition-colors cursor-pointer ${
+                className={`border-2 border-dashed rounded p-10 transition-colors cursor-pointer ${
                   dragActive ? 'border-blue-400 bg-blue-50' : 'border-slate-300 hover:border-slate-400'
                 }`}
                 onClick={() => fileInputRef.current?.click()}
@@ -225,14 +225,14 @@ export default function BulkImportPage() {
               </div>
 
               {parseError && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-600 flex items-center gap-2">
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-xs text-red-600 flex items-center gap-2">
                   <AlertTriangle className="w-4 h-4 shrink-0" /> {parseError}
                 </div>
               )}
             </div>
 
             {/* Format Guide */}
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="bg-white rounded border border-slate-200 p-6">
               <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
                 <Info className="w-4 h-4 text-blue-500" /> CSV Format Guide
               </h3>
@@ -270,7 +270,7 @@ export default function BulkImportPage() {
         {/* ── Step 2: Preview ── */}
         {step === 'preview' && (
           <div className="space-y-4">
-            <div className="bg-white rounded-xl border border-slate-200 p-6">
+            <div className="bg-white rounded border border-slate-200 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">Preview Data</h2>
@@ -286,7 +286,7 @@ export default function BulkImportPage() {
                 </button>
               </div>
 
-              <div className="overflow-x-auto border border-slate-200 rounded-lg">
+              <div className="overflow-x-auto border border-slate-200 rounded">
                 <table className="w-full text-xs">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200">
@@ -330,14 +330,14 @@ export default function BulkImportPage() {
             <div className="flex items-center justify-between">
               <button
                 onClick={() => { setStep('upload'); setParsedRows([]); setFile(null); }}
-                className="px-4 py-2.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
+                className="px-4 py-2.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded hover:bg-slate-50"
               >
                 ← Back
               </button>
               <button
                 onClick={handleImport}
                 disabled={importing}
-                className="flex items-center gap-2 px-6 py-2.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2.5 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700 disabled:opacity-50"
               >
                 {importing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                 {importing ? 'Importing...' : `Import ${parsedRows.length} Shipments`}
@@ -348,7 +348,7 @@ export default function BulkImportPage() {
 
         {/* ── Step 3: Result ── */}
         {step === 'result' && result && (
-          <div className="bg-white rounded-xl border border-slate-200 p-8 text-center">
+          <div className="bg-white rounded border border-slate-200 p-8 text-center">
             {result.errors.length === 0 ? (
               <>
                 <div className="w-16 h-16 rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto mb-4">
@@ -368,7 +368,7 @@ export default function BulkImportPage() {
                 <p className="text-sm text-slate-500 mb-4">
                   {result.created} shipments created, {result.errors.length} errors.
                 </p>
-                <div className="text-left max-w-md mx-auto bg-red-50 rounded-lg border border-red-200 p-4 mb-6 max-h-48 overflow-y-auto">
+                <div className="text-left max-w-md mx-auto bg-red-50 rounded border border-red-200 p-4 mb-6 max-h-48 overflow-y-auto">
                   {result.errors.map((err, i) => (
                     <div key={i} className="flex items-start gap-2 text-xs text-red-600 py-1 border-b border-red-100 last:border-0">
                       <XCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
@@ -382,13 +382,13 @@ export default function BulkImportPage() {
             <div className="flex items-center justify-center gap-3">
               <Link
                 href="/dashboard/shipments"
-                className="px-5 py-2.5 text-xs font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                className="px-5 py-2.5 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700"
               >
                 View Shipments
               </Link>
               <button
                 onClick={() => { setStep('upload'); setParsedRows([]); setFile(null); setResult(null); }}
-                className="px-5 py-2.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50"
+                className="px-5 py-2.5 text-xs font-semibold text-slate-600 bg-white border border-slate-200 rounded hover:bg-slate-50"
               >
                 Import More
               </button>

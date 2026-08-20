@@ -102,7 +102,7 @@ export default function AnalyticsPage() {
       <div className="flex items-center gap-2 mb-6">
         <Calendar className="w-4 h-4 text-slate-400" />
         {(['7d', '30d', '90d'] as const).map((p) => (
-          <button key={p} onClick={() => setPeriod(p)} className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${period === p ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+          <button key={p} onClick={() => setPeriod(p)} className={`px-3 py-1.5 text-xs font-semibold rounded border transition-colors ${period === p ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
             {p === '7d' ? 'Last 7 Days' : p === '30d' ? 'Last 30 Days' : 'Last 90 Days'}
           </button>
         ))}
@@ -117,7 +117,7 @@ export default function AnalyticsPage() {
                 <div className="text-[11px] text-slate-500 font-medium mb-1">{kpi.label}</div>
                 <div className="text-xl font-bold text-slate-900">{kpi.value}</div>
               </div>
-              <div className={`w-9 h-9 rounded-lg bg-${kpi.color}-50 border border-${kpi.color}-100 flex items-center justify-center text-${kpi.color}-600 shrink-0`}>
+              <div className={`w-9 h-9 rounded bg-${kpi.color}-50 border border-${kpi.color}-100 flex items-center justify-center text-${kpi.color}-600 shrink-0`}>
                 <kpi.icon className="w-4 h-4" />
               </div>
             </div>
@@ -141,7 +141,7 @@ export default function AnalyticsPage() {
             {DAILY_DATA.map((day) => (
               <div key={day.date} className="flex items-center gap-3">
                 <span className="text-[11px] font-medium text-slate-500 w-14 shrink-0">{day.date}</span>
-                <div className="flex-1 h-6 bg-slate-100 rounded-md overflow-hidden flex">
+                <div className="flex-1 h-6 bg-slate-100 rounded overflow-hidden flex">
                   <div className="h-full bg-emerald-500 rounded-l-md transition-all" style={{ width: `${(day.delivered / maxShipments) * 100}%` }} />
                   <div className="h-full bg-red-400" style={{ width: `${(day.failed / maxShipments) * 100}%` }} />
                 </div>
@@ -180,7 +180,7 @@ export default function AnalyticsPage() {
           <h3 className="text-sm font-bold text-slate-900 mb-4">Hub Performance</h3>
           <div className="space-y-3">
             {HUB_PERFORMANCE.map((hub) => (
-              <div key={hub.hub} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div key={hub.hub} className="p-3 bg-slate-50 rounded border border-slate-200">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[12px] font-bold text-slate-900">{hub.hub}</span>
                   <Badge variant={hub.successRate >= 98 ? 'green' : hub.successRate >= 96 ? 'amber' : 'red'} size="sm">{hub.successRate}%</Badge>
@@ -200,8 +200,8 @@ export default function AnalyticsPage() {
           <h3 className="text-sm font-bold text-slate-900 mb-4">Top Merchants by Volume</h3>
           <div className="space-y-3">
             {TOP_MERCHANTS.map((m, i) => (
-              <div key={m.name} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-                <div className="w-7 h-7 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-[11px] font-bold text-blue-600 shrink-0">
+              <div key={m.name} className="flex items-center gap-3 p-3 bg-slate-50 rounded border border-slate-200">
+                <div className="w-7 h-7 rounded bg-blue-50 border border-blue-100 flex items-center justify-center text-[11px] font-bold text-blue-600 shrink-0">
                   {i + 1}
                 </div>
                 <div className="flex-1 min-w-0">

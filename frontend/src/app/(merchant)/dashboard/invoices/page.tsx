@@ -115,7 +115,7 @@ export default function InvoicesPage() {
             <ArrowLeft className="w-4 h-4" /> Dashboard
           </Link>
           <div className="flex items-center gap-2.5 font-bold text-sm text-slate-900">
-            <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
+            <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white">
               <Truck className="w-4 h-4" />
             </div>
             <span>Shohnaat</span>
@@ -127,15 +127,15 @@ export default function InvoicesPage() {
       <main className="max-w-5xl mx-auto p-4 sm:p-8 space-y-6">
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl border border-slate-200 p-5">
+          <div className="bg-white rounded border border-slate-200 p-5">
             <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Total Invoices</div>
             <div className="text-2xl font-black text-slate-900 mt-1">{invoices.length}</div>
           </div>
-          <div className="bg-white rounded-xl border border-emerald-200 p-5">
+          <div className="bg-white rounded border border-emerald-200 p-5">
             <div className="text-[11px] font-bold text-emerald-600 uppercase tracking-wider">Total Paid</div>
             <div className="text-2xl font-black text-emerald-600 mt-1">${totalPaid.toFixed(2)}</div>
           </div>
-          <div className="bg-white rounded-xl border border-amber-200 p-5">
+          <div className="bg-white rounded border border-amber-200 p-5">
             <div className="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Pending</div>
             <div className="text-2xl font-black text-amber-600 mt-1">${totalPending.toFixed(2)}</div>
           </div>
@@ -147,7 +147,7 @@ export default function InvoicesPage() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg border transition-colors ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded border transition-colors ${
                 filter === f
                   ? 'bg-blue-600 text-white border-blue-600'
                   : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
@@ -161,13 +161,13 @@ export default function InvoicesPage() {
         {/* Invoice List */}
         <div className="space-y-3">
           {filtered.length === 0 ? (
-            <div className="bg-white rounded-xl border border-slate-200 p-12 text-center">
+            <div className="bg-white rounded border border-slate-200 p-12 text-center">
               <FileText className="w-10 h-10 text-slate-300 mx-auto mb-3" />
               <p className="text-sm text-slate-500">No invoices found.</p>
             </div>
           ) : (
             filtered.map((invoice) => (
-              <div key={invoice.id} className="bg-white rounded-xl border border-slate-200 p-5 hover:shadow-sm transition-shadow">
+              <div key={invoice.id} className="bg-white rounded border border-slate-200 p-5 hover:shadow-sm transition-shadow">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
@@ -220,13 +220,13 @@ export default function InvoicesPage() {
                   <button
                     onClick={() => handleDownloadPDF(invoice)}
                     disabled={downloading === invoice.id}
-                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors disabled:opacity-50"
                   >
                     {downloading === invoice.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                     Download PDF
                   </button>
                   {invoice.status === 'PENDING' && (
-                    <button className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 transition-colors">
+                    <button className="flex items-center gap-1.5 px-4 py-1.5 text-xs font-semibold text-white bg-emerald-600 rounded hover:bg-emerald-700 transition-colors">
                       <DollarSign className="w-3.5 h-3.5" /> Pay Now
                     </button>
                   )}

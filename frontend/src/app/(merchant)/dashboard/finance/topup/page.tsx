@@ -81,7 +81,7 @@ export default function TopUpPage() {
           <h2 className="text-lg font-bold text-slate-900">Wallet Top-Up Successful</h2>
           <div className="text-3xl font-bold text-emerald-600 mt-2">${result.amount.toFixed(2)}</div>
           <div className="text-xs text-slate-500 mt-1">USD credited to your wallet</div>
-          <div className="mt-4 p-3 bg-slate-50 rounded-lg border border-slate-200 text-left">
+          <div className="mt-4 p-3 bg-slate-50 rounded border border-slate-200 text-left">
             <div className="flex justify-between text-xs mb-1">
               <span className="text-slate-500">Transaction ID</span>
               <span className="font-mono font-semibold text-slate-800">{result.transactionId}</span>
@@ -129,7 +129,7 @@ export default function TopUpPage() {
               <button
                 key={key}
                 onClick={() => setMethod(key as PaymentMethod)}
-                className={`p-4 rounded-xl border-2 text-left transition-all ${
+                className={`p-4 rounded border-2 text-left transition-all ${
                   method === key
                     ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-600/10'
                     : 'border-slate-200 bg-white hover:border-slate-300'
@@ -162,7 +162,7 @@ export default function TopUpPage() {
               <button
                 key={preset}
                 onClick={() => setAmount(String(preset))}
-                className={`px-4 py-2 text-xs font-semibold rounded-lg border transition-colors ${
+                className={`px-4 py-2 text-xs font-semibold rounded border transition-colors ${
                   amount === String(preset)
                     ? 'bg-blue-50 border-blue-300 text-blue-700'
                     : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
@@ -176,7 +176,7 @@ export default function TopUpPage() {
 
         {/* Sandbox Notice */}
         {method === 'sandbox' && (
-          <div className="p-4 bg-amber-50 rounded-xl border border-amber-200 flex items-start gap-3">
+          <div className="p-4 bg-amber-50 rounded border border-amber-200 flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
               <div className="text-xs font-bold text-amber-700">Sandbox / Test Mode</div>
@@ -189,7 +189,7 @@ export default function TopUpPage() {
 
         {/* Security Notice */}
         {method !== 'sandbox' && (
-          <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-3">
+          <div className="p-4 bg-slate-50 rounded border border-slate-200 flex items-start gap-3">
             <Shield className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
             <div>
               <div className="text-xs font-bold text-slate-700">Secure Payment</div>

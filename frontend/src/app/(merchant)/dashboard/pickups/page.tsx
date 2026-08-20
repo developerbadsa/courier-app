@@ -160,7 +160,7 @@ export default function PickupsPage() {
       render: (row) => (
         <button
           onClick={(e) => { e.stopPropagation(); setDetailModal(row); }}
-          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
         >
           <Eye className="w-3.5 h-3.5" />
         </button>
@@ -185,7 +185,7 @@ export default function PickupsPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-4 mb-4">
         <Card className="p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600">
+          <div className="w-9 h-9 rounded bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600">
             <Clock className="w-4 h-4" />
           </div>
           <div>
@@ -194,7 +194,7 @@ export default function PickupsPage() {
           </div>
         </Card>
         <Card className="p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
+          <div className="w-9 h-9 rounded bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
             <Truck className="w-4 h-4" />
           </div>
           <div>
@@ -203,7 +203,7 @@ export default function PickupsPage() {
           </div>
         </Card>
         <Card className="p-4 flex items-center gap-3">
-          <div className="w-9 h-9 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+          <div className="w-9 h-9 rounded bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
             <CheckCircle className="w-4 h-4" />
           </div>
           <div>
@@ -239,33 +239,33 @@ export default function PickupsPage() {
         {detailModal && (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="p-3 bg-slate-50 rounded border border-slate-200">
                 <div className="text-[10px] font-bold text-slate-500 uppercase">Location</div>
                 <div className="text-xs font-semibold text-slate-900 mt-0.5">{detailModal.addressLabel}</div>
                 <div className="text-[11px] text-slate-500">{detailModal.address}, {detailModal.city}</div>
               </div>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+              <div className="p-3 bg-slate-50 rounded border border-slate-200">
                 <div className="text-[10px] font-bold text-slate-500 uppercase">Schedule</div>
                 <div className="text-xs font-semibold text-slate-900 mt-0.5">{detailModal.requestedDate}</div>
                 <div className="text-[11px] text-slate-500">{detailModal.timeSlot}</div>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
+              <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
                 <div className="text-lg font-bold text-slate-900">{detailModal.parcelCount}</div>
                 <div className="text-[10px] text-slate-500 font-semibold">Parcels</div>
               </div>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
+              <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
                 <div className="text-lg font-bold text-slate-900">{VEHICLE_ICONS[detailModal.vehicleType]} {detailModal.vehicleType}</div>
                 <div className="text-[10px] text-slate-500 font-semibold">Vehicle</div>
               </div>
-              <div className="p-3 bg-slate-50 rounded-lg border border-slate-200 text-center">
+              <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
                 <div className="text-sm font-bold text-slate-900">{detailModal.riderName || '—'}</div>
                 <div className="text-[10px] text-slate-500 font-semibold">Rider</div>
               </div>
             </div>
             {detailModal.driverNotes && (
-              <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="p-3 bg-blue-50 rounded border border-blue-200">
                 <div className="text-[10px] font-bold text-blue-600 uppercase mb-0.5">Driver Notes</div>
                 <div className="text-xs text-blue-700">{detailModal.driverNotes}</div>
               </div>
