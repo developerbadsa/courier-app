@@ -58,7 +58,7 @@ export default function LiveTrackingMap({ data, height = 400, className = '' }: 
     let cancelled = false;
 
     async function initMap() {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      // @ts-ignore - leaflet types resolve at runtime via dynamic import
       const L: any = (await import('leaflet')).default;
       if (cancelled || !mapRef.current) return;
 
