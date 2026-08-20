@@ -63,15 +63,14 @@ android {
                 storeFile file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']
             } else {
-                // Fallback for CI/CD test builds
-                signingConfig signingConfigs.debug
+                initWith(signingConfigs.debug)
             }
         }
     }
 
     buildTypes {
         release {
-            signingConfig (hasCustomKeystore ? signingConfigs.release : signingConfigs.debug)
+            signingConfig signingConfigs.release
             minifyEnabled false
             shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
