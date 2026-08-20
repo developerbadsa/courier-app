@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { I18nProvider } from '@/contexts/I18nContext';
 import './globals.css';
 
 const inter = Inter({
@@ -67,7 +66,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Shohnaat Rider" />
       </head>
       <body className={`${inter.className} min-h-screen bg-slate-50 text-slate-900 antialiased font-sans`}>
-        <ErrorBoundary><I18nProvider>{children}</I18nProvider></ErrorBoundary>
+        <ErrorBoundary>{children}</ErrorBoundary>
       </body>
     </html>
   );

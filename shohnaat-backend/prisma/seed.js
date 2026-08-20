@@ -6,116 +6,172 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // Create roles
-  const roles = ['super_admin', 'operator', 'merchant', 'rider'];
-  
-  for (const roleName of roles) {
-    await prisma.role.upsert({
-      where: { name: roleName },
+  // ── 1. Create Roles ──
+  const roleNames = ['super_admin', 'operator', 'merchant', 'rider'];
+  const roles = {};
+  for (const name of roleNames) {
+    roles[name] = await prisma.role.upsert({
+      where: { name },
       update: {},
-      create: { name: roleName }
+      create: { name },
     });
-    console.log(`  ✓ Role: ${roleName}`);
+    console.log(`  ✓ Role: ${name}`);
   }
 
-  // Create default branch
+  // ── 2. Create Default Branch ──
   const branch = await prisma.branch.upsert({
     where: { code: 'HQ' },
     update: {},
     create: {
-      name: 'Headquarters',
+      name: 'Headquarters Hub',
       code: 'HQ',
       isHub: true,
-      address: '123 Logistics Avenue',
-      city: 'Dhaka',
-      isActive: true
-    }
+      address: '1200 Logistics Blvd',
+      city: 'Austin',
+      isActive: true,
+    },
   });
   console.log(`  ✓ Branch: ${branch.name}`);
 
-  // Create admin user
-  const adminPassword = await bcrypt.hash('Admin#2026!Global', 12);
-  
-  const adminUser = await prisma.user.upsert({
-    where: { email: 'admin@shohnaat.com' },
-    update: {},
-    create: {
-      name: 'Admin',
+  // ── 3. Create Demo Users (matching login page ROLE_PRESETS) ──
+  const password = await bcrypt.hash('admin123', 12);
+
+  const demoUsers = [
+    {
       email: 'admin@shohnaat.com',
-      phone: '+8801700000000',
-      passwordHash: adminPassword,
-      status: 'ACTIVE',
-      branchId: branch.id
-    }
-  });
-
-  // Assign super_admin role to admin
-  await prisma.userRole.upsert({
-    where: {
-      userId_roleId: {
-        userId: adminUser.id,
-        roleId: (await prisma.role.findUnique({ where: { name: 'super_admin' } })).id
-      }
+      name: 'System Admin',
+      phone: '+1-555-0100',
+      role: 'super_admin',
     },
-    update: {},
-    create: {
-      userId: adminUser.id,
-      roleId: (await prisma.role.findUnique({ where: { name: 'super_admin' } })).id
-    }
-  });
-  console.log(`  ✓ Admin user: ${adminUser.email}`);
+    {
+      email: 'merchant@shohnaat.com',
+      name: 'Demo Merchant',
+      phone: '+1-555-0200',
+      role: 'merchant',
+    },
+    {
+      email: 'rider@shohnaat.com',
+      name: 'Demo Rider',
+      phone: '+1-555-0300',
+      role: 'rider',
+    },
+    {
+      email: 'operator@shohnaat.com',
+      name: 'Hub Operator',
+      phone: '+1-555-0400',
+      role: 'operator',
+    },
+  ];
 
-  // Create default zones
-  const zones = ['Dhaka Metro', 'Chittagong', 'Sylhet', 'Rajshahi', 'Khulna', 'Barishal', 'Rangpur', 'Mymensingh'];
-  
-  for (const zoneName of zones) {
-    await prisma.zone.upsert({
-      where: { name: zoneName },
+  for (const u of demoUsers) {
+    const user = await prisma.user.upsert({
+      where: { email: u.email },
       update: {},
-      create: { name: zoneName, isActive: true }
+      create: {
+        name: u.name,
+        email: u.email,
+        phone: u.phone,
+        passwordHash: password,
+        status: 'ACTIVE',
+        branchId: branch.id,
+      },
+    });
+
+    // Assign role
+    await prisma.userRole.upsert({
+      where: {
+        userId_roleId: {
+          userId: user.id,
+          roleId: roles[u.role].id,
+        },
+      },
+      update: {},
+      create: {
+        userId: user.id,
+        roleId: roles[u.role].id,
+      },
+    });
+
+    // Create merchant profile for merchant user
+    if (u.role === 'merchant') {
+      await prisma.merchant.upsert({
+        where: { userId: user.id },
+        update: {},
+        create: {
+          userId: user.id,
+          businessName: 'Demo Store LLC',
+          businessType: 'E-Commerce',
+          kycStatus: 'approved',
+          isActive: true,
+        },
+      });
+    }
+
+    // Create rider profile for rider user
+    if (u.role === 'rider') {
+      await prisma.rider.upsert({
+        where: { userId: user.id },
+        update: {},
+        create: {
+          userId: user.id,
+          vehicleType: 'van',
+          isOnDuty: false,
+        },
+      });
+    }
+
+    console.log(`  ✓ User: ${u.email} (${u.role})`);
+  }
+
+  // ── 4. Create Default Zones ──
+  const zoneNames = [
+    'Downtown', 'North Side', 'South Side', 'East District', 'West District',
+    'Metro Area', 'Suburban', 'Industrial',
+  ];
+  for (const name of zoneNames) {
+    await prisma.zone.upsert({
+      where: { name },
+      update: {},
+      create: { name, isActive: true },
     });
   }
-  console.log(`  ✓ Zones: ${zones.length} created`);
+  console.log(`  ✓ Zones: ${zoneNames.length} created`);
 
-  // Create default rate card
+  // ── 5. Create Default Rate Card ──
   const rateCard = await prisma.rateCard.upsert({
     where: { id: 'default' },
     update: {},
     create: {
       id: 'default',
       name: 'Standard Rate Card',
-      isDefault: true
-    }
+      isDefault: true,
+    },
   });
 
   // Create sample rate rules
-  const dhakaZone = await prisma.zone.findUnique({ where: { name: 'Dhaka Metro' } });
-  
-  await prisma.rateRule.create({
-    data: {
-      rateCardId: rateCard.id,
-      zoneId: dhakaZone.id,
-      serviceType: 'standard',
-      baseCharge: 5.00,
-      extraPerKg: 1.50
+  const downtownZone = await prisma.zone.findUnique({ where: { name: 'Downtown' } });
+  if (downtownZone) {
+    const existingRules = await prisma.rateRule.findMany({
+      where: { rateCardId: rateCard.id },
+    });
+    if (existingRules.length === 0) {
+      await prisma.rateRule.createMany({
+        data: [
+          { rateCardId: rateCard.id, zoneId: downtownZone.id, serviceType: 'standard', baseCharge: 5.0, extraPerKg: 1.5 },
+          { rateCardId: rateCard.id, zoneId: downtownZone.id, serviceType: 'express', baseCharge: 8.0, extraPerKg: 2.0 },
+        ],
+      });
     }
-  });
-
-  await prisma.rateRule.create({
-    data: {
-      rateCardId: rateCard.id,
-      zoneId: dhakaZone.id,
-      serviceType: 'express',
-      baseCharge: 8.00,
-      extraPerKg: 2.00
-    }
-  });
-
+  }
   console.log(`  ✓ Rate card and rules created`);
 
+  // ── Done ──
   console.log('\n✅ Seeding complete!');
-  console.log('\n📋 Default credentials:');
-  console.log('  Admin: admin@shohnaat.com / admin123');
+  console.log('\n📋 Demo Credentials (all passwords: admin123):');
+  console.log('  Superadmin : admin@shohnaat.com');
+  console.log('  Merchant   : merchant@shohnaat.com');
+  console.log('  Rider      : rider@shohnaat.com');
+  console.log('  Operator   : operator@shohnaat.com');
 }
 
 main()
