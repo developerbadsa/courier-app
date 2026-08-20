@@ -153,7 +153,7 @@ export default function MerchantDashboard() {
       onPrimaryAction={() => router.push('/dashboard/shipments/new')}
     >
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Today's Shipments"
           value="128"
@@ -189,11 +189,14 @@ export default function MerchantDashboard() {
       </div>
 
       {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Shipments Table */}
-        <div className="lg:col-span-2">
-          <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-slate-900">Active Shipments</h2>
+        <div className="lg:col-span-2 space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-base font-bold text-slate-900 tracking-tight">Active Shipments</h2>
+              <p className="text-xs text-slate-500 mt-0.5">Live status and dispatch timeline for current orders</p>
+            </div>
             <Badge variant="blue" size="sm">{SHIPMENTS.length} parcels</Badge>
           </div>
 
@@ -211,18 +214,18 @@ export default function MerchantDashboard() {
         </div>
 
         {/* Sidebar Cards */}
-        <div className="space-y-5">
+        <div className="space-y-6">
           {/* Pickup Schedule */}
-          <Card className="p-5 border-l-4 border-l-blue-600">
+          <Card className="p-6 border-l-4 border-l-blue-600">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Scheduled Pickup</span>
               <Badge variant="blue" size="sm">Today 3:00 PM</Badge>
             </div>
-            <h3 className="text-sm font-bold text-slate-900 mt-2">Headquarters Hub Van #4</h3>
-            <p className="text-xs text-slate-500 mt-1">
+            <h3 className="text-sm font-bold text-slate-900 mt-3">Headquarters Hub Van #4</h3>
+            <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
               Rider <strong>David Miller</strong> assigned for 18 parcel pickups.
             </p>
-            <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
+            <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
               <span className="text-xs text-slate-500">Need immediate pickup?</span>
               <Button variant="outline" size="sm" className="h-8 text-xs font-semibold">
                 Request Extra
@@ -231,12 +234,12 @@ export default function MerchantDashboard() {
           </Card>
 
           {/* Settlement Summary */}
-          <Card className="p-5">
-            <div className="flex items-center justify-between mb-3">
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-slate-900">Settlement &amp; Payouts</h3>
               <Badge variant="green" size="sm" dot>Verified</Badge>
             </div>
-            <div className="space-y-2.5 text-xs">
+            <div className="space-y-3 text-xs">
               <div className="flex justify-between py-1.5 border-b border-slate-100">
                 <span className="text-slate-500">Collected This Week</span>
                 <span className="font-bold text-slate-900">$12,840.00</span>
@@ -247,17 +250,18 @@ export default function MerchantDashboard() {
               </div>
               <div className="flex justify-between py-1.5 font-semibold">
                 <span className="text-slate-800">Net Payable</span>
-                <span className="font-bold text-emerald-600 text-sm">$12,198.00</span>
+                <span className="font-bold text-emerald-600 text-base">$12,198.00</span>
               </div>
             </div>
-            <div className="mt-4">
-              <Button variant="primary" size="sm" className="w-full h-9 text-xs" leftIcon={<Download className="w-3.5 h-3.5" />}>
+            <div className="mt-5">
+              <Button variant="primary" size="sm" className="w-full h-9 text-xs font-semibold" leftIcon={<Download className="w-3.5 h-3.5" />}>
                 Download Statement
               </Button>
             </div>
           </Card>
         </div>
       </div>
+
     </DashboardLayout>
   );
 }
