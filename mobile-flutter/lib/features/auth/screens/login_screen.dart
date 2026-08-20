@@ -6,8 +6,10 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
+import '../../admin/screens/admin_home_screen.dart';
 import '../../rider/screens/rider_home_screen.dart';
 import '../../merchant/screens/merchant_home_screen.dart';
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -72,7 +74,11 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             );
           } else if (state is Authenticated) {
-            if (state.role == 'rider') {
+            if (state.role == 'super_admin' || state.role == 'operator') {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const AdminHomeScreen()),
+              );
+            } else if (state.role == 'rider') {
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (_) => const RiderHomeScreen()),
               );
@@ -82,6 +88,7 @@ class _LoginScreenState extends State<LoginScreen> {
               );
             }
           }
+
         },
         builder: (context, state) {
           final isLoading = state is AuthLoading;

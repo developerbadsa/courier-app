@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import 'login_screen.dart';
+import '../../admin/screens/admin_home_screen.dart';
 import '../../rider/screens/rider_home_screen.dart';
 import '../../merchant/screens/merchant_home_screen.dart';
 
@@ -29,7 +30,11 @@ class _SplashScreenState extends State<SplashScreen> {
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
-            if (state.role == 'rider') {
+            if (state.role == 'super_admin' || state.role == 'operator') {
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (_) => const AdminHomeScreen()),
+              );
+            } else if (state.role == 'rider') {
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (_) => const RiderHomeScreen()),
               );
@@ -39,6 +44,7 @@ class _SplashScreenState extends State<SplashScreen> {
               );
             }
           } else if (state is Unauthenticated || state is AuthError) {
+
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (_) => const LoginScreen()),
             );
