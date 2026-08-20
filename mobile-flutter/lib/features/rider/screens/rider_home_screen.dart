@@ -1,0 +1,370 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:lucide_icons/lucide_icons.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/status_badge_widget.dart';
+import '../../auth/cubit/auth_cubit.dart';
+import '../../auth/screens/login_screen.dart';
+import '../cubit/runsheet_cubit.dart';
+import '../cubit/runsheet_state.dart';
+import '../models/delivery_task_model.dart';
+import 'task_detail_screen.dart';
+import '../../scanner/screens/camera_barcode_scanner_screen.dart';
+
+class RiderHomeScreen extends StatefulWidget {
+  const RiderHomeScreen({super.key});
+
+  @override
+  State<RiderHomeScreen> createState() => _RiderHomeScreenState();
+}
+
+class _RiderHomeScreenState extends State<RiderHomeScreen> {
+  int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    context.read<RunsheetCubit>().fetchRunsheet();
+  }
+
+  void _onLogout() {
+    context.read<AuthCubit>().logout();
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.navyBackground,
+        title: const Row(
+          children: [
+            Icon(LucideIcons.bike, size: 20, color: Colors.white),
+            SizedBox(width: 8),
+            Text('Shohnaat Rider'),
+          ],
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(LucideIcons.camera, color: Colors.white),
+            tooltip: 'Camera Barcode Scanner',
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const CameraBarcodeScannerScreen()),
+              );
+            },
+          ),
+          IconButton(
+            icon: const Icon(LucideIcons.logOut, color: AppColors.textMuted, size: 18),
+            onPressed: _onLogout,
+          ),
+        ],
+      ),
+      body: BlocBuilder<RunsheetCubit, RunsheetState>(
+        builder: (context, state) {
+          if (state is RunsheetLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (state is RunsheetLoaded) {
+            if (_currentIndex == 0) {
+              return _buildActiveTasksTab(state);
+            } else if (_currentIndex == 1) {
+              return _buildHistoryTab(state);
+            } else {
+              return _buildEarningsTab(state);
+            }
+          }
+
+          return Center(
+            child: AppButton(
+              text: 'Retry Loading Runsheet',
+              onPressed: () => context.read<RunsheetCubit>().fetchRunsheet(),
+            ),
+          );
+        },
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        selectedItemColor: AppColors.primary,
+        unselectedItemColor: AppColors.textMuted,
+        backgroundColor: Colors.white,
+        onTap: (index) => setState(() => _currentIndex = index),
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(LucideIcons.clipboardList),
+            label: 'Runsheet',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(LucideIcons.history),
+            label: 'Delivered',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(LucideIcons.wallet),
+            label: 'Cash Wallet',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveTasksTab(RunsheetLoaded state) {
+    final tasks = state.activeTasks;
+
+    return RefreshIndicator(
+      onRefresh: () => context.read<RunsheetCubit>().fetchRunsheet(),
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Header Metric Summary
+          Row(
+            children: [
+              Expanded(
+                child: AppCard(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Remaining', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                      const SizedBox(height: 2),
+                      Text('${state.pendingCount} Stops', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: AppCard(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Completed', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                      const SizedBox(height: 2),
+                      Text('${state.completedCount} Done', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.success)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          if (tasks.isEmpty)
+            Container(
+              padding: const EdgeInsets.symmetric(vertical: 40),
+              child: const Column(
+                children: [
+                  Icon(LucideIcons.checkCheck, size: 48, color: AppColors.success),
+                  SizedBox(height: 12),
+                  Text('All Runsheet Tasks Completed!', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  Text('Great job! No pending deliveries remaining.', style: TextStyle(color: AppColors.textMuted, fontSize: 12.5)),
+                ],
+              ),
+            )
+          else
+            ...tasks.asMap().entries.map((entry) {
+              final idx = entry.key + 1;
+              final task = entry.value;
+              return _buildTaskCard(task, stopIndex: idx);
+            }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHistoryTab(RunsheetLoaded state) {
+    final tasks = state.historyTasks;
+
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Text(
+          'Completed Deliveries (${tasks.length})',
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+        ),
+        const SizedBox(height: 12),
+        if (tasks.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 30),
+            child: Center(child: Text('No completed tasks yet today.')),
+          )
+        else
+          ...tasks.map((task) => _buildTaskCard(task)),
+      ],
+    );
+  }
+
+  Widget _buildEarningsTab(RunsheetLoaded state) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // COD Wallet Card
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(14),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.12),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('CASH IN HAND (COD COLLECTED)', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                Text(
+                  '\$${state.totalCodCollected.toStringAsFixed(2)} USD',
+                  style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900),
+                ),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    'Deposit at Hub End of Shift: \$${state.totalCodCollected.toStringAsFixed(2)}',
+                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Shift Summary Card
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text('Shift Performance', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                const Divider(height: 20),
+                _buildSummaryRow('Total Assigned Tasks', '${state.tasks.length} Parcels'),
+                _buildSummaryRow('Delivered Successfully', '${state.completedCount} Parcels'),
+                _buildSummaryRow('Pending Stops', '${state.pendingCount} Stops'),
+                _buildSummaryRow('Success Rate', '${state.tasks.isNotEmpty ? ((state.completedCount / state.tasks.length) * 100).toStringAsFixed(0) : 0}%'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTaskCard(DeliveryTaskModel task, {int? stopIndex}) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12.0),
+      child: AppCard(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => TaskDetailScreen(task: task)),
+          );
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    if (stopIndex != null) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          '#$stopIndex',
+                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                    ],
+                    Text(
+                      task.trackingNumber,
+                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
+                    ),
+                  ],
+                ),
+                StatusBadgeWidget(status: task.status, isSmall: true),
+              ],
+            ),
+            const Divider(height: 16),
+            Text(
+              task.recipientName,
+              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            ),
+            const SizedBox(height: 4),
+            Row(
+              children: [
+                const Icon(LucideIcons.mapPin, size: 14, color: AppColors.textMuted),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    '${task.deliveryAddress}, ${task.destinationCity}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  task.codAmount > 0 ? 'COD: \$${task.codAmount.toStringAsFixed(2)}' : 'PREPAID',
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                    color: task.codAmount > 0 ? const Color(0xFFB45309) : AppColors.success,
+                  ),
+                ),
+                const Row(
+                  children: [
+                    Text('Details', style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600)),
+                    Icon(LucideIcons.chevronRight, size: 14, color: AppColors.primary),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
