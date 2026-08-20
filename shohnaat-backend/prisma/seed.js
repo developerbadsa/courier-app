@@ -34,32 +34,34 @@ async function main() {
   console.log(`  ✓ Branch: ${branch.name}`);
 
   // ── 3. Create Demo Users (matching login page ROLE_PRESETS) ──
-  const password = await bcrypt.hash('admin123', 12);
-
   const demoUsers = [
     {
       email: 'admin@shohnaat.com',
       name: 'System Admin',
       phone: '+1-555-0100',
       role: 'super_admin',
+      password: 'admin123',
     },
     {
       email: 'merchant@shohnaat.com',
       name: 'Demo Merchant',
       phone: '+1-555-0200',
       role: 'merchant',
+      password: 'merchant123',
     },
     {
       email: 'rider@shohnaat.com',
       name: 'Demo Rider',
       phone: '+1-555-0300',
       role: 'rider',
+      password: 'rider123',
     },
     {
       email: 'operator@shohnaat.com',
       name: 'Hub Operator',
       phone: '+1-555-0400',
       role: 'operator',
+      password: 'operator123',
     },
   ];
 
@@ -71,7 +73,7 @@ async function main() {
         name: u.name,
         email: u.email,
         phone: u.phone,
-        passwordHash: password,
+        passwordHash: await bcrypt.hash(u.password, 12),
         status: 'ACTIVE',
         branchId: branch.id,
       },
