@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { Input, Button, Checkbox, Select } from '@/components/ui';
+import { apiPost, showToast } from '@/lib/api';
 
 const ROLE_PRESETS: Record<
   string,
@@ -70,56 +71,30 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
 
-    const apiUrl =
-      process.env.NEXT_PUBLIC_API_URL || 'https://api-shohnaat.rahimbadsa.me';
+    const result = await apiPost<{ accessToken: string; user: { roles: string[] } }>(
+      '/api/v1/auth/login',
+      { email, password },
+    );
 
-    try {
-      const res = await fetch(`${apiUrl}/api/v1/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+    if (result.success && result.data) {
+      localStorage.setItem('shohnaat_token', result.data.accessToken);
+      localStorage.setItem('shohnaat_user', JSON.stringify(result.data.user));
+      showToast('success', 'Signed in successfully');
 
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        if (data.data?.accessToken) {
-          localStorage.setItem('shohnaat_token', data.data.accessToken);
-          localStorage.setItem('shohnaat_user', JSON.stringify(data.data.user));
-        }
-
-        const userRoles = data.data?.user?.roles || [];
-        const role = Array.isArray(userRoles) ? userRoles[0] : (data.data?.user?.role?.name || '');
-        if (role === 'super_admin' || role === 'operator' || userRoles.includes('super_admin') || userRoles.includes('operator')) {
-          window.location.href = '/admin';
-        } else if (role === 'rider' || userRoles.includes('rider')) {
-          window.location.href = '/rider';
-        } else {
-          window.location.href = '/dashboard';
-        }
-      } else {
-        if (email === 'admin@shohnaat.com' && password === 'admin123') {
-          window.location.href = '/admin';
-        } else if (email === 'merchant@shohnaat.com') {
-          window.location.href = '/dashboard';
-        } else if (email === 'rider@shohnaat.com') {
-          window.location.href = '/rider';
-        } else {
-          setError(data.message || 'Invalid email or password.');
-        }
-      }
-
-    } catch {
-      if (email === 'admin@shohnaat.com' && password === 'admin123') {
+      const userRoles = result.data.user?.roles || [];
+      const role = Array.isArray(userRoles) ? userRoles[0] : '';
+      if (role === 'super_admin' || role === 'operator') {
         window.location.href = '/admin';
-      } else if (email.includes('rider')) {
+      } else if (role === 'rider') {
         window.location.href = '/rider';
       } else {
         window.location.href = '/dashboard';
       }
-    } finally {
-      setIsLoading(false);
+    } else {
+      setError(result.message || 'Invalid email or password.');
     }
+
+    setIsLoading(false);
   };
 
   return (

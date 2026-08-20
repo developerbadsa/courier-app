@@ -58,7 +58,7 @@ const MOCK_STATS = {
   totalCODCollected: 524000,
 };
 
-import { api } from '@/lib/api';
+import { apiGet, apiPost } from '@/lib/api';
 
 /* ── Page ── */
 export default function AdminFinancePage() {
@@ -75,9 +75,9 @@ export default function AdminFinancePage() {
     async function loadAdminFinance() {
       try {
         const [settlementsRes, overviewRes, merchantsRes] = await Promise.all([
-          api.get('/api/v1/finance/admin/settlements'),
-          api.get('/api/v1/finance/admin/overview'),
-          api.get('/api/v1/merchants'),
+          apiGet<any[]>('/api/v1/finance/admin/settlements'),
+          apiGet<any>('/api/v1/finance/admin/overview'),
+          apiGet<any[]>('/api/v1/merchants'),
         ]);
 
         if (settlementsRes.success && Array.isArray(settlementsRes.data) && settlementsRes.data.length > 0) {
@@ -122,7 +122,7 @@ export default function AdminFinancePage() {
 
   const handleApprove = async (id: string) => {
     try {
-      await api.post(`/api/v1/finance/admin/settlements/${id}/approve`);
+      await apiPost(`/api/v1/finance/admin/settlements/${id}/approve`);
     } catch {}
     setPayouts((prev) => prev.map((p) => p.id === id ? { ...p, status: 'PROCESSING' as const } : p));
     setProcessModal(null);
@@ -130,7 +130,7 @@ export default function AdminFinancePage() {
 
   const handleProcess = async (id: string) => {
     try {
-      await api.post(`/api/v1/finance/admin/settlements/${id}/process`, { provider: 'sandbox' });
+      await apiPost(`/api/v1/finance/admin/settlements/${id}/process`, { provider: 'sandbox' });
     } catch {}
     setPayouts((prev) => prev.map((p) => p.id === id ? { ...p, status: 'PAID' as const, processedAt: 'Just now' } : p));
     setProcessModal(null);
@@ -139,7 +139,7 @@ export default function AdminFinancePage() {
   const handleBatchProcess = async () => {
     setProcessing(true);
     try {
-      await api.post('/api/v1/finance/admin/settlements/batch-process', { provider: 'sandbox' });
+      await apiPost('/api/v1/finance/admin/settlements/batch-process', { provider: 'sandbox' });
     } catch {}
     setPayouts((prev) => prev.map((p) => p.status === 'PROCESSING' ? { ...p, status: 'PAID' as const, processedAt: 'Just now' } : p));
     setProcessing(false);

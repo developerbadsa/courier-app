@@ -1,16 +1,150 @@
-/**
- * Shohnaat Logistics — Resilient Frontend API Client
- * Automatic auth header injection, error normalization, and fallback handling
- */
+import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-const getApiBaseUrl = (): string => {
-  if (typeof window !== 'undefined') {
-    return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+/* ─────────────────────────────────────────────────────────────
+ *  Toast notification system (lightweight, no external deps)
+ * ───────────────────────────────────────────────────────────── */
+export type ToastType = 'success' | 'error' | 'warning' | 'info';
+
+export interface Toast {
+  id: string;
+  type: ToastType;
+  message: string;
+  duration?: number;
+}
+
+type ToastListener = (toasts: Toast[]) => void;
+let listeners: ToastListener[] = [];
+let toasts: Toast[] = [];
+
+function notify() {
+  listeners.forEach((l) => l([...toasts]));
+}
+
+export function subscribeToasts(listener: ToastListener) {
+  listeners.push(listener);
+  return () => {
+    listeners = listeners.filter((l) => l !== listener);
+  };
+}
+
+export function showToast(type: ToastType, message: string, duration = 4000) {
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+  const toast: Toast = { id, type, message, duration };
+  toasts = [...toasts, toast];
+  notify();
+  if (duration > 0) {
+    setTimeout(() => removeToast(id), duration);
   }
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+}
+
+export function removeToast(id: string) {
+  toasts = toasts.filter((t) => t.id !== id);
+  notify();
+}
+
+/* ─────────────────────────────────────────────────────────────
+ *  User-friendly error messages
+ * ───────────────────────────────────────────────────────────── */
+const ERROR_MESSAGES: Record<number, string> = {
+  400: 'Invalid request. Please check your input.',
+  401: 'Session expired. Please sign in again.',
+  403: 'You don\'t have permission for this action.',
+  404: 'Resource not found.',
+  408: 'Request timed out. Please try again.',
+  409: 'Conflict — this resource already exists.',
+  422: 'Validation error. Please check the form fields.',
+  429: 'Too many requests. Please wait a moment.',
+  500: 'Server error. Please try again later.',
+  502: 'Service temporarily unavailable. Retrying...',
+  503: 'Service is under maintenance. Please try again later.',
 };
 
-interface ApiResponse<T = any> {
+function getErrorMessage(error: AxiosError<{ message?: string }>): string {
+  const status = error.response?.status;
+  const serverMessage = error.response?.data?.message;
+
+  if (status === 401) {
+    // Clear expired token
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('shohnaat_token');
+      localStorage.removeItem('shohnaat_user');
+    }
+    return serverMessage || ERROR_MESSAGES[401];
+  }
+
+  if (status && ERROR_MESSAGES[status]) {
+    return serverMessage || ERROR_MESSAGES[status];
+  }
+
+  if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+    return 'Request timed out. Please check your connection and try again.';
+  }
+
+  if (!error.response) {
+    return 'Network error. Please check your internet connection.';
+  }
+
+  return serverMessage || `Something went wrong (${status || 'unknown'}). Please try again.`;
+}
+
+/* ─────────────────────────────────────────────────────────────
+ *  Axios instance with interceptors
+ * ───────────────────────────────────────────────────────────── */
+const api = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
+  timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+// Request interceptor — inject auth token
+api.interceptors.request.use(
+  (config: InternalAxiosRequestConfig) => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('shohnaat_token');
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+    }
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
+
+// Response interceptor — normalize errors, show toasts
+api.interceptors.response.use(
+  (response) => response,
+  (error: AxiosError<{ message?: string }>) => {
+    const status = error.response?.status;
+    const message = getErrorMessage(error);
+
+    // Don't show toast for login errors (handled locally)
+    const url = error.config?.url || '';
+    if (!url.includes('/auth/login')) {
+      if (status === 401) {
+        showToast('warning', message);
+        // Redirect to login after a short delay
+        if (typeof window !== 'undefined') {
+          setTimeout(() => {
+            window.location.href = '/login';
+          }, 1500);
+        }
+      } else if (status && status >= 500) {
+        showToast('error', message);
+      } else if (status === 429) {
+        showToast('warning', message);
+      }
+    }
+
+    return Promise.reject(error);
+  },
+);
+
+/* ─────────────────────────────────────────────────────────────
+ *  Typed API helpers
+ * ───────────────────────────────────────────────────────────── */
+export interface ApiResponse<T = unknown> {
   success: boolean;
   data?: T;
   message?: string;
@@ -23,93 +157,67 @@ interface ApiResponse<T = any> {
   };
 }
 
-class ApiClient {
-  private baseUrl: string;
-
-  constructor() {
-    this.baseUrl = getApiBaseUrl();
-  }
-
-  private getHeaders(customHeaders: Record<string, string> = {}): Record<string, string> {
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...customHeaders,
+export async function apiGet<T>(endpoint: string): Promise<ApiResponse<T>> {
+  try {
+    const res = await api.get<ApiResponse<T>>(endpoint);
+    return res.data;
+  } catch (error) {
+    const axiosErr = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message: getErrorMessage(axiosErr),
+      error_code: axiosErr.code,
     };
-
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('shohnaat_token');
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`;
-      }
-    }
-
-    return headers;
-  }
-
-  public async request<T = any>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<ApiResponse<T>> {
-    const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint.startsWith('/') ? '' : '/'}${endpoint}`;
-
-    try {
-      const res = await fetch(url, {
-        ...options,
-        headers: this.getHeaders(options.headers as Record<string, string>),
-      });
-
-      const data = await res.json().catch(() => ({
-        success: false,
-        message: `HTTP Error ${res.status}: ${res.statusText}`,
-      }));
-
-      if (!res.ok) {
-        // If 401 Unauthorized, handle token expiration gracefully
-        if (res.status === 401 && typeof window !== 'undefined' && !endpoint.includes('/auth/login')) {
-          console.warn('Session expired. Redirecting to login...');
-        }
-        return {
-          success: false,
-          message: data.message || `Request failed with status ${res.status}`,
-          error_code: data.error_code,
-          data: data.data,
-        };
-      }
-
-      return data;
-    } catch (err: any) {
-      return {
-        success: false,
-        message: err.message || 'Network connection failed. Please check your internet or server status.',
-        error_code: 'NETWORK_ERROR',
-      };
-    }
-  }
-
-  public get<T = any>(endpoint: string, headers?: Record<string, string>) {
-    return this.request<T>(endpoint, { method: 'GET', headers });
-  }
-
-  public post<T = any>(endpoint: string, body?: any, headers?: Record<string, string>) {
-    return this.request<T>(endpoint, {
-      method: 'POST',
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-  }
-
-  public patch<T = any>(endpoint: string, body?: any, headers?: Record<string, string>) {
-    return this.request<T>(endpoint, {
-      method: 'PATCH',
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
-  }
-
-  public delete<T = any>(endpoint: string, headers?: Record<string, string>) {
-    return this.request<T>(endpoint, { method: 'DELETE', headers });
   }
 }
 
-export const api = new ApiClient();
+export async function apiPost<T>(
+  endpoint: string,
+  body?: unknown,
+): Promise<ApiResponse<T>> {
+  try {
+    const res = await api.post<ApiResponse<T>>(endpoint, body);
+    return res.data;
+  } catch (error) {
+    const axiosErr = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message: getErrorMessage(axiosErr),
+      error_code: axiosErr.code,
+    };
+  }
+}
+
+export async function apiPatch<T>(
+  endpoint: string,
+  body?: unknown,
+): Promise<ApiResponse<T>> {
+  try {
+    const res = await api.patch<ApiResponse<T>>(endpoint, body);
+    return res.data;
+  } catch (error) {
+    const axiosErr = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message: getErrorMessage(axiosErr),
+      error_code: axiosErr.code,
+    };
+  }
+}
+
+export async function apiDelete<T>(endpoint: string): Promise<ApiResponse<T>> {
+  try {
+    const res = await api.delete<ApiResponse<T>>(endpoint);
+    return res.data;
+  } catch (error) {
+    const axiosErr = error as AxiosError<{ message?: string }>;
+    return {
+      success: false,
+      message: getErrorMessage(axiosErr),
+      error_code: axiosErr.code,
+    };
+  }
+}
+
+export { api };
 export default api;

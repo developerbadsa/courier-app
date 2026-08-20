@@ -71,7 +71,7 @@ const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string }> 
   REFUND: { label: 'Refund', color: 'text-purple-600', bg: 'bg-purple-50 border-purple-200' },
 };
 
-import { api } from '@/lib/api';
+import { apiGet, apiPost } from '@/lib/api';
 
 /* ------------------------------------------------------------------ */
 /*  Page                                                                */
@@ -92,9 +92,9 @@ export default function FinancePage() {
     async function loadFinanceData() {
       try {
         const [walletRes, entriesRes, settlementsRes] = await Promise.all([
-          api.get('/api/v1/finance/wallet'),
-          api.get('/api/v1/finance/entries'),
-          api.get('/api/v1/finance/settlements'),
+          apiGet<any>('/api/v1/finance/wallet'),
+          apiGet<any[]>('/api/v1/finance/entries'),
+          apiGet<any[]>('/api/v1/finance/settlements'),
         ]);
 
         if (walletRes.success && walletRes.data) {
@@ -148,12 +148,12 @@ export default function FinancePage() {
   const handlePayoutRequest = async () => {
     setPayoutProcessing(true);
     try {
-      const res = await api.post('/api/v1/finance/payout/request', payoutForm);
+      const res = await apiPost<any>('/api/v1/finance/payout/request', payoutForm);
       if (res.success) {
         setPayoutModal(false);
         setPayoutSubmitted(true);
         // Refresh wallet
-        const w = await api.get('/api/v1/finance/wallet');
+        const w = await apiGet<any>('/api/v1/finance/wallet');
         if (w.success && w.data) setWallet(w.data);
       }
     } catch {
