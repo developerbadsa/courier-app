@@ -11,6 +11,31 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(':app')
+
+    // Fix geolocator_android: its build.gradle reads android.flutter.compileSdkVersion
+    // which only exists in the app module. Inject it for library subprojects.
+    if (project.name == 'geolocator_android') {
+        project.plugins.whenPluginAdded { plugin ->
+            def isAndroidLib = plugin.class.name.contains('com.android.library')
+            if (isAndroidLib) {
+                // Create a flutter-like extension on android so geolocator can read it
+                project.android.flutter = new FlutterStub(project.android)
+            }
+        }
+    }
+}
+
+// Stub class that provides flutter.compileSdkVersion etc.
+class FlutterStub {
+    def android
+    def compileSdkVersion = 34
+    def minSdkVersion = 21
+    def targetSdkVersion = 34
+    def ndkVersion = "25.1.8937393"
+
+    FlutterStub(android) {
+        this.android = android
+    }
 }
 
 tasks.register("clean", Delete) {
