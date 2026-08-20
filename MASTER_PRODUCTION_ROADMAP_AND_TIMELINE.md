@@ -25,26 +25,35 @@
 gantt
     title Shohnaat Logistics — Production Timeline
     dateFormat  YYYY-MM-DD
-    section Sprint 1: Core Foundation & UI System
+    section Sprint 1: Core Foundation
     DevOps, Docker & PostgreSQL 16 Schema       :done,    des1, 2026-08-19, 2026-08-20
-    Figma Design Tokens & Reusable UI/Layout    :done,    des2, 2026-08-19, 2026-08-20
-    Auth, RBAC & 1-Click Demo Logins            :done,    des3, 2026-08-19, 2026-08-20
-    section Sprint 2: Core Order & Shipping Engine
-    Create Shipment Multi-Step Wizard          :active,  des4, 2026-08-21, 2026-08-23
-    Dynamic Rate & Volumetric Weight Engine     :active,  des5, 2026-08-21, 2026-08-23
-    Thermal Waybill & Barcode PDF Generator     :         des6, 2026-08-24, 2026-08-25
-    Address Book & Scheduled Pickup Dispatch    :         des7, 2026-08-25, 2026-08-26
-    section Sprint 3: Field Operations & Mid-Mile
-    Rider PWA App & Real-Time COD Handover      :         des8, 2026-08-27, 2026-08-29
-    Hub Barcode Scanning, Bagging & Linehaul    :         des9, 2026-08-30, 2026-09-01
-    Live Public Tracking & Visual Timeline      :         des10, 2026-09-02, 2026-09-03
-    section Sprint 4: Financial Clearinghouse & Payments
-    COD Wallets & Automated Settlements (PDF)   :         des11, 2026-09-04, 2026-09-07
-    Stripe & PayPal USD Gateways + Webhooks    :         des12, 2026-09-08, 2026-09-10
-    section Sprint 5: Developer API & Scale
-    Developer API Keys & HMAC Signed Webhooks   :         des13, 2026-09-11, 2026-09-13
-    BullMQ Background Queues & SMS/Email Alerts :         des14, 2026-09-14, 2026-09-16
-    E2E Integration Testing & Go-Live           :         des15, 2026-09-17, 2026-09-19
+    Design Tokens & Reusable UI/Layout         :done,    des2, 2026-08-19, 2026-08-20
+    Auth, RBAC & 1-Click Demo Logins           :done,    des3, 2026-08-19, 2026-08-20
+    section Sprint 2-3: Orders & Field Ops
+    Shipment Wizard + Rate Engine              :done,    des4, 2026-08-18, 2026-08-19
+    Hub Barcode Scanning + Manifests           :done,    des5, 2026-08-19, 2026-08-19
+    Rider PWA + COD Handover                   :done,    des6, 2026-08-19, 2026-08-19
+    section Sprint 4-5: Finance & Developer
+    Double-Entry Ledger + Stripe/PayPal        :done,    des7, 2026-08-19, 2026-08-19
+    API Keys + HMAC Webhooks                   :done,    des8, 2026-08-19, 2026-08-19
+    section Sprint 6-9: Portal & Hardening
+    Public Tracking + Analytics                :done,    des9, 2026-08-20, 2026-08-20
+    BullMQ Notifications                       :done,    des10, 2026-08-20, 2026-08-20
+    E2E Tests + Security Hardening             :done,    des11, 2026-08-20, 2026-08-20
+    section Sprint 10-11: Hardening & UI Lock
+    Redis Cache + Backup + Logger              :done,    des12, 2026-08-20, 2026-08-20
+    Design System Lockdown + DataTable         :done,    des13, 2026-08-20, 2026-08-20
+    section Sprint 12-13: Wiring & Labels
+    Full API Wiring (25 pages)                 :done,    des14, 2026-08-20, 2026-08-20
+    4x6 Thermal Label Engine                   :done,    des15, 2026-08-20, 2026-08-20
+    section Sprint 14-15: Tracking & Payouts
+    Live GPS Map + SSE Streaming               :done,    des16, 2026-08-20, 2026-08-20
+    Stripe/PayPal Payout Execution             :done,    des17, 2026-08-20, 2026-08-20
+    section Sprint 16-17: AI Rider & Cross-Dock
+    AI Route Optimizer + Offline Sync          :done,    des18, 2026-08-20, 2026-08-20
+    Multi-Hub Manifest Wiring                  :done,    des19, 2026-08-20, 2026-08-20
+    section Flutter Mobile App
+    Full Audit + 12 Screens API-Wired          :done,    des20, 2026-08-20, 2026-08-20
 ```
 
 ---
