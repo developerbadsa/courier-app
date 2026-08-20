@@ -1,0 +1,57 @@
+name: Build Shohnaat Mobile Android APK
+
+on:
+  push:
+    paths:
+      - 'mobile-flutter/**'
+      - '.github/workflows/build-flutter-apk.yml'
+  workflow_dispatch:
+
+jobs:
+  build-apk:
+    name: 📱 Build Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: ☕ Set up Java 17 (OpenJDK)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+
+      - name: 🐦 Set up Flutter SDK
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: 📦 Flutter Doctor & Cache Verify
+        run: |
+          flutter doctor -v
+
+      - name: ⚙️ Setup Android Platforms & Fetch Dependencies
+        working-directory: ./mobile-flutter
+        run: |
+          flutter create . --platforms=android --org com.shohnaat
+          flutter pub get
+
+      - name: 🔨 Build Universal Release APK
+        working-directory: ./mobile-flutter
+        run: |
+          flutter build apk --release
+
+      - name: 🔨 Build Split ABI APKs (Optimized for ARM64 & ARM32)
+        working-directory: ./mobile-flutter
+        run: |
+          flutter build apk --release --split-per-abi
+
+      - name: 📤 Upload Release APKs as Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Shohnaat-Logistics-Android-APK
+          path: mobile-flutter/build/app/outputs/flutter-apk/*.apk
+          retention-days: 30
