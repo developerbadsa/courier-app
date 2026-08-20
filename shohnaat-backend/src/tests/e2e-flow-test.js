@@ -78,57 +78,59 @@ async function runE2E() {
 
   // Login as merchant
   const merchantLogin = await request('POST', '/api/v1/auth/login', {
-    body: { email: 'merchant@test.com', password: 'password123' },
+    body: { email: 'merchant@shohnaat.com', password: 'admin123' },
     expectStatus: 200,
     label: 'Merchant login',
   });
-  merchantToken = merchantLogin.data?.data?.token || '';
+  merchantToken = merchantLogin.data?.data?.accessToken || merchantLogin.data?.data?.token || '';
 
   // Login as admin
   const adminLogin = await request('POST', '/api/v1/auth/login', {
-    body: { email: 'admin@test.com', password: 'password123' },
+    body: { email: 'admin@shohnaat.com', password: 'admin123' },
     expectStatus: 200,
     label: 'Admin login',
   });
-  adminToken = adminLogin.data?.data?.token || '';
+  adminToken = adminLogin.data?.data?.accessToken || adminLogin.data?.data?.token || '';
 
   // Login as rider
   const riderLogin = await request('POST', '/api/v1/auth/login', {
-    body: { email: 'rider@test.com', password: 'password123' },
+    body: { email: 'rider@shohnaat.com', password: 'admin123' },
     expectStatus: 200,
     label: 'Rider login',
   });
-  riderToken = riderLogin.data?.data?.token || '';
+  riderToken = riderLogin.data?.data?.accessToken || riderLogin.data?.data?.token || '';
 
-  // If any tokens missing, try creating them
-  if (!merchantToken || !adminToken) {
+  // If any tokens missing, try fallback registration
+  if (!merchantToken || !adminToken || !riderToken) {
     console.log('  ℹ️  Some users missing — registering test accounts...');
 
     await request('POST', '/api/v1/auth/register', {
-      body: { email: 'merchant@test.com', password: 'password123', name: 'Test Merchant', role: 'merchant' },
+      body: { email: 'merchant@shohnaat.com', phone: '+1-555-0200', password: 'admin123', name: 'Demo Merchant', role: 'merchant' },
       label: 'Register merchant',
     });
 
     await request('POST', '/api/v1/auth/register', {
-      body: { email: 'admin@test.com', password: 'password123', name: 'Test Admin', role: 'super_admin' },
+      body: { email: 'admin@shohnaat.com', phone: '+1-555-0100', password: 'admin123', name: 'System Admin', role: 'super_admin' },
       label: 'Register admin',
     });
 
     await request('POST', '/api/v1/auth/register', {
-      body: { email: 'rider@test.com', password: 'password123', name: 'Test Rider', role: 'rider' },
+      body: { email: 'rider@shohnaat.com', phone: '+1-555-0300', password: 'admin123', name: 'Demo Rider', role: 'rider' },
       label: 'Register rider',
     });
 
     // Re-login
-    const m2 = await request('POST', '/api/v1/auth/login', { body: { email: 'merchant@test.com', password: 'password123' }, label: 'Re-login merchant' });
-    merchantToken = m2.data?.data?.token || '';
+    const m2 = await request('POST', '/api/v1/auth/login', { body: { email: 'merchant@shohnaat.com', password: 'admin123' }, label: 'Re-login merchant' });
+    merchantToken = m2.data?.data?.accessToken || m2.data?.data?.token || '';
 
-    const a2 = await request('POST', '/api/v1/auth/login', { body: { email: 'admin@test.com', password: 'password123' }, label: 'Re-login admin' });
-    adminToken = a2.data?.data?.token || '';
+    const a2 = await request('POST', '/api/v1/auth/login', { body: { email: 'admin@shohnaat.com', password: 'admin123' }, label: 'Re-login admin' });
+    adminToken = a2.data?.data?.accessToken || a2.data?.data?.token || '';
 
-    const r2 = await request('POST', '/api/v1/auth/login', { body: { email: 'rider@test.com', password: 'password123' }, label: 'Re-login rider' });
-    riderToken = r2.data?.data?.token || '';
+    const r2 = await request('POST', '/api/v1/auth/login', { body: { email: 'rider@shohnaat.com', password: 'admin123' }, label: 'Re-login rider' });
+    riderToken = r2.data?.data?.accessToken || r2.data?.data?.token || '';
   }
+
+
 
   // ─── Step 2: Create Shipment ───
   step(2, 'Create Shipment (Merchant)');

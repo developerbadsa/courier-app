@@ -1,10 +1,14 @@
 const express = require('express');
 const router = express.Router();
+const { cacheMiddleware } = require('../lib/cache');
 
 /**
  * PUBLIC Tracking API — No Authentication Required
  * GET /api/v1/tracking/:trackingNumber
+ * Sub-millisecond cached responses via Redis
  */
+router.use('/:trackingNumber', cacheMiddleware('tracking', 30));
+
 
 // Status display labels
 const STATUS_LABELS = {

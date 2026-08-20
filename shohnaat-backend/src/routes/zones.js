@@ -1,12 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const { auth, requireRole } = require('../middleware/auth');
+const { cacheMiddleware, delByPattern } = require('../lib/cache');
 
 router.use(auth);
 router.use(requireRole('super_admin', 'operator'));
 
-// GET /api/v1/zones — List all delivery zones
-router.get('/', async (req, res, next) => {
+// GET /api/v1/zones — List all delivery zones (Cached 5 minutes)
+router.get('/', cacheMiddleware('zones', 300), async (req, res, next) => {
   try {
     const prisma = req.app.locals.prisma;
     const zones = await prisma.zone.findMany({
@@ -34,6 +35,9 @@ router.post('/', async (req, res, next) => {
       data: { name, isActive: isActive !== undefined ? isActive : true },
     });
 
+    // Invalidate zones cache
+    delByPattern('zones:*').catch(() => {});
+
     res.status(201).json({ success: true, data: zone });
   } catch (error) {
     if (error.code === 'P2002') {
@@ -57,6 +61,9 @@ router.patch('/:id', async (req, res, next) => {
       },
     });
 
+    // Invalidate zones cache
+    delByPattern('zones:*').catch(() => {});
+
     res.json({ success: true, data: zone });
   } catch (error) {
     next(error);
@@ -68,6 +75,10 @@ router.delete('/:id', async (req, res, next) => {
   try {
     const prisma = req.app.locals.prisma;
     await prisma.zone.delete({ where: { id: req.params.id } });
+
+    // Invalidate zones cache
+    delByPattern('zones:*').catch(() => {});
+
     res.json({ success: true, message: 'Zone deleted' });
   } catch (error) {
     next(error);
@@ -75,3 +86,4 @@ router.delete('/:id', async (req, res, next) => {
 });
 
 module.exports = router;
+

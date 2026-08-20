@@ -10,7 +10,9 @@ const generateTokens = (user, roles) => {
     { 
       id: user.id, 
       email: user.email,
-      roles 
+      roles,
+      merchantId: user.merchant?.id || null,
+      riderId: user.rider?.id || null,
     },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '15m' }
@@ -24,6 +26,7 @@ const generateTokens = (user, roles) => {
 
   return { accessToken, refreshToken };
 };
+
 
 // POST /api/v1/auth/register
 router.post('/register', async (req, res, next) => {
@@ -94,9 +97,12 @@ router.post('/login', async (req, res, next) => {
       include: {
         roles: {
           include: { role: true }
-        }
+        },
+        merchant: { select: { id: true, businessName: true } },
+        rider: { select: { id: true } }
       }
     });
+
 
     if (!user) {
       return res.status(401).json({

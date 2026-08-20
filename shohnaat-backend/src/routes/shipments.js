@@ -4,6 +4,8 @@ const { auth, requireRole } = require('../middleware/auth');
 const crypto = require('crypto');
 const { createAuditLog } = require('./auditLogs');
 const { notifyShipmentStatus } = require('../services/notificationService');
+const { delByPattern } = require('../lib/cache');
+
 
 // Status state machine - valid transitions
 const VALID_TRANSITIONS = {
@@ -289,6 +291,61 @@ router.post('/', async (req, res, next) => {
       serviceType,
     } = req.body;
 
+    // Resolve merchant
+    let effectiveMerchantId = merchantId || req.user.merchantId;
+    if (!effectiveMerchantId && req.user.id) {
+      let merchant = await prisma.merchant.findUnique({ where: { userId: req.user.id } });
+      if (!merchant) {
+        merchant = await prisma.merchant.create({
+          data: {
+            userId: req.user.id,
+            businessName: req.user.name || 'Merchant Store',
+          },
+        });
+      }
+      effectiveMerchantId = merchant.id;
+    }
+
+    // Resolve or create default addresses if IDs not provided
+    let effectivePickupAddressId = pickupAddressId;
+    let effectiveDeliveryAddressId = deliveryAddressId;
+
+    if (!effectivePickupAddressId && effectiveMerchantId) {
+      let defaultPickup = await prisma.address.findFirst({
+        where: { merchantId: effectiveMerchantId, type: 'PICKUP' },
+      });
+      if (!defaultPickup) {
+        defaultPickup = await prisma.address.create({
+          data: {
+            merchantId: effectiveMerchantId,
+            type: 'PICKUP',
+            label: 'Default Warehouse',
+            line1: pickupAddressSnap?.street || '100 Logistics Blvd',
+            city: pickupAddressSnap?.city || 'Austin',
+          },
+        });
+      }
+      effectivePickupAddressId = defaultPickup.id;
+    }
+
+    if (!effectiveDeliveryAddressId && effectiveMerchantId) {
+      let defaultDelivery = await prisma.address.findFirst({
+        where: { merchantId: effectiveMerchantId, type: 'DELIVERY' },
+      });
+      if (!defaultDelivery) {
+        defaultDelivery = await prisma.address.create({
+          data: {
+            merchantId: effectiveMerchantId,
+            type: 'DELIVERY',
+            label: 'Customer Destination',
+            line1: deliveryAddressSnap?.street || '200 Delivery St',
+            city: deliveryAddressSnap?.city || 'Miami',
+          },
+        });
+      }
+      effectiveDeliveryAddressId = defaultDelivery.id;
+    }
+
     // Create or find consignee
     let consignee = await prisma.consignee.findFirst({
       where: { phone: consigneePhone },
@@ -307,15 +364,16 @@ router.post('/', async (req, res, next) => {
     const shipment = await prisma.shipment.create({
       data: {
         trackingNumber: generateTrackingNumber(),
-        merchantId,
+        merchantId: effectiveMerchantId,
         consigneeId: consignee.id,
-        pickupAddressId,
-        deliveryAddressId,
+        pickupAddressId: effectivePickupAddressId,
+        deliveryAddressId: effectiveDeliveryAddressId,
         pickupAddressSnap: pickupAddressSnap || undefined,
         deliveryAddressSnap: deliveryAddressSnap || undefined,
         weightKg: weightKg ? parseFloat(weightKg) : null,
         paymentType: paymentType || 'COD',
         codAmount: codAmount ? parseFloat(codAmount) : 0,
+
         deliveryCharge: deliveryCharge ? parseFloat(deliveryCharge) : 0,
         chargeSnapshot: {
           weightKg: weightKg ? parseFloat(weightKg) : null,
@@ -526,8 +584,12 @@ router.patch('/:id/status', async (req, res, next) => {
       // Non-blocking
     }
 
+    // Invalidate tracking cache immediately for real-time consistency
+    delByPattern('tracking:*').catch(() => {});
+
     res.json({ success: true, data: updated[0] });
   } catch (error) {
+
     next(error);
   }
 });

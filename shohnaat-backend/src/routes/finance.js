@@ -14,7 +14,11 @@ router.use(auth);
 router.get('/wallet', async (req, res, next) => {
   try {
     const prisma = req.app.locals.prisma;
-    const merchantId = req.user.merchantId || req.body.merchantId;
+    let merchantId = req.user.merchantId || req.query.merchantId || req.body.merchantId;
+    if (!merchantId && req.user.id) {
+      const m = await prisma.merchant.findUnique({ where: { userId: req.user.id } });
+      if (m) merchantId = m.id;
+    }
     if (!merchantId) return res.status(400).json({ success: false, message: 'Merchant ID required' });
 
     const ledger = new LedgerService(prisma);
@@ -29,7 +33,12 @@ router.get('/wallet', async (req, res, next) => {
 router.get('/entries', async (req, res, next) => {
   try {
     const prisma = req.app.locals.prisma;
-    const merchantId = req.user.merchantId || req.query.merchantId;
+    let merchantId = req.user.merchantId || req.query.merchantId;
+    if (!merchantId && req.user.id) {
+      const m = await prisma.merchant.findUnique({ where: { userId: req.user.id } });
+      if (m) merchantId = m.id;
+    }
+
     const { page, limit, startDate, endDate } = req.query;
 
     const ledger = new LedgerService(prisma);
@@ -39,6 +48,7 @@ router.get('/entries', async (req, res, next) => {
     next(error);
   }
 });
+
 
 // GET /api/v1/finance/entries/export — Export ledger as CSV
 router.get('/entries/export', async (req, res, next) => {

@@ -1,13 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const { auth, requireRole } = require('../middleware/auth');
+const { cacheMiddleware, delByPattern } = require('../lib/cache');
 
 // All hub/branch routes require admin/operator role
 router.use(auth);
 router.use(requireRole('super_admin', 'operator'));
 
-// GET /api/v1/hubs — List all branches/hubs
-router.get('/', async (req, res, next) => {
+// GET /api/v1/hubs — List all branches/hubs (Cached 5 minutes)
+router.get('/', cacheMiddleware('hubs', 300), async (req, res, next) => {
   try {
     const prisma = req.app.locals.prisma;
     const { page = 1, limit = 20, search, isHub } = req.query;
@@ -90,6 +91,9 @@ router.post('/', async (req, res, next) => {
       data: { name, code, isHub: isHub || false, address, city },
     });
 
+    // Invalidate hubs cache
+    delByPattern('hubs:*').catch(() => {});
+
     res.status(201).json({ success: true, data: hub });
   } catch (error) {
     if (error.code === 'P2002') {
@@ -117,6 +121,9 @@ router.patch('/:id', async (req, res, next) => {
       },
     });
 
+    // Invalidate hubs cache
+    delByPattern('hubs:*').catch(() => {});
+
     res.json({ success: true, data: hub });
   } catch (error) {
     next(error);
@@ -131,6 +138,10 @@ router.delete('/:id', async (req, res, next) => {
       where: { id: req.params.id },
       data: { deletedAt: new Date() },
     });
+
+    // Invalidate hubs cache
+    delByPattern('hubs:*').catch(() => {});
+
     res.json({ success: true, message: 'Hub deleted' });
   } catch (error) {
     next(error);
@@ -138,3 +149,4 @@ router.delete('/:id', async (req, res, next) => {
 });
 
 module.exports = router;
+
