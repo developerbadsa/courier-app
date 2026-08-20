@@ -5,9 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
 import 'login_screen.dart';
-import '../../admin/screens/admin_home_screen.dart';
-import '../../rider/screens/rider_home_screen.dart';
-import '../../merchant/screens/merchant_home_screen.dart';
+import '../../rider/screens/rider_main_shell.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -30,21 +28,10 @@ class _SplashScreenState extends State<SplashScreen> {
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
-            if (state.role == 'super_admin' || state.role == 'operator') {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const AdminHomeScreen()),
-              );
-            } else if (state.role == 'rider') {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const RiderHomeScreen()),
-              );
-            } else {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const MerchantHomeScreen()),
-              );
-            }
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const RiderMainShell()),
+            );
           } else if (state is Unauthenticated || state is AuthError) {
-
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (_) => const LoginScreen()),
             );
@@ -55,36 +42,37 @@ class _SplashScreenState extends State<SplashScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               ClipRRect(
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(20),
                 child: Image.asset(
                   'assets/images/app_logo.png',
-                  width: 72,
-                  height: 72,
+                  width: 80,
+                  height: 80,
                   fit: BoxFit.cover,
                   errorBuilder: (_, __, ___) => Container(
-                    width: 72,
-                    height: 72,
+                    width: 80,
+                    height: 80,
                     color: AppColors.primary,
-                    child: const Icon(LucideIcons.truck, color: Colors.white, size: 36),
+                    child: const Icon(LucideIcons.bike, color: Colors.white, size: 40),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
               const Text(
-                'SHOHNAAT',
+                'SHOHNAAT RIDER PRO',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 24,
+                  fontSize: 22,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 2.0,
+                  letterSpacing: 1.5,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               const Text(
-                'Connecting Logistics Everywhere',
+                'High-Performance Courier Dispatch & Route Hub',
                 style: TextStyle(
-                  color: AppColors.textMuted,
-                  fontSize: 12.5,
+                  color: AppColors.cyanAccent,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
               const SizedBox(height: 36),
@@ -93,7 +81,7 @@ class _SplashScreenState extends State<SplashScreen> {
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.cyanAccent),
                 ),
               ),
             ],

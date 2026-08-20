@@ -16,6 +16,7 @@ import '../models/delivery_task_model.dart';
 import '../services/ai_route_optimizer_service.dart';
 import '../widgets/pod_signature_modal.dart';
 import '../widgets/cash_collection_modal.dart';
+import 'task_detail_screen.dart';
 
 class RiderHomeScreen extends StatefulWidget {
   const RiderHomeScreen({super.key});
@@ -532,25 +533,34 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
   }
 
   Widget _buildTaskCard(DeliveryTaskModel task, int sequenceNumber) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.navySurface,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => TaskDetailScreen(task: task)),
+          );
+        },
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: task.isCompleted
-              ? AppColors.success.withValues(alpha: 0.4)
-              : AppColors.navyBorder,
-          width: 1.2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: AppColors.navySurface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: task.isCompleted
+                  ? AppColors.success.withValues(alpha: 0.4)
+                  : AppColors.navyBorder,
+              width: 1.2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 8,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
-        ],
-      ),
-      padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -768,6 +778,8 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
           ),
         ],
       ),
-    );
-  }
+    ),
+  ),
+);
+}
 }

@@ -6,10 +6,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../cubit/auth_cubit.dart';
 import '../cubit/auth_state.dart';
-import '../../rider/screens/rider_home_screen.dart';
-import '../../merchant/screens/merchant_home_screen.dart';
-import '../../admin/screens/admin_home_screen.dart';
-import '../../tracking/screens/customer_tracking_screen.dart';
+import '../../rider/screens/rider_main_shell.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -40,10 +37,10 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _quickFill(String email, String password) {
-    _emailController.text = email;
-    _passwordController.text = password;
-    _onLoginPressed();
+  void _quickLaunchRider() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => const RiderMainShell()),
+    );
   }
 
   @override
@@ -53,19 +50,9 @@ class _LoginScreenState extends State<LoginScreen> {
       body: BlocConsumer<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
-            if (state.role == 'super_admin' || state.role == 'operator') {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const AdminHomeScreen()),
-              );
-            } else if (state.role == 'rider') {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const RiderHomeScreen()),
-              );
-            } else {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (_) => const MerchantHomeScreen()),
-              );
-            }
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (_) => const RiderMainShell()),
+            );
           } else if (state is AuthError) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
@@ -104,14 +91,14 @@ class _LoginScreenState extends State<LoginScreen> {
                           borderRadius: BorderRadius.circular(22),
                           child: Image.asset(
                             'assets/images/app_logo.png',
-                            width: 72,
-                            height: 72,
+                            width: 76,
+                            height: 76,
                             fit: BoxFit.cover,
                             errorBuilder: (_, __, ___) => Container(
-                              width: 72,
-                              height: 72,
+                              width: 76,
+                              height: 76,
                               color: AppColors.primary,
-                              child: const Icon(LucideIcons.truck, color: Colors.white, size: 36),
+                              child: const Icon(LucideIcons.bike, color: Colors.white, size: 38),
                             ),
                           ),
                         ),
@@ -119,43 +106,96 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 16),
                     const Text(
-                      'SHOHNAAT',
+                      'SHOHNAAT RIDER PRO',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 24,
+                        fontSize: 22,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 2.0,
+                        letterSpacing: 1.5,
                       ),
                     ),
                     const SizedBox(height: 4),
                     const Text(
-                      'Enterprise Logistics Super App',
+                      'Courier Navigation & Dispatch Companion',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: AppColors.cyanAccent,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        letterSpacing: 0.5,
+                        letterSpacing: 0.4,
                       ),
                     ),
 
                     const SizedBox(height: 28),
 
-                    // Glassmorphism Login Card
+                    // Quick 1-Tap Launch Button
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF1E3A8A), Color(0xFF0284C7)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.35),
+                            blurRadius: 16,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Row(
+                            children: [
+                              Icon(LucideIcons.zap, color: Colors.amberAccent, size: 20),
+                              SizedBox(width: 8),
+                              Text(
+                                'Instant Fast Access',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          const Text(
+                            'Launch directly into the Rider Hub with full runsheet & GPS tools.',
+                            style: TextStyle(color: Colors.white70, fontSize: 11.5),
+                          ),
+                          const SizedBox(height: 14),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: _quickLaunchRider,
+                              icon: const Icon(LucideIcons.arrowRight, size: 16, color: AppColors.navyBackground),
+                              label: const Text(
+                                'Start Shift as Courier Rider',
+                                style: TextStyle(color: AppColors.navyBackground, fontWeight: FontWeight.bold, fontSize: 13),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    // Or Sign In with Credentials
                     Container(
                       padding: const EdgeInsets.all(22),
                       decoration: BoxDecoration(
                         gradient: AppColors.darkCardGradient,
                         borderRadius: BorderRadius.circular(24),
                         border: Border.all(color: AppColors.navyBorder.withValues(alpha: 0.9), width: 1.2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.35),
-                            blurRadius: 20,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
                       ),
                       child: Form(
                         key: _formKey,
@@ -163,27 +203,27 @@ class _LoginScreenState extends State<LoginScreen> {
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
                             const Text(
-                              'Sign In to Account',
+                              'Sign In with Rider Credentials',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 16,
+                                fontSize: 14.5,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
-                            const SizedBox(height: 16),
+                            const SizedBox(height: 14),
 
-                            // Email Field
+                            // Email / Phone Field
                             AppTextField(
                               controller: _emailController,
-                              label: 'Email Address',
-                              hint: 'name@company.com',
+                              label: 'Rider Email or Phone',
+                              hint: 'rider@shohnaat.com',
                               keyboardType: TextInputType.emailAddress,
-                              prefixIcon: LucideIcons.mail,
+                              prefixIcon: LucideIcons.user,
                               validator: (val) =>
-                                  val == null || !val.contains('@') ? 'Enter a valid email' : null,
+                                  val == null || val.isEmpty ? 'Enter rider account' : null,
                             ),
 
-                            const SizedBox(height: 14),
+                            const SizedBox(height: 12),
 
                             // Password Field
                             AppTextField(
@@ -202,91 +242,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                     setState(() => _obscurePassword = !_obscurePassword),
                               ),
                               validator: (val) =>
-                                  val == null || val.length < 6 ? 'Password must be 6+ chars' : null,
+                                  val == null || val.length < 4 ? 'Enter valid password' : null,
                             ),
 
-                            const SizedBox(height: 20),
+                            const SizedBox(height: 18),
 
                             // Login Button
                             AppButton(
-                              text: 'Sign In to Portal',
+                              text: 'Authenticate Rider Account',
                               isLoading: isLoading,
-                              icon: const Icon(LucideIcons.arrowRight, size: 18),
+                              icon: const Icon(LucideIcons.logIn, size: 16),
                               onPressed: _onLoginPressed,
                             ),
                           ],
                         ),
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // Quick Demo Roles Header
-                    const Text(
-                      '⚡ 1-TAP INSTANT ROLE DEMO',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 11,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    // 3 Quick Demo Buttons
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildQuickRoleBtn(
-                            icon: LucideIcons.bike,
-                            label: 'Rider',
-                            color: AppColors.cyanAccent,
-                            onTap: () => _quickFill('rider@shohnaat.com', 'admin123'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildQuickRoleBtn(
-                            icon: LucideIcons.store,
-                            label: 'Merchant',
-                            color: Colors.amberAccent,
-                            onTap: () => _quickFill('merchant@shohnaat.com', 'admin123'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: _buildQuickRoleBtn(
-                            icon: LucideIcons.shieldCheck,
-                            label: 'Admin',
-                            color: AppColors.purple,
-                            onTap: () => _quickFill('admin@shohnaat.com', 'admin123'),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    // Public Live Tracking Shortcut
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => const CustomerTrackingScreen(),
-                          ),
-                        );
-                      },
-                      icon: const Icon(LucideIcons.search, size: 16, color: AppColors.cyanAccent),
-                      label: const Text(
-                        'Public Tracking Lookup (No Login Required)',
-                        style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: const BorderSide(color: AppColors.navyBorder),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     ),
 
@@ -297,40 +266,6 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           );
         },
-      ),
-    );
-  }
-
-  Widget _buildQuickRoleBtn({
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: AppColors.navySurface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.navyBorder),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 20),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 11.5,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
