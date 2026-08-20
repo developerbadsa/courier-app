@@ -1,65 +1,94 @@
 import 'dart:async';
-import 'package:flutter/services.dart';
-import 'package:permission_handler/permission_handler.dart';
+import 'package:flutter/foundation.dart';
+import 'package:geolocator/geolocator.dart';
 import '../constants/api_constants.dart';
 import '../network/dio_client.dart';
 
-/// GPS service using permission_handler for runtime permissions
-/// and native MethodChannel for background location tracking.
+/// Enterprise GPS telemetry service with full Android runtime permission flow
+/// and continuous real-time broadcast to Shohnaat tracking backend.
 class LocationService {
   final DioClient _client;
-  final MethodChannel _channel = const MethodChannel('com.shohnaat/gps');
-  StreamSubscription? _timerSubscription;
+  StreamSubscription<Position>? _positionSubscription;
   bool _isTracking = false;
   DateTime? _lastBroadcast;
+  double _lastLat = 0;
+  double _lastLng = 0;
   String? _riderId;
 
-  static const int _minIntervalSeconds = 10;
+  static const int _minIntervalSeconds = 8;
 
   LocationService({DioClient? client}) : _client = client ?? DioClient();
 
   bool get isTracking => _isTracking;
+  double get lastLat => _lastLat;
+  double get lastLng => _lastLng;
 
-  /// Request location permission using permission_handler (runtime dialog)
+  /// Request runtime location permission and verify GPS service status.
   Future<bool> handleLocationPermission() async {
-    var status = await Permission.location.status;
+    try {
+      // 1. Check if device location service (GPS) is turned on
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        await Geolocator.openLocationSettings();
+        serviceEnabled = await Geolocator.isLocationServiceEnabled();
+        if (!serviceEnabled) return false;
+      }
 
-    if (status.isGranted) return true;
+      // 2. Check location permissions
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          return false;
+        }
+      }
 
-    // Request permission — shows system dialog
-    status = await Permission.location.request();
+      if (permission == LocationPermission.deniedForever) {
+        await Geolocator.openAppSettings();
+        return false;
+      }
 
-    if (status.isGranted) return true;
-
-    // If permanently denied, open app settings
-    if (status.isPermanentlyDenied) {
-      await openAppSettings();
-      // Re-check after user returns from settings
-      await Future.delayed(const Duration(seconds: 1));
-      status = await Permission.location.status;
-      return status.isGranted;
+      return permission == LocationPermission.always || permission == LocationPermission.whileInUse;
+    } catch (e) {
+      debugPrint('[LocationService] Permission check error: $e');
+      return false;
     }
-
-    return false;
   }
 
   /// Get current one-time GPS coordinates
   Future<Map<String, double>?> getCurrentLocation() async {
     try {
-      final result = await _channel.invokeMethod('getCurrentLocation');
-      if (result is Map) {
+      final hasPermission = await handleLocationPermission();
+      if (!hasPermission) return null;
+
+      Position position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      _lastLat = position.latitude;
+      _lastLng = position.longitude;
+
+      return {
+        'latitude': position.latitude,
+        'longitude': position.longitude,
+      };
+    } catch (e) {
+      debugPrint('[LocationService] getCurrentLocation error: $e');
+      final lastKnown = await Geolocator.getLastKnownPosition();
+      if (lastKnown != null) {
         return {
-          'latitude': (result['latitude'] ?? 0).toDouble(),
-          'longitude': (result['longitude'] ?? 0).toDouble(),
-          'speed': (result['speed'] ?? 0).toDouble(),
-          'heading': (result['heading'] ?? 0).toDouble(),
+          'latitude': lastKnown.latitude,
+          'longitude': lastKnown.longitude,
         };
       }
-    } catch (_) {}
-    return null;
+      return null;
+    }
   }
 
-  /// Start continuous GPS broadcasting
+  /// Start continuous real-time GPS broadcasting to backend.
   Future<bool> startLiveTracking({required String riderId}) async {
     final hasPermission = await handleLocationPermission();
     if (!hasPermission) return false;
@@ -67,56 +96,49 @@ class LocationService {
     _isTracking = true;
     _riderId = riderId;
 
-    try {
-      await _channel.invokeMethod('startTracking', {
-        'intervalSeconds': _minIntervalSeconds,
-        'distanceFilter': 15,
-      });
-    } catch (_) {}
-
-    // Listen for native location updates
-    _channel.setMethodCallHandler((call) async {
-      if (call.method == 'onLocationUpdate' && _isTracking) {
-        final data = call.arguments as Map;
-        await _broadcastCoordinates(
-          latitude: (data['latitude'] ?? 0).toDouble(),
-          longitude: (data['longitude'] ?? 0).toDouble(),
-          speed: (data['speed'] ?? 0).toDouble(),
-          heading: (data['heading'] ?? 0).toDouble(),
+    // Send immediate initial coordinate
+    getCurrentLocation().then((loc) {
+      if (loc != null) {
+        _broadcastCoordinates(
+          latitude: loc['latitude']!,
+          longitude: loc['longitude']!,
+          speed: 0,
+          heading: 0,
         );
       }
     });
 
-    // Fallback polling if native channel doesn't deliver
-    _timerSubscription = Stream.periodic(
-      const Duration(seconds: _minIntervalSeconds),
-      (_) => _pollLocation(),
-    ).listen((_) {});
+    // Start live position stream
+    const locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 10,
+    );
+
+    await _positionSubscription?.cancel();
+    _positionSubscription = Geolocator.getPositionStream(
+      locationSettings: locationSettings,
+    ).listen((Position position) {
+      if (_isTracking) {
+        _broadcastCoordinates(
+          latitude: position.latitude,
+          longitude: position.longitude,
+          speed: position.speed,
+          heading: position.heading,
+        );
+      }
+    }, onError: (err) {
+      debugPrint('[LocationService] Position stream error: $err');
+    });
 
     return true;
   }
 
-  Future<void> _pollLocation() async {
-    if (!_isTracking) return;
-    final loc = await getCurrentLocation();
-    if (loc != null) {
-      await _broadcastCoordinates(
-        latitude: loc['latitude']!,
-        longitude: loc['longitude']!,
-        speed: loc['speed']!,
-        heading: loc['heading']!,
-      );
-    }
-  }
-
+  /// Stop GPS tracking
   Future<void> stopLiveTracking() async {
     _isTracking = false;
     _riderId = null;
-    await _timerSubscription?.cancel();
-    _timerSubscription = null;
-    try {
-      await _channel.invokeMethod('stopTracking');
-    } catch (_) {}
+    await _positionSubscription?.cancel();
+    _positionSubscription = null;
   }
 
   Future<void> _broadcastCoordinates({
@@ -132,6 +154,9 @@ class LocationService {
         now.difference(_lastBroadcast!).inSeconds < _minIntervalSeconds) {
       return;
     }
+
+    _lastLat = latitude;
+    _lastLng = longitude;
     _lastBroadcast = now;
 
     try {
@@ -147,7 +172,7 @@ class LocationService {
         },
       );
     } catch (_) {
-      // Queued for retry by DioClient interceptor
+      // Offline sync queue handles retry
     }
   }
 }

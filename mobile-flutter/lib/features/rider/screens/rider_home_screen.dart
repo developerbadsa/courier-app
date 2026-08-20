@@ -1,24 +1,21 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/services/connectivity_service.dart';
-import '../../../core/services/location_service.dart';
-import '../../../core/services/offline_sync_service.dart';
-import '../../../core/widgets/app_button.dart';
-import '../../../core/widgets/app_card.dart';
-import '../../../core/widgets/app_compliance_dialogs.dart';
+import '../../../core/widgets/app_stat_card.dart';
+import '../../../core/widgets/filter_pill_bar.dart';
 import '../../../core/widgets/status_badge_widget.dart';
+import '../../../core/services/location_service.dart';
 import '../../auth/cubit/auth_cubit.dart';
 import '../../auth/cubit/auth_state.dart';
-import '../../auth/screens/login_screen.dart';
+import '../../scanner/screens/camera_barcode_scanner_screen.dart';
 import '../cubit/runsheet_cubit.dart';
 import '../cubit/runsheet_state.dart';
 import '../models/delivery_task_model.dart';
 import '../services/ai_route_optimizer_service.dart';
-import 'task_detail_screen.dart';
-import '../../scanner/screens/camera_barcode_scanner_screen.dart';
+import '../widgets/pod_signature_modal.dart';
+import '../widgets/cash_collection_modal.dart';
 
 class RiderHomeScreen extends StatefulWidget {
   const RiderHomeScreen({super.key});
@@ -28,51 +25,24 @@ class RiderHomeScreen extends StatefulWidget {
 }
 
 class _RiderHomeScreenState extends State<RiderHomeScreen> {
-  int _currentIndex = 0;
-  bool _isGpsActive = false;
-  int _offlineQueueCount = 0;
   final LocationService _locationService = LocationService();
-  late final OfflineSyncService _offlineSyncService;
-  late final ConnectivityService _connectivityService;
-  bool _isOnline = true;
-  StreamSubscription? _connectivitySub;
+  final TextEditingController _searchController = TextEditingController();
+
+  bool _isGpsActive = false;
+  String _selectedFilter = 'ALL';
+  bool _isOptimizing = false;
 
   @override
   void initState() {
     super.initState();
-    _connectivityService = context.read<ConnectivityService>();
-    _offlineSyncService = OfflineSyncService(connectivity: _connectivityService);
-    _isOnline = _connectivityService.isOnline;
-
-    // Listen for connectivity changes
-    _connectivitySub = _connectivityService.onConnectivityChanged.listen((isOnline) {
-      if (mounted) {
-        setState(() => _isOnline = isOnline);
-        if (isOnline) {
-          _syncOfflineQueue();
-        }
-      }
-    });
-
-    // Start auto-sync for offline queue
-    _offlineSyncService.startAutoSync();
-
     context.read<RunsheetCubit>().fetchRunsheet();
-    _checkOfflineQueue();
   }
 
   @override
   void dispose() {
-    _connectivitySub?.cancel();
-    _offlineSyncService.dispose();
+    _searchController.dispose();
+    _locationService.stopLiveTracking();
     super.dispose();
-  }
-
-  Future<void> _checkOfflineQueue() async {
-    final queue = await _offlineSyncService.getPendingQueue();
-    if (mounted) {
-      setState(() => _offlineQueueCount = queue.length);
-    }
   }
 
   void _toggleGps(bool val) async {
@@ -82,7 +52,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Please enable GPS Location permission in device settings.'),
+              content: Text('Please enable GPS Location permission in settings.'),
               backgroundColor: AppColors.danger,
             ),
           );
@@ -97,7 +67,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('⚡ Live GPS Telemetry Broadcast Started!'),
+            content: Text('⚡ Live GPS Telemetry Broadcast Active!'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -108,571 +78,695 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     }
   }
 
-  void _syncOfflineQueue() async {
-    final synced = await _offlineSyncService.syncPendingQueue();
-    await _checkOfflineQueue();
-    if (mounted && synced > 0) {
+  void _runAiOptimizer(List<DeliveryTaskModel> tasks) async {
+    setState(() => _isOptimizing = true);
+    await Future.delayed(const Duration(milliseconds: 700));
+    final sorted = AiRouteOptimizerService.optimizeRoute(
+      tasks: tasks,
+      hubLat: 30.2672,
+      hubLng: -97.7431,
+    );
+    if (mounted) {
+      context.read<RunsheetCubit>().updateOptimizedTasks(sorted);
+      setState(() => _isOptimizing = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$synced offline actions synced to server.'),
-          backgroundColor: AppColors.success,
+        const SnackBar(
+          content: Text('✨ AI Route Optimizer: Sequence sorted for minimum fuel & time!'),
+          backgroundColor: AppColors.primary,
         ),
       );
     }
   }
 
-  void _optimizeStops(List<DeliveryTaskModel> currentTasks) {
-    final optimized = AiRouteOptimizerService.optimizeRoute(tasks: currentTasks);
-    context.read<RunsheetCubit>().updateOptimizedTasks(optimized);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('✨ AI Route Optimized! Estimated time saved: 34 mins & 12.4 km'),
-        backgroundColor: AppColors.primary,
+  void _openDialer(String phone) async {
+    if (phone.isEmpty) return;
+    final uri = Uri.parse('tel:${phone.replaceAll(RegExp(r'[^\d+]'), '')}');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    }
+  }
+
+  void _openWhatsApp(String phone, String trackingNumber) async {
+    final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
+    final uri = Uri.parse(
+        'https://wa.me/$cleanPhone?text=Hello,%20this%20is%20your%20Shohnaat%20courier%20rider%20for%20parcel%20$trackingNumber.%20I%20am%20arriving%20shortly.');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  void _openGoogleMaps(String address) async {
+    final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}');
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  void _openSignatureModal(DeliveryTaskModel task) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => PodSignatureModal(
+        trackingNumber: task.trackingNumber,
+        recipientName: task.recipientName,
+        onConfirm: (otp) {
+          context.read<RunsheetCubit>().completeDelivery(
+                shipmentId: task.id,
+                codCollected: task.codAmount,
+                otpVerified: true,
+              );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ Proof of Delivery recorded for ${task.trackingNumber}!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        },
       ),
     );
   }
 
-  void _onLogout() {
-    context.read<AuthCubit>().logout();
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
+  void _openCashCollectionModal(DeliveryTaskModel task) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => CashCollectionModal(
+        expectedCod: task.codAmount,
+        trackingNumber: task.trackingNumber,
+        onCollect: (amount) {
+          context.read<RunsheetCubit>().completeDelivery(
+                shipmentId: task.id,
+                codCollected: amount,
+              );
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('💰 \$$amount COD Collected & Confirmed!'),
+              backgroundColor: AppColors.success,
+            ),
+          );
+        },
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.navyBackground,
       appBar: AppBar(
         backgroundColor: AppColors.navyBackground,
-        title: const Row(
+        elevation: 0,
+        title: Row(
           children: [
-            Icon(LucideIcons.bike, size: 20, color: Colors.white),
-            SizedBox(width: 8),
-            Text('Shohnaat Rider'),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset(
+                'assets/images/app_logo.png',
+                width: 34,
+                height: 34,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(LucideIcons.truck, color: AppColors.cyanAccent, size: 24),
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'SHOHNAAT RIDER PRO',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 1.1,
+                    color: Colors.white,
+                  ),
+                ),
+                Text(
+                  'Austin Central Dispatch Hub',
+                  style: TextStyle(fontSize: 10.5, color: AppColors.textMuted),
+                ),
+              ],
+            ),
           ],
         ),
         actions: [
+          // Barcode Camera Scan Trigger
           IconButton(
-            icon: const Icon(LucideIcons.camera, color: Colors.white),
-            tooltip: 'Camera Barcode Scanner',
+            icon: const Icon(LucideIcons.scanLine, color: AppColors.cyanAccent, size: 22),
+            tooltip: 'Open Optical Scanner',
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const CameraBarcodeScannerScreen()),
               );
             },
           ),
-          PopupMenuButton<String>(
-            icon: const Icon(LucideIcons.moreVertical, color: Colors.white, size: 20),
-            onSelected: (value) {
-              if (value == 'privacy') {
-                AppComplianceDialogs.showPrivacyPolicy(context);
-              } else if (value == 'delete_account') {
-                AppComplianceDialogs.showAccountDeletionRequest(
-                  context,
-                  onConfirmDelete: () {
-                    context.read<AuthCubit>().logout();
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    );
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Account deletion request submitted.'),
-                        backgroundColor: AppColors.danger,
-                      ),
-                    );
-                  },
-                );
-              } else if (value == 'logout') {
-                _onLogout();
-              }
-            },
-            itemBuilder: (context) => [
-              const PopupMenuItem(
-                value: 'privacy',
-                child: Row(
-                  children: [
-                    Icon(LucideIcons.shieldCheck, size: 16, color: AppColors.primary),
-                    SizedBox(width: 8),
-                    Text('Privacy Policy'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'delete_account',
-                child: Row(
-                  children: [
-                    Icon(LucideIcons.trash2, size: 16, color: AppColors.danger),
-                    SizedBox(width: 8),
-                    Text('Delete Account', style: TextStyle(color: AppColors.danger)),
-                  ],
-                ),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem(
-                value: 'logout',
-                child: Row(
-                  children: [
-                    Icon(LucideIcons.logOut, size: 16, color: AppColors.textSecondary),
-                    SizedBox(width: 8),
-                    Text('Log Out'),
-                  ],
-                ),
-              ),
-            ],
+          // Logout
+          IconButton(
+            icon: const Icon(LucideIcons.logOut, color: AppColors.textMuted, size: 20),
+            tooltip: 'Sign Out',
+            onPressed: () => context.read<AuthCubit>().logout(),
           ),
         ],
       ),
       body: BlocBuilder<RunsheetCubit, RunsheetState>(
         builder: (context, state) {
-          if (state is RunsheetLoading) {
-            return const Center(child: CircularProgressIndicator());
-          }
+          final tasks = state is RunsheetLoaded ? state.tasks : <DeliveryTaskModel>[];
+          final completedTasks = tasks.where((t) => t.isCompleted).length;
+          final pendingTasks = tasks.where((t) => !t.isCompleted).length;
+          final totalCod = tasks.where((t) => !t.isCompleted).fold(0.0, (sum, t) => sum + t.codAmount);
 
-          if (state is RunsheetLoaded) {
-            if (_currentIndex == 0) {
-              return _buildActiveTasksTab(state);
-            } else if (_currentIndex == 1) {
-              return _buildHistoryTab(state);
-            } else {
-              return _buildEarningsTab(state);
-            }
-          }
+          final filteredTasks = tasks.where((t) {
+            final query = _searchController.text.trim().toLowerCase();
+            final matchesQuery = query.isEmpty ||
+                t.trackingNumber.toLowerCase().contains(query) ||
+                t.recipientName.toLowerCase().contains(query) ||
+                t.deliveryAddress.toLowerCase().contains(query);
 
-          return Center(
-            child: AppButton(
-              text: 'Retry Loading Runsheet',
-              onPressed: () => context.read<RunsheetCubit>().fetchRunsheet(),
+            if (!matchesQuery) return false;
+            if (_selectedFilter == 'PENDING') return !t.isCompleted;
+            if (_selectedFilter == 'COMPLETED') return t.isCompleted;
+            if (_selectedFilter == 'OUT_FOR_DELIVERY') return t.isOutForDelivery;
+            return true;
+          }).toList();
+
+          return RefreshIndicator(
+            onRefresh: () async => context.read<RunsheetCubit>().fetchRunsheet(),
+            color: AppColors.cyanAccent,
+            backgroundColor: AppColors.navyCard,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // Rider Shift & Live GPS Telemetry Ribbon
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: AppColors.darkCardGradient,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AppColors.navyBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: AppColors.primaryGradient,
+                          ),
+                          child: const Icon(LucideIcons.bike, color: Colors.white, size: 22),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Shift Status: On Duty',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'Real-time GPS broadcast to dispatcher',
+                                style: TextStyle(color: AppColors.textMuted, fontSize: 11),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Switch(
+                          value: _isGpsActive,
+                          onChanged: _toggleGps,
+                          activeThumbColor: AppColors.cyanAccent,
+                          activeTrackColor: AppColors.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // AI Route Optimizer Callout Banner
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF1E3A8A), Color(0xFF0D9488)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withValues(alpha: 0.3),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.2),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(LucideIcons.sparkles, color: Colors.amberAccent, size: 18),
+                            ),
+                            const SizedBox(width: 10),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'AI Route Optimizer',
+                                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                                  ),
+                                  Text(
+                                    'Multi-Stop Traveling Salesman Engine',
+                                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${tasks.length} Total Waypoints • ~45 min ETA',
+                              style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                            ),
+                            ElevatedButton.icon(
+                              onPressed: _isOptimizing ? null : () => _runAiOptimizer(tasks),
+                              icon: _isOptimizing
+                                  ? const SizedBox(
+                                      width: 14,
+                                      height: 14,
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                    )
+                                  : const Icon(LucideIcons.route, size: 14, color: AppColors.navyBackground),
+                              label: Text(
+                                _isOptimizing ? 'Sorting...' : 'Sort Best Path',
+                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5, color: AppColors.navyBackground),
+                              ),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // 4-Card KPI Stat Grid
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    childAspectRatio: 1.6,
+                    children: [
+                      AppStatCard(
+                        title: 'Total Run Stops',
+                        value: '${tasks.length}',
+                        icon: LucideIcons.package,
+                        iconColor: AppColors.cyanAccent,
+                        trend: '+12% today',
+                      ),
+                      AppStatCard(
+                        title: 'Pending Dropoffs',
+                        value: '$pendingTasks',
+                        icon: LucideIcons.clock,
+                        iconColor: AppColors.warning,
+                        trend: 'Active',
+                      ),
+                      AppStatCard(
+                        title: 'Delivered',
+                        value: '$completedTasks',
+                        icon: LucideIcons.checkCircle2,
+                        iconColor: AppColors.success,
+                        trend: '100% SLA',
+                      ),
+                      AppStatCard(
+                        title: 'COD to Collect',
+                        value: '\$${totalCod.toStringAsFixed(2)}',
+                        icon: LucideIcons.banknote,
+                        iconColor: Colors.amberAccent,
+                        trend: 'Cash/POS',
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  // Search Bar
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.navySurface,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.navyBorder),
+                    ),
+                    child: TextField(
+                      controller: _searchController,
+                      onChanged: (_) => setState(() {}),
+                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                      decoration: InputDecoration(
+                        hintText: 'Search by tracking #, recipient, or address...',
+                        hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12.5),
+                        prefixIcon: const Icon(LucideIcons.search, color: AppColors.textMuted, size: 18),
+                        suffixIcon: _searchController.text.isNotEmpty
+                            ? IconButton(
+                                icon: const Icon(LucideIcons.x, color: AppColors.textMuted, size: 16),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() {});
+                                },
+                              )
+                            : null,
+                        border: InputBorder.none,
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // Filter Capsule Pills
+                  FilterPillBar(
+                    items: [
+                      FilterPillItem(key: 'ALL', label: 'All Tasks', count: tasks.length, icon: LucideIcons.listFilter),
+                      FilterPillItem(key: 'PENDING', label: 'Pending', count: pendingTasks, icon: LucideIcons.clock),
+                      FilterPillItem(key: 'OUT_FOR_DELIVERY', label: 'Out for Delivery', icon: LucideIcons.truck),
+                      FilterPillItem(key: 'COMPLETED', label: 'Delivered', count: completedTasks, icon: LucideIcons.checkCircle2),
+                    ],
+                    selectedKey: _selectedFilter,
+                    onSelected: (val) => setState(() => _selectedFilter = val),
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  // Runsheet Stops List
+                  if (state is RunsheetLoading)
+                    const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 40),
+                      child: Center(child: CircularProgressIndicator(color: AppColors.cyanAccent)),
+                    )
+                  else if (filteredTasks.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        color: AppColors.navySurface,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.navyBorder),
+                      ),
+                      child: const Center(
+                        child: Column(
+                          children: [
+                            Icon(LucideIcons.packageCheck, size: 48, color: AppColors.textMuted),
+                            SizedBox(height: 12),
+                            Text(
+                              'No delivery tasks found in this view',
+                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                  else
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: filteredTasks.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final task = filteredTasks[index];
+                        return _buildTaskCard(task, index + 1);
+                      },
+                    ),
+
+                  const SizedBox(height: 30),
+                ],
+              ),
             ),
           );
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textMuted,
-        backgroundColor: Colors.white,
-        onTap: (index) => setState(() => _currentIndex = index),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(LucideIcons.clipboardList),
-            label: 'Runsheet',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(LucideIcons.history),
-            label: 'Delivered',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(LucideIcons.wallet),
-            label: 'Cash Wallet',
-          ),
-        ],
-      ),
     );
   }
 
-  Widget _buildActiveTasksTab(RunsheetLoaded state) {
-    final tasks = state.activeTasks;
-
-    return RefreshIndicator(
-      onRefresh: () async {
-        await context.read<RunsheetCubit>().fetchRunsheet();
-        _checkOfflineQueue();
-      },
-      child: ListView(
-        padding: const EdgeInsets.all(16),
+  Widget _buildTaskCard(DeliveryTaskModel task, int sequenceNumber) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.navySurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: task.isCompleted
+              ? AppColors.success.withValues(alpha: 0.4)
+              : AppColors.navyBorder,
+          width: 1.2,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Live GPS Broadcast & Status Card
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.navyBackground,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      decoration: BoxDecoration(
-                        color: _isGpsActive ? AppColors.success : AppColors.textMuted,
-                        shape: BoxShape.circle,
-                        boxShadow: _isGpsActive
-                            ? [
-                                BoxShadow(
-                                  color: AppColors.success.withOpacity(0.6),
-                                  blurRadius: 8,
-                                ),
-                              ]
-                            : null,
+          // Card Header: Stop Sequence Badge + Tracking ID + Status
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 26,
+                    height: 26,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: AppColors.primaryGradient,
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$sequenceNumber',
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          _isGpsActive ? 'GPS LIVE BROADCAST ACTIVE' : 'GPS STANDBY (OFFLINE READY)',
-                          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
-                        ),
-                        Text(
-                          _isGpsActive ? 'Streaming coordinates to customers' : 'Enable to broadcast live route',
-                          style: const TextStyle(color: AppColors.textMuted, fontSize: 10.5),
-                        ),
-                      ],
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    task.trackingNumber,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
                     ),
-                  ],
-                ),
-                Switch(
-                  value: _isGpsActive,
-                  activeColor: AppColors.success,
-                  onChanged: _toggleGps,
-                ),
-              ],
+                  ),
+                ],
+              ),
+              StatusBadgeWidget(status: task.status),
+            ],
+          ),
+
+          const SizedBox(height: 10),
+
+          // Recipient & Address
+          Text(
+            task.recipientName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+              fontSize: 14,
             ),
           ),
-          const SizedBox(height: 12),
-
-          // Offline/Online Status Banner
-          if (!_isOnline) ...[
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF2F2),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFDC2626).withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(LucideIcons.wifiOff, size: 18, color: Color(0xFFDC2626)),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Text(
-                      'Offline Mode — Actions queued for auto-sync',
-                      style: TextStyle(color: Color(0xFF991B1B), fontSize: 12, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-          ]
-          else if (_offlineQueueCount > 0) ...[
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: const Color(0xFFFEF3C7),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFFF59E0B).withOpacity(0.3)),
-              ),
-              child: Row(
-                children: [
-                  const Icon(LucideIcons.cloudOff, size: 18, color: Color(0xFFB45309)),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      '$_offlineQueueCount actions pending sync',
-                      style: const TextStyle(color: Color(0xFF92400E), fontSize: 12, fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: _syncOfflineQueue,
-                    child: const Text('SYNC NOW', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11, color: Color(0xFFB45309))),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-
-          // Cached Data Indicator
-          if (state.isFromCache) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: const Color(0xFFEFF6FF),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.3)),
-              ),
-              child: Row(
-                children: const [
-                  Icon(LucideIcons.database, size: 14, color: Color(0xFF3B82F6)),
-                  SizedBox(width: 8),
-                  Text(
-                    'Showing cached tasks — will refresh when online',
-                    style: TextStyle(color: Color(0xFF1E40AF), fontSize: 11, fontWeight: FontWeight.w500),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-
-          // Metric Summary Pills & AI Route Optimizer Button
+          const SizedBox(height: 4),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const Icon(LucideIcons.mapPin, color: AppColors.textMuted, size: 14),
+              const SizedBox(width: 6),
               Expanded(
-                child: AppCard(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Remaining', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      const SizedBox(height: 2),
-                      Text('${state.pendingCount} Stops', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary)),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: AppCard(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Completed', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                      const SizedBox(height: 2),
-                      Text('${state.completedCount} Done', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.success)),
-                    ],
-                  ),
+                child: Text(
+                  '${task.deliveryAddress}, ${task.destinationCity}',
+                  style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
 
-          // 1-Click AI Route Optimizer
-          if (tasks.isNotEmpty)
-            AppButton(
-              text: 'AI Optimize Delivery Stops (2-Opt TSP)',
-              variant: AppButtonVariant.outline,
-              isFullWidth: true,
-              size: AppButtonSize.sm,
-              icon: const Icon(LucideIcons.sparkles, size: 14, color: AppColors.primary),
-              onPressed: () => _optimizeStops(tasks),
-            ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
 
-          if (tasks.isEmpty)
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 40),
-              child: const Column(
+          // Time Slot & COD Ribbon
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
                 children: [
-                  Icon(LucideIcons.checkCheck, size: 48, color: AppColors.success),
-                  SizedBox(height: 12),
-                  Text('All Runsheet Tasks Completed!', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  Text('Great job! No pending deliveries remaining.', style: TextStyle(color: AppColors.textMuted, fontSize: 12.5)),
+                  const Icon(LucideIcons.clock, color: AppColors.cyanAccent, size: 13),
+                  const SizedBox(width: 5),
+                  Text(
+                    task.scheduledTime ?? 'Standard Slot',
+                    style: const TextStyle(color: AppColors.cyanAccent, fontSize: 11, fontWeight: FontWeight.w500),
+                  ),
                 ],
               ),
-            )
-          else
-            ...tasks.asMap().entries.map((entry) {
-              final idx = entry.key + 1;
-              final task = entry.value;
-              return _buildTaskCard(task, stopIndex: idx);
-            }),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHistoryTab(RunsheetLoaded state) {
-    final tasks = state.historyTasks;
-
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text(
-          'Completed Deliveries (${tasks.length})',
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-        ),
-        const SizedBox(height: 12),
-        if (tasks.isEmpty)
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 30),
-            child: Center(child: Text('No completed tasks yet today.')),
-          )
-        else
-          ...tasks.map((task) => _buildTaskCard(task)),
-      ],
-    );
-  }
-
-  Widget _buildEarningsTab(RunsheetLoaded state) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // COD Wallet Card
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('CASH IN HAND (COD COLLECTED)', style: TextStyle(color: AppColors.textMuted, fontSize: 11, fontWeight: FontWeight.w700)),
-                const SizedBox(height: 6),
-                Text(
-                  '\$${state.totalCodCollected.toStringAsFixed(2)} USD',
-                  style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900),
-                ),
-                const SizedBox(height: 14),
+              if (task.codAmount > 0)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
+                    color: Colors.amber.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.amber.withValues(alpha: 0.4)),
                   ),
                   child: Text(
-                    'Deposit at Hub End of Shift: \$${state.totalCodCollected.toStringAsFixed(2)}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                    'COD: \$${task.codAmount.toStringAsFixed(2)}',
+                    style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.bold),
+                  ),
+                )
+              else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
+                  ),
+                  child: const Text(
+                    'PREPAID',
+                    style: TextStyle(color: AppColors.success, fontSize: 10.5, fontWeight: FontWeight.bold),
                   ),
                 ),
-              ],
-            ),
+            ],
           ),
-          const SizedBox(height: 16),
 
-          // Shift Summary Card
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Shift Performance', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
-                const Divider(height: 20),
-                _buildSummaryRow('Total Assigned Tasks', '${state.tasks.length} Parcels'),
-                _buildSummaryRow('Delivered Successfully', '${state.completedCount} Parcels'),
-                _buildSummaryRow('Pending Stops', '${state.pendingCount} Stops'),
-                _buildSummaryRow('Success Rate', '${state.tasks.isNotEmpty ? ((state.completedCount / state.tasks.length) * 100).toStringAsFixed(0) : 0}%'),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSummaryRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 13)),
-          Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTaskCard(DeliveryTaskModel task, {int? stopIndex}) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12.0),
-      child: AppCard(
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => TaskDetailScreen(task: task)),
-          );
-        },
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    if (stopIndex != null) ...[
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          '#$stopIndex',
-                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                    ],
-                    Text(
-                      task.trackingNumber,
-                      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold, color: AppColors.primary),
+          if (task.driverNotes != null && task.driverNotes!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.05),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(LucideIcons.info, size: 13, color: AppColors.textMuted),
+                  const SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      task.driverNotes!,
+                      style: const TextStyle(color: AppColors.textMuted, fontSize: 11, fontStyle: FontStyle.italic),
                     ),
-                  ],
-                ),
-                StatusBadgeWidget(status: task.status, isSmall: true),
-              ],
-            ),
-            const Divider(height: 16),
-            Text(
-              task.recipientName,
-              style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-            ),
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(LucideIcons.mapPin, size: 14, color: AppColors.textMuted),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    '${task.deliveryAddress}, ${task.destinationCity}',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(fontSize: 12.5, color: AppColors.textSecondary),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  task.codAmount > 0 ? 'COD: \$${task.codAmount.toStringAsFixed(2)}' : 'PREPAID',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.bold,
-                    color: task.codAmount > 0 ? const Color(0xFFB45309) : AppColors.success,
-                  ),
-                ),
-                const Row(
-                  children: [
-                    Text('Details', style: TextStyle(fontSize: 12, color: AppColors.primary, fontWeight: FontWeight.w600)),
-                    Icon(LucideIcons.chevronRight, size: 14, color: AppColors.primary),
-                  ],
-                ),
-              ],
+                ],
+              ),
             ),
           ],
-        ),
+
+          const SizedBox(height: 12),
+
+          // 1-Tap Quick Action Buttons (Call, WhatsApp, Maps, Deliver/Signature)
+          Row(
+            children: [
+              // Call button
+              IconButton.filledTonal(
+                icon: const Icon(LucideIcons.phone, size: 16),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.navyCard,
+                  foregroundColor: Colors.white,
+                ),
+                tooltip: 'Call Recipient',
+                onPressed: () => _openDialer(task.recipientPhone),
+              ),
+              const SizedBox(width: 6),
+              // WhatsApp button
+              IconButton.filledTonal(
+                icon: const Icon(LucideIcons.messageSquare, size: 16),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.navyCard,
+                  foregroundColor: AppColors.success,
+                ),
+                tooltip: 'WhatsApp Message',
+                onPressed: () => _openWhatsApp(task.recipientPhone, task.trackingNumber),
+              ),
+              const SizedBox(width: 6),
+              // Google Maps Navigation
+              IconButton.filledTonal(
+                icon: const Icon(LucideIcons.navigation, size: 16),
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.navyCard,
+                  foregroundColor: AppColors.cyanAccent,
+                ),
+                tooltip: 'Navigate via Google Maps',
+                onPressed: () => _openGoogleMaps('${task.deliveryAddress}, ${task.destinationCity}'),
+              ),
+              const Spacer(),
+
+              // Primary Action: Signature / Deliver
+              if (!task.isCompleted) ...[
+                if (task.codAmount > 0)
+                  ElevatedButton.icon(
+                    onPressed: () => _openCashCollectionModal(task),
+                    icon: const Icon(LucideIcons.banknote, size: 14, color: Colors.white),
+                    label: const Text('Collect & Deliver', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5, color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber.shade700,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  )
+                else
+                  ElevatedButton.icon(
+                    onPressed: () => _openSignatureModal(task),
+                    icon: const Icon(LucideIcons.penTool, size: 14, color: Colors.white),
+                    label: const Text('Sign (POD)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5, color: Colors.white)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+              ] else
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(LucideIcons.check, size: 14, color: AppColors.success),
+                      SizedBox(width: 4),
+                      Text('Completed', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold, fontSize: 11.5)),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ],
       ),
     );
   }

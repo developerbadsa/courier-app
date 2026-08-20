@@ -23,48 +23,48 @@ class StatusBadgeWidget extends StatelessWidget {
       case 'PAID':
       case 'APPROVED':
       case 'ACTIVE':
-        bg = AppColors.successLight;
-        text = const Color(0xFF047857);
+        bg = AppColors.success.withValues(alpha: 0.15);
+        text = AppColors.success;
         dot = AppColors.success;
         break;
       case 'IN_TRANSIT':
       case 'OUT_FOR_DELIVERY':
       case 'PICKED_UP':
       case 'ASSIGNED':
-        bg = AppColors.primaryLight;
-        text = const Color(0xFF1D4ED8);
-        dot = AppColors.primary;
+        bg = AppColors.cyanAccent.withValues(alpha: 0.15);
+        text = AppColors.cyanAccent;
+        dot = AppColors.cyanAccent;
         break;
       case 'PENDING':
       case 'DRAFT':
       case 'PROCESSING':
-        bg = AppColors.warningLight;
-        text = const Color(0xFFB45309);
+        bg = AppColors.warning.withValues(alpha: 0.15);
+        text = Colors.amberAccent;
         dot = AppColors.warning;
         break;
       case 'FAILED':
       case 'CANCELLED':
       case 'REJECTED':
-        bg = AppColors.dangerLight;
-        text = const Color(0xFFB91C1C);
+        bg = AppColors.danger.withValues(alpha: 0.15);
+        text = AppColors.danger;
         dot = AppColors.danger;
         break;
       default:
-        bg = const Color(0xFFF1F5F9);
-        text = AppColors.textSecondary;
+        bg = Colors.white.withValues(alpha: 0.08);
+        text = AppColors.textMuted;
         dot = AppColors.textMuted;
         break;
     }
 
     return Container(
       padding: EdgeInsets.symmetric(
-        horizontal: isSmall ? 6 : 8,
-        vertical: isSmall ? 2 : 4,
+        horizontal: isSmall ? 7 : 10,
+        vertical: isSmall ? 3 : 5,
       ),
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: dot.withOpacity(0.25), width: 1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: dot.withValues(alpha: 0.35), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -75,16 +75,19 @@ class StatusBadgeWidget extends StatelessWidget {
             decoration: BoxDecoration(
               color: dot,
               shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(color: dot.withValues(alpha: 0.8), blurRadius: 4, spreadRadius: 1),
+              ],
             ),
           ),
-          const SizedBox(width: 5),
+          const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
               color: text,
-              fontSize: isSmall ? 10 : 11,
+              fontSize: isSmall ? 10 : 11.5,
               fontWeight: FontWeight.w700,
-              letterSpacing: 0.2,
+              letterSpacing: 0.3,
             ),
           ),
         ],

@@ -104,7 +104,7 @@ class LiveDeliveryMapView extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E293B).withOpacity(0.92),
+                color: const Color(0xFF1E293B).withValues(alpha: 0.92),
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.white12),
               ),
@@ -122,9 +122,9 @@ class LiveDeliveryMapView extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      Text(
+                      const Text(
                         'Live GPS Telemetry',
-                        style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 11, fontWeight: FontWeight.w600),
+                        style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),

@@ -87,7 +87,7 @@ class _PickupRequestsScreenState extends State<PickupRequestsScreen> {
                   const Text('Time Slot', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 6),
                   DropdownButtonFormField<String>(
-                    value: _selectedSlot,
+                    initialValue: _selectedSlot,
                     items: const [
                       DropdownMenuItem(value: 'Morning (9:00 AM – 12:00 PM)', child: Text('Morning (9:00 AM – 12:00 PM)')),
                       DropdownMenuItem(value: 'Afternoon (1:00 PM – 4:00 PM)', child: Text('Afternoon (1:00 PM – 4:00 PM)')),

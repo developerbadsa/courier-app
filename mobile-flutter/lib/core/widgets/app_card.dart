@@ -21,23 +21,23 @@ class AppCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: backgroundColor ?? AppColors.surface,
-        borderRadius: BorderRadius.circular(10),
+        color: backgroundColor ?? AppColors.navySurface,
+        borderRadius: BorderRadius.circular(16),
         border: Border.fromBorderSide(
-          border ?? const BorderSide(color: AppColors.border, width: 1),
+          border ?? BorderSide(color: AppColors.navyBorder.withValues(alpha: 0.8), width: 1.2),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(16),
           onTap: onTap,
           child: Padding(
             padding: padding,

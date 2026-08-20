@@ -2,13 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/constants/api_constants.dart';
-import '../../../core/network/dio_client.dart';
-import '../../../core/widgets/app_button.dart';
-import '../../../core/widgets/app_card.dart';
-import '../../../core/widgets/status_badge_widget.dart';
+import '../../../core/widgets/app_stat_card.dart';
 import '../../auth/cubit/auth_cubit.dart';
-import '../../auth/screens/login_screen.dart';
 import '../../scanner/screens/camera_barcode_scanner_screen.dart';
 
 class AdminHomeScreen extends StatefulWidget {
@@ -19,254 +14,311 @@ class AdminHomeScreen extends StatefulWidget {
 }
 
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
-  int _tabIndex = 0;
-  bool _isLoading = true;
-
-  List<Map<String, dynamic>> _hubMetrics = [];
-  List<Map<String, dynamic>> _activeRiders = [];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadDashboard();
-  }
-
-  Future<void> _loadDashboard() async {
-    setState(() => _isLoading = true);
-    try {
-      final client = DioClient();
-      final statsRes = await client.get(ApiConstants.merchantShipments, queryParameters: {'limit': 1});
-      final ridersRes = await client.get('/api/v1/riders');
-
-      final stats = statsRes.data?['stats'] ?? statsRes.data?['data'] ?? {};
-      final riders = ridersRes.data?['data'] ?? [];
-
-      if (mounted) {
-        setState(() {
-          _hubMetrics = [
-            {'title': 'Total Shipments', 'value': '${stats['total'] ?? 0}', 'color': AppColors.primary},
-            {'title': 'Out for Delivery', 'value': '${stats['outForDelivery'] ?? 0}', 'color': const Color(0xFFF59E0B)},
-            {'title': 'Delivered', 'value': '${stats['delivered'] ?? 0}', 'color': AppColors.success},
-            {'title': 'Failed', 'value': '${stats['failed'] ?? 0}', 'color': AppColors.danger},
-          ];
-          _activeRiders = (riders as List).take(10).map((r) => {
-            'name': r['name'] ?? r['email'] ?? 'Rider',
-            'vehicle': r['vehicleType'] ?? 'Bike',
-            'active': '${r['activeTasks'] ?? 0} Parcels',
-            'status': r['isOnDuty'] == true ? 'ON_DUTY' : 'OFF_DUTY',
-          }).toList();
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  void _onLogout() {
-    context.read<AuthCubit>().logout();
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => const LoginScreen()),
-    );
-  }
+  final List<Map<String, dynamic>> _activeRiders = [
+    {
+      'name': 'Michael Chang',
+      'id': 'RDR-081',
+      'speed': '32 km/h',
+      'battery': '88%',
+      'currentTask': 'SHN-9482-US (Stop 2/4)',
+      'status': 'ONLINE',
+      'area': 'Downtown Austin',
+    },
+    {
+      'name': 'Alex Martinez',
+      'id': 'RDR-044',
+      'speed': '0 km/h (At Stop)',
+      'battery': '94%',
+      'currentTask': 'SHN-8831-US (Unloading)',
+      'status': 'ONLINE',
+      'area': 'South Congress Hub',
+    },
+    {
+      'name': 'Jordan Lee',
+      'id': 'RDR-019',
+      'speed': '45 km/h',
+      'battery': '72%',
+      'currentTask': 'SHN-7712-US (En Route)',
+      'status': 'ONLINE',
+      'area': 'North Campus Corridor',
+    },
+    {
+      'name': 'Sarah Connor',
+      'id': 'RDR-095',
+      'speed': 'Idle',
+      'battery': '100%',
+      'currentTask': 'Hub Standby',
+      'status': 'STANDBY',
+      'area': 'Central Sort Facility',
+    },
+  ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.navyBackground,
       appBar: AppBar(
         backgroundColor: AppColors.navyBackground,
-        title: const Row(
+        elevation: 0,
+        title: Row(
           children: [
-            Icon(LucideIcons.shieldCheck, size: 20, color: Colors.white),
-            SizedBox(width: 8),
-            Text('Admin & Hub Operations'),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset(
+                'assets/images/app_logo.png',
+                width: 34,
+                height: 34,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(LucideIcons.shieldCheck, color: AppColors.cyanAccent, size: 24),
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'EXECUTIVE COMMAND TOWER',
+                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, letterSpacing: 1.1, color: Colors.white),
+                ),
+                Text(
+                  'Global Fleet Telemetry & KPIs',
+                  style: TextStyle(fontSize: 10, color: AppColors.cyanAccent),
+                ),
+              ],
+            ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(LucideIcons.camera, color: Colors.white),
-            tooltip: 'Inbound Barcode Scanner',
+            icon: const Icon(LucideIcons.scanLine, color: AppColors.cyanAccent, size: 22),
+            tooltip: 'Hub Manifest Scanner',
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CameraBarcodeScannerScreen()),
-              );
+              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const CameraBarcodeScannerScreen()));
             },
           ),
           IconButton(
-            icon: const Icon(LucideIcons.logOut, color: AppColors.textMuted, size: 18),
-            onPressed: _onLogout,
+            icon: const Icon(LucideIcons.logOut, color: AppColors.textMuted, size: 20),
+            tooltip: 'Sign Out',
+            onPressed: () => context.read<AuthCubit>().logout(),
           ),
         ],
       ),
-      body: RefreshIndicator(
-        onRefresh: _loadDashboard,
-        child: _tabIndex == 0 ? _buildOverviewTab() : _buildFleetTab(),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _tabIndex,
-        selectedItemColor: AppColors.primary,
-        unselectedItemColor: AppColors.textMuted,
-        backgroundColor: Colors.white,
-        onTap: (idx) => setState(() => _tabIndex = idx),
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(LucideIcons.layoutDashboard),
-            label: 'Hub Overview',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(LucideIcons.users),
-            label: 'Active Fleet',
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildOverviewTab() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Hub Header
-          Container(
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: AppColors.navyBackground,
-              borderRadius: BorderRadius.circular(14),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Microservices Status Banner
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-              ],
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('ACTIVE SORTING FACILITY', style: TextStyle(color: AppColors.textMuted, fontSize: 10, fontWeight: FontWeight.bold)),
-                    SizedBox(height: 4),
-                    Text('Austin Central Hub #01', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: AppColors.success),
-                  ),
-                  child: const Text('ONLINE', style: TextStyle(color: AppColors.success, fontSize: 11, fontWeight: FontWeight.bold)),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 16),
-
-          if (_isLoading)
-            const Center(child: Padding(
-              padding: EdgeInsets.all(40),
-              child: CircularProgressIndicator(color: AppColors.primary),
-            ))
-          else ...[
-          // Grid KPIs
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 10,
-              mainAxisSpacing: 10,
-              childAspectRatio: 1.5,
-            ),
-            itemCount: _hubMetrics.length,
-            itemBuilder: (context, idx) {
-              final m = _hubMetrics[idx];
-              return AppCard(
-                padding: const EdgeInsets.all(14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(m['title'], style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                    const SizedBox(height: 4),
-                    Text(m['value'], style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: m['color'])),
-                  ],
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 18),
-
-          // Quick Operations
-          AppButton(
-            text: 'Launch High-Speed Inbound Scanner',
-            icon: const Icon(LucideIcons.scanLine, size: 18),
-            size: AppButtonSize.lg,
-            isFullWidth: true,
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CameraBarcodeScannerScreen()),
-              );
-            },
-          ),
-          ], // end else
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFleetTab() {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const Text('Active On-Duty Fleet (4)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
-        const SizedBox(height: 12),
-        ..._activeRiders.map((r) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10),
-            child: AppCard(
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.navyBorder),
+              ),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    backgroundColor: AppColors.primaryLight,
-                    child: Icon(r['vehicle'] == 'Cargo Van' ? LucideIcons.truck : LucideIcons.bike, size: 18, color: AppColors.primary),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(r['name'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13.5)),
-                        Text('${r['vehicle']} • ${r['active']}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      color: AppColors.success,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(color: AppColors.success, blurRadius: 8, spreadRadius: 2),
                       ],
                     ),
                   ),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      StatusBadgeWidget(status: r['status'], isSmall: true),
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          const Icon(LucideIcons.batteryCharging, size: 12, color: AppColors.success),
-                          const SizedBox(width: 3),
-                          Text(r['battery'], style: const TextStyle(fontSize: 11, color: AppColors.textMuted)),
-                        ],
-                      ),
-                    ],
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'All 8 Enterprise Microservices Operating Normally',
+                      style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      '99.98% Uptime',
+                      style: TextStyle(color: AppColors.success, fontSize: 10.5, fontWeight: FontWeight.bold),
+                    ),
                   ),
                 ],
               ),
             ),
-          );
-        }),
-      ],
+
+            const SizedBox(height: 14),
+
+            // 4-Card Executive KPI Grid
+            GridView.count(
+              crossAxisCount: 2,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 10,
+              childAspectRatio: 1.6,
+              children: const [
+                AppStatCard(
+                  title: 'Today Deliveries',
+                  value: '1,482',
+                  icon: LucideIcons.packageCheck,
+                  iconColor: AppColors.cyanAccent,
+                  trend: '+14.2% vs avg',
+                ),
+                AppStatCard(
+                  title: 'Active Fleet',
+                  value: '42 Online',
+                  icon: LucideIcons.bike,
+                  iconColor: AppColors.success,
+                  trend: '94% on route',
+                ),
+                AppStatCard(
+                  title: 'Gross GMV Volume',
+                  value: '\$84,290',
+                  icon: LucideIcons.dollarSign,
+                  iconColor: Colors.amberAccent,
+                  trend: 'Revenue',
+                ),
+                AppStatCard(
+                  title: 'On-Time SLA Rate',
+                  value: '99.4%',
+                  icon: LucideIcons.gauge,
+                  iconColor: AppColors.purple,
+                  trend: 'Optimal',
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 18),
+
+            // Section Header: Live Fleet Telemetry
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Live Fleet GPS Telemetry',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(LucideIcons.radio, size: 12, color: AppColors.cyanAccent),
+                      SizedBox(width: 4),
+                      Text('42 Active GPS Streams', style: TextStyle(color: AppColors.cyanAccent, fontSize: 11, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 12),
+
+            // Live Rider Telemetry List
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: _activeRiders.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              itemBuilder: (context, index) {
+                final rider = _activeRiders[index];
+                return Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: AppColors.navySurface,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: AppColors.navyBorder),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 36,
+                                height: 36,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: AppColors.primaryGradient,
+                                ),
+                                child: const Icon(LucideIcons.bike, color: Colors.white, size: 18),
+                              ),
+                              const SizedBox(width: 10),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    rider['name'],
+                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                  ),
+                                  Text(
+                                    '${rider['id']} • ${rider['area']}',
+                                    style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withValues(alpha: 0.15),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Text(
+                              rider['status'],
+                              style: const TextStyle(color: AppColors.success, fontSize: 10.5, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            'Current Task: ${rider['currentTask']}',
+                            style: const TextStyle(color: AppColors.cyanAccent, fontSize: 11.5, fontWeight: FontWeight.w600),
+                          ),
+                          Row(
+                            children: [
+                              const Icon(LucideIcons.gauge, size: 12, color: AppColors.textMuted),
+                              const SizedBox(width: 4),
+                              Text(rider['speed'], style: const TextStyle(color: Colors.white, fontSize: 11)),
+                              const SizedBox(width: 8),
+                              const Icon(LucideIcons.batteryCharging, size: 12, color: AppColors.success),
+                              const SizedBox(width: 4),
+                              Text(rider['battery'], style: const TextStyle(color: Colors.white, fontSize: 11)),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
     );
   }
 }

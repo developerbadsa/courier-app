@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
-import 'package:permission_handler/permission_handler.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/dio_client.dart';
@@ -28,7 +27,6 @@ class _CameraBarcodeScannerScreenState extends State<CameraBarcodeScannerScreen>
   final TextEditingController _manualBarcodeInput = TextEditingController();
   bool _isTorchOn = false;
   bool _isCameraFront = false;
-  bool _hasCameraPermission = true;
   Map<String, dynamic>? _scannedResult;
   bool _isLookingUp = false;
   String? _lookupError;
@@ -38,8 +36,6 @@ class _CameraBarcodeScannerScreenState extends State<CameraBarcodeScannerScreen>
   @override
   void initState() {
     super.initState();
-    _checkCameraPermission();
-
     _animController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1800),
@@ -48,15 +44,6 @@ class _CameraBarcodeScannerScreenState extends State<CameraBarcodeScannerScreen>
     _laserAnimation = Tween<double>(begin: 0.1, end: 0.9).animate(
       CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
     );
-  }
-
-  Future<void> _checkCameraPermission() async {
-    final status = await Permission.camera.request();
-    if (mounted) {
-      setState(() {
-        _hasCameraPermission = status.isGranted;
-      });
-    }
   }
 
   void _onLookupScan(String barcode) async {
@@ -140,49 +127,49 @@ class _CameraBarcodeScannerScreenState extends State<CameraBarcodeScannerScreen>
             child: Stack(
               alignment: Alignment.center,
               children: [
-                if (_hasCameraPermission)
-                  MobileScanner(
-                    controller: _scannerController,
-                    onDetect: (BarcodeCapture capture) {
-                      for (final barcode in capture.barcodes) {
-                        final rawValue = barcode.rawValue;
-                        if (rawValue != null && rawValue.isNotEmpty) {
-                          _manualBarcodeInput.text = rawValue;
-                          _onLookupScan(rawValue);
-                          break;
-                        }
-                      }
-                    },
-                  )
-                else
-                  Container(
-                    color: const Color(0xFF0F172A),
-                    padding: const EdgeInsets.all(24),
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(LucideIcons.cameraOff, size: 54, color: AppColors.danger),
-                          const SizedBox(height: 16),
-                          const Text(
-                            'Camera Permission Required',
-                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'Please allow camera access in device settings to scan parcel waybill barcodes & QR codes.',
-                            style: TextStyle(color: AppColors.textMuted, fontSize: 12),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          AppButton(
-                            text: 'Grant Camera Permission',
-                            onPressed: _checkCameraPermission,
-                          ),
-                        ],
+                MobileScanner(
+                  controller: _scannerController,
+                  errorBuilder: (context, error) {
+                    return Container(
+                      color: const Color(0xFF0F172A),
+                      padding: const EdgeInsets.all(24),
+                      child: Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(LucideIcons.cameraOff, size: 54, color: AppColors.danger),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'Camera Permission Required',
+                              style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              error.errorDetails?.message ?? 'Please allow camera permission to scan barcodes.',
+                              style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 16),
+                            AppButton(
+                              text: 'Retry Camera Access',
+                              onPressed: () => _scannerController.start(),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
+                  onDetect: (BarcodeCapture capture) {
+                    for (final barcode in capture.barcodes) {
+                      final rawValue = barcode.rawValue;
+                      if (rawValue != null && rawValue.isNotEmpty) {
+                        _manualBarcodeInput.text = rawValue;
+                        _onLookupScan(rawValue);
+                        break;
+                      }
+                    }
+                  },
+                ),
 
                 // Viewfinder HUD Overlay
                 Positioned.fill(
