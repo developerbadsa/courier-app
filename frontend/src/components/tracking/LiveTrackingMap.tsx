@@ -58,7 +58,8 @@ export default function LiveTrackingMap({ data, height = 400, className = '' }: 
     let cancelled = false;
 
     async function initMap() {
-      const L = (await import('leaflet')).default;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const L: any = (await import('leaflet')).default;
       if (cancelled || !mapRef.current) return;
 
       // Fix Leaflet default icon paths
