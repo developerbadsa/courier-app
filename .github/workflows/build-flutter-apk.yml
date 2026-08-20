@@ -34,9 +34,10 @@ jobs:
         run: |
           flutter doctor -v
 
-      - name: ⚙️ Fetch Dependencies & Regenerate Android Bindings
+      - name: ⚙️ Setup Android Wrapper & Dependencies
         working-directory: ./mobile-flutter
         run: |
+          flutter create . --platforms=android --org com.shohnaat
           flutter pub get
 
       - name: 🔨 Build Universal Release APK (.apk)
