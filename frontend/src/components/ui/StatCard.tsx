@@ -36,7 +36,7 @@ export const StatCard: React.FC<StatCardProps> = ({
           {title}
         </span>
         <div
-          className={`w-9 h-9 rounded-lg border flex items-center justify-center ${iconBg} ${iconColor} shrink-0`}
+          className={`w-9 h-9 rounded border flex items-center justify-center ${iconBg} ${iconColor} shrink-0`}
         >
           <Icon className="w-4 h-4 stroke-[2]" />
         </div>

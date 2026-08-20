@@ -356,7 +356,7 @@ export default function NewPickupPage() {
                         : 'bg-white border-slate-200 hover:border-slate-300'
                     }`}
                   >
-                    <div className="w-10 h-10 mx-auto rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center mb-2">
+                    <div className="w-10 h-10 mx-auto rounded bg-slate-50 border border-slate-200 flex items-center justify-center mb-2">
                       <v.icon className={`w-5 h-5 ${v.color}`} />
                     </div>
                     <div className="text-xs font-bold text-slate-900">{v.label}</div>

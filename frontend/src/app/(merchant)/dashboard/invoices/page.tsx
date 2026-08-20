@@ -149,7 +149,7 @@ export default function InvoicesPage() {
       </div>
 
       {/* ── Action Toolbar & Filters with my-8 spacing ── */}
-      <div className="my-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+      <div className="my-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 bg-white rounded border border-slate-200 shadow-sm">
         {/* Filter Pills */}
         <div className="flex items-center gap-2">
           <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-2 flex items-center gap-1.5">
@@ -159,7 +159,7 @@ export default function InvoicesPage() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-3.5 py-1.5 text-xs font-semibold rounded-md border transition-all ${
+              className={`px-3.5 py-1.5 text-xs font-semibold rounded border transition-all ${
                 filter === f
                   ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                   : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
@@ -195,7 +195,7 @@ export default function InvoicesPage() {
       {/* ── Invoice Cards List using Reusable ExpandableCard ── */}
       <div className="my-8 space-y-4">
         {filtered.length === 0 ? (
-          <div className="bg-white rounded-lg border border-slate-200 p-16 text-center shadow-sm">
+          <div className="bg-white rounded border border-slate-200 p-16 text-center shadow-sm">
             <FileText className="w-12 h-12 text-slate-300 mx-auto mb-4" />
             <h3 className="text-sm font-bold text-slate-700">No invoices found</h3>
             <p className="text-xs text-slate-400 mt-1">There are no invoices matching the selected status filter.</p>
@@ -239,7 +239,7 @@ export default function InvoicesPage() {
                 <span>Recipient: <strong>{invoice.merchantName}</strong> ({invoice.merchantAddress})</span>
               </div>
 
-              <div className="bg-slate-50 rounded-lg p-4 border border-slate-100 space-y-2">
+              <div className="bg-slate-50 rounded p-4 border border-slate-100 space-y-2">
                 <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">Itemized Breakdown</div>
                 {invoice.items.map((item, idx) => (
                   <div key={idx} className="flex items-center justify-between text-xs text-slate-600">

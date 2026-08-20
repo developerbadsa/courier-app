@@ -62,7 +62,7 @@ export function ExpandableCard({
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4 flex-1">
           {icon && (
-            <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-600 shrink-0">
+            <div className="w-10 h-10 rounded bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-600 shrink-0">
               {icon}
             </div>
           )}
@@ -93,7 +93,7 @@ export function ExpandableCard({
             <button
               type="button"
               onClick={handleToggle}
-              className={`h-8 px-2.5 rounded-md border text-xs font-semibold flex items-center gap-1 transition-all ${
+              className={`h-8 px-2.5 rounded border text-xs font-semibold flex items-center gap-1 transition-all ${
                 isExpanded
                   ? 'bg-slate-100 border-slate-300 text-slate-800'
                   : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'

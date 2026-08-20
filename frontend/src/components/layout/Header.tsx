@@ -121,7 +121,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-3.5 min-w-0">
         <button
           onClick={onOpenMobileSidebar}
-          className="p-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 lg:hidden cursor-pointer"
+          className="p-2 text-slate-500 hover:text-slate-900 rounded hover:bg-slate-100 lg:hidden cursor-pointer"
           aria-label="Open sidebar"
         >
           <Menu className="w-5 h-5" />
@@ -164,7 +164,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Notifications Dropdown Card */}
           {isNotificationsOpen && (
-            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white rounded-2xl border border-slate-200/90 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white rounded border border-slate-200/90 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
               <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-bold text-slate-900">Notifications</h3>
@@ -247,7 +247,7 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Standard Enterprise Profile Dropdown Menu */}
           {isProfileOpen && (
-            <div className="absolute right-0 mt-3 w-64 bg-white rounded-2xl border border-slate-200/90 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
+            <div className="absolute right-0 mt-3 w-64 bg-white rounded border border-slate-200/90 shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-150">
               {/* Header Info */}
               <div className="p-4 border-b border-slate-100 bg-slate-50/70">
                 <div className="flex items-center gap-3">
@@ -276,7 +276,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <Link
                   href="/dashboard"
                   onClick={() => setIsProfileOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100/80 transition-colors"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded hover:bg-slate-100/80 transition-colors"
                 >
                   <User className="w-4 h-4 text-slate-400" />
                   <span>Store Profile & KYC</span>
@@ -285,7 +285,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <Link
                   href="/dashboard/addresses"
                   onClick={() => setIsProfileOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100/80 transition-colors"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded hover:bg-slate-100/80 transition-colors"
                 >
                   <MapPin className="w-4 h-4 text-slate-400" />
                   <span>Address Book & Hubs</span>
@@ -294,7 +294,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <Link
                   href="/dashboard/finance"
                   onClick={() => setIsProfileOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100/80 transition-colors"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded hover:bg-slate-100/80 transition-colors"
                 >
                   <CreditCard className="w-4 h-4 text-slate-400" />
                   <span>Finance & Settlements</span>
@@ -303,7 +303,7 @@ export const Header: React.FC<HeaderProps> = ({
                 <Link
                   href="/dashboard/developer"
                   onClick={() => setIsProfileOpen(false)}
-                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100/80 transition-colors"
+                  className="flex items-center gap-3 px-3 py-2.5 rounded hover:bg-slate-100/80 transition-colors"
                 >
                   <Settings className="w-4 h-4 text-slate-400" />
                   <span>Developer API & Keys</span>
@@ -314,7 +314,7 @@ export const Header: React.FC<HeaderProps> = ({
               <div className="p-2 border-t border-slate-100 bg-slate-50/40">
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded text-xs font-bold text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                 >
                   <LogOut className="w-4 h-4 stroke-[2.2]" />
                   <span>Sign Out</span>
@@ -328,7 +328,7 @@ export const Header: React.FC<HeaderProps> = ({
       {/* Quick Search Modal */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 px-4 bg-slate-900/50 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded w-full max-w-lg shadow-2xl border border-slate-200 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
             <form onSubmit={handleQuickSearch} className="p-4 border-b border-slate-100 flex items-center gap-3">
               <Search className="w-5 h-5 text-slate-400" />
               <input
@@ -342,7 +342,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 type="button"
                 onClick={() => setIsSearchOpen(false)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg"
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded"
               >
                 <X className="w-4 h-4" />
               </button>

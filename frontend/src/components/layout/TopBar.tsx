@@ -17,7 +17,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuClick, title }) => {
         {onMenuClick && (
           <button
             onClick={onMenuClick}
-            className="p-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 lg:hidden"
+            className="p-2 text-slate-500 hover:text-slate-900 rounded hover:bg-slate-100 lg:hidden"
             aria-label="Open navigation menu"
           >
             <Menu className="w-5 h-5" />
@@ -48,7 +48,7 @@ export const TopBar: React.FC<TopBarProps> = ({ onMenuClick, title }) => {
 
         {/* Notifications */}
         <button
-          className="relative p-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100 transition-colors"
+          className="relative p-2 text-slate-500 hover:text-slate-900 rounded hover:bg-slate-100 transition-colors"
           aria-label="Notifications"
         >
           <Bell className="w-4 h-4 stroke-[2]" />

@@ -160,7 +160,7 @@ export function LanguageToggle({ className = '' }: { className?: string }) {
 
   if (!mounted) {
     return (
-      <div className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-md ${className}`}>
+      <div className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded ${className}`}>
         <Globe className="w-3.5 h-3.5 text-slate-500" /> EN
       </div>
     );
@@ -169,7 +169,7 @@ export function LanguageToggle({ className = '' }: { className?: string }) {
   return (
     <button
       onClick={() => setLocale(locale === 'en' ? 'ar' : 'en')}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-md border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors shadow-xs ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors shadow-xs ${className}`}
       title={locale === 'en' ? 'Switch to Arabic' : 'Switch to English'}
     >
       <Globe className="w-3.5 h-3.5 text-blue-600 shrink-0" />

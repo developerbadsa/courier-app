@@ -57,7 +57,7 @@ export const Modal: React.FC<ModalProps> = ({
 
       {/* Dialog */}
       <div
-        className={`relative w-full ${sizeStyles[size]} bg-white rounded-xl shadow-xl border border-slate-200 ${className}`}
+        className={`relative w-full ${sizeStyles[size]} bg-white rounded shadow-xl border border-slate-200 ${className}`}
       >
         {/* Header */}
         {(title || description) && (
@@ -69,7 +69,7 @@ export const Modal: React.FC<ModalProps> = ({
               </div>
               <button
                 onClick={onClose}
-                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors -mt-1 -mr-1"
+                className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors -mt-1 -mr-1"
               >
                 <X className="w-4 h-4" />
               </button>
