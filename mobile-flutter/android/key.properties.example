@@ -1,0 +1,9 @@
+# ==============================================================================
+# 🔑 Shohnaat Logistics — Google Play Keystore Properties Template
+# ==============================================================================
+# Rename this file to `key.properties` in `mobile-flutter/android/` for release builds.
+
+storePassword=shohnaat_secure_store_password_2026
+keyPassword=shohnaat_secure_key_password_2026
+keyAlias=shohnaat-release-key
+storeFile=upload-keystore.jks

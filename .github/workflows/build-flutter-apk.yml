@@ -1,4 +1,4 @@
-name: Build Shohnaat Mobile Android APK
+name: Build Shohnaat Mobile Android APK & Play Store Bundle
 
 on:
   push:
@@ -8,8 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-apk:
-    name: 📱 Build Release APK
+  build-android:
+    name: 📱 Build Play Store Bundle (.aab) & Release APK
     runs-on: ubuntu-latest
 
     steps:
@@ -29,7 +29,7 @@ jobs:
           channel: 'stable'
           cache: true
 
-      - name: 📦 Flutter Doctor & Cache Verify
+      - name: 📦 Flutter Doctor & Environment Verify
         run: |
           flutter doctor -v
 
@@ -39,17 +39,29 @@ jobs:
           flutter create . --platforms=android --org com.shohnaat
           flutter pub get
 
-      - name: 🔨 Build Universal Release APK
+      - name: 🚀 Build Google Play Store App Bundle (.aab)
+        working-directory: ./mobile-flutter
+        run: |
+          flutter build appbundle --release
+
+      - name: 🔨 Build Universal Release APK (.apk)
         working-directory: ./mobile-flutter
         run: |
           flutter build apk --release
 
-      - name: 🔨 Build Split ABI APKs (Optimized for ARM64 & ARM32)
+      - name: 🔨 Build Split ABI APKs (ARM64 & ARM32)
         working-directory: ./mobile-flutter
         run: |
           flutter build apk --release --split-per-abi
 
-      - name: 📤 Upload Release APKs as Artifact
+      - name: 📤 Upload Google Play App Bundle (.aab) Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Shohnaat-GooglePlay-AppBundle-AAB
+          path: mobile-flutter/build/app/outputs/bundle/release/*.aab
+          retention-days: 30
+
+      - name: 📤 Upload Release APKs (.apk) Artifact
         uses: actions/upload-artifact@v4
         with:
           name: Shohnaat-Logistics-Android-APK
