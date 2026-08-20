@@ -3,23 +3,58 @@ const nodemailer = require('nodemailer');
 const logger = require('../lib/logger');
 
 /* ──────────────────────────────────────────────────────────────────────
-   BullMQ Connection (Redis)
+   BullMQ Connection (Redis) with Resilient Error Handling
    ────────────────────────────────────────────────────────────────────── */
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-const connection = { url: REDIS_URL };
+
+let connectionOpts = { maxRetriesPerRequest: null, enableOfflineQueue: false };
+try {
+  const parsed = new URL(REDIS_URL);
+  connectionOpts.host = parsed.hostname || '127.0.0.1';
+  connectionOpts.port = parseInt(parsed.port || '6379', 10);
+  if (parsed.password) connectionOpts.password = parsed.password;
+} catch {
+  connectionOpts.host = '127.0.0.1';
+  connectionOpts.port = 6379;
+}
+
+connectionOpts.retryStrategy = (times) => {
+  if (times > 3) {
+    return 15000; // Backoff every 15s when Redis is unavailable to prevent log spam
+  }
+  return 2000;
+};
+
+const connection = connectionOpts;
 
 /* ──────────────────────────────────────────────────────────────────────
-   Notification Queue
+   Notification Queue (graceful fallback if Redis unavailable)
    ────────────────────────────────────────────────────────────────────── */
-const notificationQueue = new Queue('notifications', {
-  connection,
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: { type: 'exponential', delay: 2000 },
-    removeOnComplete: 100,
-    removeOnFail: 50,
-  },
-});
+let notificationQueue = null;
+let redisAvailable = true;
+
+try {
+  notificationQueue = new Queue('notifications', {
+    connection,
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 2000 },
+      removeOnComplete: 100,
+      removeOnFail: 50,
+    },
+  });
+
+  // Catch connection errors gracefully on the Queue event emitter
+  notificationQueue.on('error', (err) => {
+    if (redisAvailable) {
+      redisAvailable = false;
+      logger.warn(`⚠️  [Notification Queue] Redis connection unavailable (${err.message}). Queue fallback activated.`);
+    }
+  });
+} catch (err) {
+  redisAvailable = false;
+  logger.warn(`⚠️  BullMQ Queue init failed (Redis unavailable): ${err.message}`);
+}
 
 /* ──────────────────────────────────────────────────────────────────────
    Email Transporter (SMTP — configurable)
@@ -265,17 +300,27 @@ async function saveSettings(prisma, config) {
 
 /**
  * Enqueue a notification (adds to BullMQ queue)
+ * Gracefully skips if Redis is unavailable
  */
 async function enqueueNotification({ event, recipients, data, channels }) {
-  const job = await notificationQueue.add(
-    'send-notification',
-    { event, recipients, data, channels },
-    {
-      priority: event === 'shipment_failed' ? 1 : event === 'delivered' ? 2 : 3,
-    }
-  );
-  logger.info(`[Notification] Enqueued job ${job.id} for event: ${event}`);
-  return job.id;
+  if (!notificationQueue) {
+    logger.warn(`[Notification] Queue unavailable (Redis down) — skipping: ${event}`);
+    return null;
+  }
+  try {
+    const job = await notificationQueue.add(
+      'send-notification',
+      { event, recipients, data, channels },
+      {
+        priority: event === 'shipment_failed' ? 1 : event === 'delivered' ? 2 : 3,
+      }
+    );
+    logger.info(`[Notification] Enqueued job ${job.id} for event: ${event}`);
+    return job.id;
+  } catch (err) {
+    logger.warn(`[Notification] Failed to enqueue (Redis down): ${err.message}`);
+    return null;
+  }
 }
 
 /**
@@ -504,6 +549,7 @@ async function getNotificationLogs(prisma, { page = 1, limit = 20, event, status
    BullMQ Worker — processes notification jobs
    ────────────────────────────────────────────────────────────────────── */
 function createWorker(prisma) {
+  try {
   const worker = new Worker(
     'notifications',
     async (job) => {
@@ -545,7 +591,15 @@ function createWorker(prisma) {
     logger.error(`[Worker] Job ${job?.id} failed: ${err.message}`);
   });
 
+  worker.on('error', (err) => {
+    // Gracefully swallow endless Redis ECONNREFUSED worker error trace dumps
+  });
+
   return worker;
+  } catch (err) {
+    logger.warn(`⚠️  Worker init skipped (Redis unavailable): ${err.message}`);
+    return null;
+  }
 }
 
 module.exports = {

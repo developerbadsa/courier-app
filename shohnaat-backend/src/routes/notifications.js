@@ -120,8 +120,15 @@ router.post('/send', async (req, res, next) => {
 });
 
 // GET /api/v1/notifications/queue — Get queue status
-router.get('/queue', async (req, res, next) => {
+router.get('/queue', async (req, res) => {
   try {
+    if (!notificationQueue) {
+      return res.json({
+        success: true,
+        data: { status: 'DISCONNECTED', waiting: 0, active: 0, completed: 0, failed: 0, total: 0 },
+      });
+    }
+
     const [waiting, active, completed, failed] = await Promise.all([
       notificationQueue.getWaitingCount(),
       notificationQueue.getActiveCount(),
@@ -132,6 +139,7 @@ router.get('/queue', async (req, res, next) => {
     res.json({
       success: true,
       data: {
+        status: 'CONNECTED',
         waiting,
         active,
         completed,
@@ -140,7 +148,10 @@ router.get('/queue', async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+    res.json({
+      success: true,
+      data: { status: 'DISCONNECTED', error: error.message, waiting: 0, active: 0, completed: 0, failed: 0, total: 0 },
+    });
   }
 });
 

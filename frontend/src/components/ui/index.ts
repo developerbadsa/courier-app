@@ -1,5 +1,6 @@
 export * from './Button';
 export * from './Input';
+export * from './Textarea';
 export * from './Checkbox';
 export * from './Card';
 export * from './StatusBadge';
@@ -11,3 +12,4 @@ export * from './Modal';
 export * from './EmptyState';
 export * from './Tabs';
 export * from './PageHeader';
+export * from './Select';

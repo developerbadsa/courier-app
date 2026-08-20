@@ -95,19 +95,24 @@ app.use(errorHandler);
 // Start server with resilient DB retry
 const start = async () => {
   try {
-    await connectWithRetry(5, 2000);
+    const dbConnected = await connectWithRetry(5, 2000);
 
-    // Start BullMQ notification worker
+    if (!dbConnected) {
+      logger.warn('⚠️  Server starting in DEGRADED mode — DB unavailable. Some routes will fail.');
+    }
+
+    // Start BullMQ notification worker (graceful fallback if Redis is down)
     try {
       createNotificationWorker(prisma);
       console.log('📧 Notification worker started (BullMQ)');
     } catch (err) {
-      logger.warn('Notification worker failed to start:', err.message);
+      logger.warn('⚠️  Notification worker skipped (Redis unavailable):', err.message);
     }
 
     const server = app.listen(PORT, '0.0.0.0', () => {
-      console.log(`🚀 Shohnaat Core API running on port ${PORT}`);
-      logger.info(`Server running on port ${PORT}`);
+      const mode = dbConnected ? '✅' : '⚠️  DEGRADED';
+      console.log(`${mode} Shohnaat Core API running on port ${PORT}`);
+      logger.info(`Server running on port ${PORT} [${dbConnected ? 'healthy' : 'degraded'}]`);
     });
 
     // Graceful Shutdown Handlers
@@ -123,7 +128,7 @@ const start = async () => {
     process.on('SIGTERM', () => shutdown('SIGTERM'));
     process.on('SIGINT', () => shutdown('SIGINT'));
   } catch (error) {
-    logger.error('Failed to start server:', error);
+    logger.error('Fatal server error:', error.message);
     process.exit(1);
   }
 };

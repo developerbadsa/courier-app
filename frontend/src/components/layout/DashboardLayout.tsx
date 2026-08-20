@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sidebar, UserRole } from './Sidebar';
-import { Header } from './Header';
+import { Plus } from 'lucide-react';
+import { Sidebar, type UserRole } from './Sidebar';
+import { TopBar } from './TopBar';
+import { Button } from '../ui/Button';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -16,35 +18,49 @@ interface DashboardLayoutProps {
 export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children,
   role = 'merchant',
-  title = 'Overview',
+  title,
   subtitle,
   primaryActionLabel,
   onPrimaryAction,
 }) => {
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
-      {/* Universal Sidebar */}
+    <div className="min-h-screen bg-slate-50 font-sans">
       <Sidebar
         role={role}
-        isOpen={isMobileSidebarOpen}
-        onClose={() => setIsMobileSidebarOpen(false)}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
       />
 
-      {/* Main Content Viewport */}
-      <div className="flex-1 flex flex-col min-w-0 lg:pl-64">
-        {/* Top Header */}
-        <Header
-          title={title}
-          subtitle={subtitle}
-          onOpenMobileSidebar={() => setIsMobileSidebarOpen(true)}
-          primaryActionLabel={primaryActionLabel}
-          onPrimaryAction={onPrimaryAction}
-        />
-
-        {/* Page Main Content Area */}
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6 max-w-7xl w-full mx-auto">
+      <div className="lg:pl-64 flex flex-col min-h-screen">
+        <TopBar onMenuClick={() => setSidebarOpen(true)} title={title} />
+        <main className="flex-1 p-4 lg:p-6">
+          {/* Page Header */}
+          {title && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">
+                  {title}
+                </h1>
+                {subtitle && (
+                  <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                    {subtitle}
+                  </p>
+                )}
+              </div>
+              {primaryActionLabel && onPrimaryAction && (
+                <Button
+                  variant="primary"
+                  size="md"
+                  onClick={onPrimaryAction}
+                  leftIcon={<Plus className="w-4 h-4 stroke-[2.5]" />}
+                >
+                  {primaryActionLabel}
+                </Button>
+              )}
+            </div>
+          )}
           {children}
         </main>
       </div>

@@ -83,18 +83,18 @@ export default function Home() {
         <div className="max-w-lg mx-auto mt-8">
           <form onSubmit={handleTrackSubmit} className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
+              <Search className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none stroke-[2]" />
               <input
                 type="text"
-                placeholder="Enter tracking ID"
+                placeholder="Enter tracking ID (e.g. SH-9082)"
                 value={trackingNumber}
                 onChange={(e) => setTrackingNumber(e.target.value)}
-                className="w-full h-10 pl-9 pr-3 text-xs bg-slate-50 border border-slate-200 rounded text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 font-mono transition-all"
+                className="w-full h-10 pl-10 pr-4 text-xs bg-slate-50 border border-slate-200 rounded text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10 font-mono transition-all uppercase"
               />
             </div>
             <button
               type="submit"
-              className="h-10 px-5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded transition-all flex items-center gap-1.5 shrink-0"
+              className="h-10 px-5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white text-xs font-semibold rounded transition-all flex items-center gap-1.5 shrink-0 cursor-pointer shadow-2xs"
             >
               Track
               <ArrowRight className="w-3.5 h-3.5" />

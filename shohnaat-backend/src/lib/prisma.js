@@ -39,10 +39,6 @@ const connectWithRetry = async (maxRetries = 5, initialDelay = 2000) => {
 
       if (attempt === maxRetries) {
         logger.error('🚨 [Database] Maximum connection retries exceeded. Server entering degraded mode.');
-        // Don't crash process immediately in production; allow health check to report degraded
-        if (process.env.NODE_ENV !== 'production') {
-          throw error;
-        }
         return false;
       }
 

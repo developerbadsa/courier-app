@@ -1,27 +1,57 @@
-import React, { InputHTMLAttributes, forwardRef } from 'react';
+import React, { forwardRef } from 'react';
+import { Check } from 'lucide-react';
 
-export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
+export interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string | React.ReactNode;
+  containerClassName?: string;
 }
 
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
-  ({ label, className = '', id, ...props }, ref) => {
-    const checkboxId = id || (typeof label === 'string' ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
+  (
+    {
+      label,
+      checked,
+      className = '',
+      containerClassName = '',
+      id,
+      onChange,
+      ...props
+    },
+    ref
+  ) => {
+    const checkboxId =
+      id ||
+      (typeof label === 'string'
+        ? label.toLowerCase().replace(/\s+/g, '-')
+        : undefined);
 
     return (
       <label
         htmlFor={checkboxId}
-        className="inline-flex items-center gap-2 cursor-pointer select-none group"
+        className={`inline-flex items-center gap-2.5 cursor-pointer select-none group ${containerClassName}`}
       >
-        <input
-          id={checkboxId}
-          ref={ref}
-          type="checkbox"
-          className={`w-4 h-4 rounded-[4px] border-[#CBD5E1] text-[#2563EB] focus:ring-[#2563EB] focus:ring-offset-0 bg-[#F0F5FF] cursor-pointer transition-colors ${className}`}
-          {...props}
-        />
+        <div className="relative flex items-center justify-center shrink-0">
+          <input
+            id={checkboxId}
+            ref={ref}
+            type="checkbox"
+            checked={checked}
+            onChange={onChange}
+            className="peer sr-only"
+            {...props}
+          />
+          <div
+            className={`w-3.5 h-3.5 rounded-[3px] border flex items-center justify-center transition-all duration-150 ${
+              checked
+                ? 'bg-blue-600 border-blue-600 text-white'
+                : 'border-slate-300 bg-white group-hover:border-slate-400 group-hover:bg-slate-50'
+            } ${className}`}
+          >
+            {checked && <Check size={10} strokeWidth={3} className="text-white" />}
+          </div>
+        </div>
         {label && (
-          <span className="text-[13px] text-[#475569] group-hover:text-[#334155] font-normal transition-colors">
+          <span className="text-xs font-medium text-slate-600 group-hover:text-slate-900 transition-colors">
             {label}
           </span>
         )}
