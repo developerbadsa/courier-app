@@ -10,3 +10,4 @@ export * from './DataTable';
 export * from './Modal';
 export * from './EmptyState';
 export * from './Tabs';
+export * from './PageHeader';
