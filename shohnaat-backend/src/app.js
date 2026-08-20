@@ -3,9 +3,11 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const logger = require('./lib/logger');
+const { requestLoggerMiddleware } = require('./lib/logger');
 const { prisma, connectWithRetry, disconnect } = require('./lib/prisma');
 const errorHandler = require('./middleware/errorHandler');
 const { helmetMiddleware, requestId, inputSanitizer, sqlInjectionGuard, rateLimiter, corsOptions } = require('./middleware/security');
+
 
 // Routes
 const healthRoutes = require('./routes/health');
@@ -53,11 +55,9 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
   etag: true,
 }));
 
-// Request logging
-app.use((req, res, next) => {
-  logger.info(`${req.method} ${req.path}`);
-  next();
-});
+// Pro Request Logging & Latency Telemetry
+app.use(requestLoggerMiddleware);
+
 
 // Routes
 app.use('/health', healthRoutes);
