@@ -13,9 +13,14 @@ import {
   Check,
   FileText,
   Download,
+  Loader2,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import { StatCard, StatusBadge, Button, Card, DataTable, Column, Tabs, Badge } from '@/components/ui';
+import { downloadInvoicePDF } from '@/lib/invoicePdf';
+import { showToast } from '@/lib/api';
+
+
 
 /* ------------------------------------------------------------------ */
 /*  Types & Mock Data                                                   */
@@ -140,9 +145,43 @@ function useColumns() {
 export default function MerchantDashboard() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('all');
+  const [downloadingStatement, setDownloadingStatement] = useState(false);
   const columns = useColumns();
 
   const filtered = activeTab === 'all' ? SHIPMENTS : SHIPMENTS.filter((s) => s.status === activeTab);
+
+  const handleDownloadStatement = () => {
+    setDownloadingStatement(true);
+    try {
+      downloadInvoicePDF({
+        invoiceNumber: `STMT-${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-01`,
+        invoiceDate: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        dueDate: new Date(Date.now() + 7 * 86400000).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
+        from: {
+          name: 'Shohnaat Logistics Financial Clearinghouse',
+          address: 'Headquarters Hub, USA',
+          email: 'settlements@shohnaat.com',
+          phone: '+1 (800) 555-SHAT',
+        },
+        to: {
+          name: 'Merchant Partner Account',
+          address: 'Verified Merchant Hub, USA',
+        },
+        items: [
+          { description: 'Weekly COD Remittance Collected (5 shipments)', quantity: 1, unitPrice: 12840.00 },
+          { description: 'Platform Delivery & Fulfillment Fees (Deduction)', quantity: 1, unitPrice: -642.00 },
+        ],
+        taxRate: 0,
+        currency: 'USD',
+        notes: 'Certified Financial Statement for weekly COD disbursement. Net payable processed to primary settlement account.',
+      });
+      showToast('success', 'Weekly settlement statement PDF downloaded successfully!');
+    } catch {
+      showToast('error', 'Unable to generate statement PDF.');
+    } finally {
+      setTimeout(() => setDownloadingStatement(false), 800);
+    }
+  };
 
   return (
     <DashboardLayout
@@ -227,7 +266,12 @@ export default function MerchantDashboard() {
             </p>
             <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between">
               <span className="text-xs text-slate-500">Need immediate pickup?</span>
-              <Button variant="outline" size="sm" className="h-8 text-xs font-semibold">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs font-semibold"
+                onClick={() => router.push('/dashboard/pickups/new')}
+              >
                 Request Extra
               </Button>
             </div>
@@ -254,13 +298,21 @@ export default function MerchantDashboard() {
               </div>
             </div>
             <div className="mt-5">
-              <Button variant="primary" size="sm" className="w-full h-9 text-xs font-semibold" leftIcon={<Download className="w-3.5 h-3.5" />}>
-                Download Statement
+              <Button
+                variant="primary"
+                size="sm"
+                className="w-full h-9 text-xs font-semibold"
+                onClick={handleDownloadStatement}
+                disabled={downloadingStatement}
+                leftIcon={downloadingStatement ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+              >
+                {downloadingStatement ? 'Generating PDF...' : 'Download Statement'}
               </Button>
             </div>
           </Card>
         </div>
       </div>
+
 
     </DashboardLayout>
   );
