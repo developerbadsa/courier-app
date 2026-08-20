@@ -10,6 +10,7 @@ import { printShippingLabel, type ShippingLabelData } from '@/lib/shippingLabelP
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout';
 import { Button, Card, Badge, Input } from '@/components/ui';
+import { apiPost, apiGet, showToast } from '@/lib/api';
 
 /* ── Types ── */
 interface ScanResult {
@@ -78,30 +79,53 @@ export default function ScanInboundPage() {
     setIsScanning(true);
     const tn = trackingNumber.trim().toUpperCase();
 
-    // TODO: POST /api/v1/operations/scan/receive
-    // Simulate API response
-    await new Promise((r) => setTimeout(r, 300));
+    try {
+      const res = await apiPost<any>('/api/v1/operations/scan/receive', {
+        trackingNumber: tn,
+        branchId,
+      });
 
-    const result: ScanResult = {
-      trackingNumber: tn,
-      status: 'success',
-      message: 'Received at hub',
-      shipment: {
-        id: `sh-${Date.now()}`,
-        currentStatus: 'AT_HUB',
-        weightKg: Math.round(Math.random() * 10 * 100) / 100,
-        codAmount: Math.random() > 0.5 ? Math.round(Math.random() * 200 * 100) / 100 : 0,
-      },
-      timestamp: new Date().toLocaleTimeString(),
-    };
+      if (res.success && res.data) {
+        if (soundEnabled) playBeep();
 
-    if (soundEnabled) playBeep();
+        const result: ScanResult = {
+          trackingNumber: tn,
+          status: 'success',
+          message: res.data?.currentStatus === 'AT_HUB' ? 'Received at hub' : res.data?.currentStatus || 'Received',
+          shipment: res.data,
+          timestamp: new Date().toLocaleTimeString(),
+        };
+        setScans((prev) => [result, ...prev]);
+        showToast('success', `Received: ${tn}`);
+      } else {
+        if (soundEnabled) playBuzz();
 
-    setScans((prev) => [result, ...prev]);
+        const result: ScanResult = {
+          trackingNumber: tn,
+          status: 'error',
+          message: res.message || 'Failed to receive parcel',
+          timestamp: new Date().toLocaleTimeString(),
+        };
+        setScans((prev) => [result, ...prev]);
+        showToast('error', res.message || `Failed: ${tn}`);
+      }
+    } catch (err: any) {
+      if (soundEnabled) playBuzz();
+
+      const result: ScanResult = {
+        trackingNumber: tn,
+        status: 'error',
+        message: err?.message || 'Network error',
+        timestamp: new Date().toLocaleTimeString(),
+      };
+      setScans((prev) => [result, ...prev]);
+      showToast('error', `Scan failed: ${err?.message || 'Network error'}`);
+    }
+
     setManualInput('');
     setIsScanning(false);
     inputRef.current?.focus();
-  }, [soundEnabled]);
+  }, [soundEnabled, branchId]);
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -158,155 +182,120 @@ export default function ScanInboundPage() {
           </div>
         </Card>
         <Card className="p-3 flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600">
-            <BarChart3 className="w-4 h-4" />
+          <div className="w-8 h-8 rounded bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
+            <Zap className="w-4 h-4" />
           </div>
           <div>
-            <div className="text-lg font-bold text-blue-600">${totalCod.toFixed(0)}</div>
-            <div className="text-[10px] text-slate-500 font-semibold">Total COD</div>
+            <div className="text-lg font-bold text-emerald-600">${totalCod.toFixed(0)}</div>
+            <div className="text-[10px] text-slate-500 font-semibold">COD Value</div>
           </div>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Scanner Input Area */}
-        <div className="lg:col-span-1 space-y-4">
-          {/* Camera/Scanner Zone */}
-          <Card className="p-6">
-            <div className="border-2 border-dashed border-slate-300 rounded p-8 text-center bg-slate-50">
-              <Camera className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="text-xs font-semibold text-slate-600">Camera Scanner Zone</p>
-              <p className="text-[11px] text-slate-400 mt-1">Point camera at barcode or QR code</p>
-              <p className="text-[10px] text-slate-400 mt-2">Or use USB barcode scanner below</p>
-            </div>
+      {/* Scanner Input */}
+      <Card className="p-4 mb-4">
+        <div className="flex items-center gap-3">
+          <div className="flex-1">
+            <Input
+              ref={inputRef}
+              type="text"
+              placeholder="Scan barcode or type tracking number..."
+              value={manualInput}
+              onChange={(e) => setManualInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="font-mono text-sm"
+              disabled={isScanning}
+            />
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            title={soundEnabled ? 'Mute sound' : 'Enable sound'}
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setScans([])}
+            title="Clear scan history"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </Button>
+        </div>
+        {isScanning && (
+          <div className="flex items-center gap-2 mt-2 text-xs text-blue-600">
+            <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            Processing scan...
+          </div>
+        )}
+      </Card>
+
+      {/* Scan Results */}
+      <div className="space-y-2 max-h-[500px] overflow-y-auto">
+        {scans.length === 0 ? (
+          <Card className="p-12 text-center">
+            <Camera className="w-10 h-10 text-slate-200 mx-auto mb-2" />
+            <p className="text-sm text-slate-400">No parcels scanned yet</p>
+            <p className="text-[11px] text-slate-300 mt-1">Point your barcode scanner at a parcel or type the tracking number</p>
           </Card>
-
-          {/* Manual / USB Scanner Input */}
-          <Card className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-xs font-bold text-slate-900">Manual Entry / USB Scanner</h3>
-              <button
-                onClick={() => setSoundEnabled(!soundEnabled)}
-                className="p-1.5 rounded hover:bg-slate-100 text-slate-400 hover:text-slate-600"
-              >
-                {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-              </button>
-            </div>
-            <form onSubmit={handleManualSubmit}>
-              <Input
-                ref={inputRef}
-                type="text"
-                placeholder="Scan barcode or type tracking number..."
-                value={manualInput}
-                onChange={(e) => setManualInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                className="font-mono text-sm"
-                disabled={isScanning}
-              />
-              <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1.5">
-                <Info className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                <span>USB scanner acts as keyboard — scan triggers Enter automatically</span>
-              </p>
-
-            </form>
-          </Card>
-
-          {/* Sound Toggle */}
-          <Card className="p-4 flex items-center justify-between">
-            <div>
-              <div className="text-xs font-bold text-slate-900">Audio Feedback</div>
-              <div className="text-[11px] text-slate-500">Beep on success / Buzz on error</div>
-            </div>
-            <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className={`w-11 h-6 rounded-full transition-colors ${soundEnabled ? 'bg-blue-600' : 'bg-slate-300'}`}
+        ) : (
+          scans.map((scan, i) => (
+            <div
+              key={`${scan.trackingNumber}-${i}`}
+              className={`flex items-center gap-3 p-3 rounded border ${
+                scan.status === 'success'
+                  ? 'bg-white border-slate-200 hover:bg-slate-50'
+                  : 'bg-red-50/50 border-red-200'
+              }`}
             >
-              <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${soundEnabled ? 'translate-x-5.5' : 'translate-x-0.5'}`} />
-            </button>
-          </Card>
-        </div>
-
-        {/* Scan Results Log */}
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-slate-900">Scan Log ({scans.length})</h3>
-            <Button variant="ghost" size="sm" leftIcon={<RotateCcw className="w-3 h-3" />} onClick={() => setScans([])}>
-              Clear
-            </Button>
-          </div>
-
-          <div className="space-y-2 max-h-[500px] overflow-y-auto">
-            {scans.length === 0 ? (
-              <Card className="p-12 text-center">
-                <Package className="w-10 h-10 text-slate-200 mx-auto mb-2" />
-                <p className="text-sm text-slate-400">No parcels scanned yet</p>
-                <p className="text-[11px] text-slate-300 mt-1">Start scanning to receive inbound parcels</p>
-              </Card>
-            ) : (
-              scans.map((scan, i) => (
-                <div
-                  key={`${scan.trackingNumber}-${i}`}
-                  className={`flex items-center gap-3 p-3 rounded border transition-colors ${
-                    scan.status === 'success'
-                      ? 'bg-emerald-50/50 border-emerald-200'
-                      : 'bg-red-50/50 border-red-200'
-                  }`}
-                >
-                  <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${
-                    scan.status === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'
-                  }`}>
-                    {scan.status === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-slate-900">{scan.trackingNumber}</span>
-                      <Badge variant={scan.status === 'success' ? 'green' : 'default'} size="sm">
-                        {scan.message}
-                      </Badge>
-                    </div>
-                    {scan.shipment && (
-                      <div className="flex items-center gap-3 text-[10px] text-slate-500 mt-0.5">
-                        <span>{scan.shipment.weightKg} kg</span>
-                        {scan.shipment.codAmount > 0 && <span>COD: ${scan.shipment.codAmount.toFixed(2)}</span>}
-                        <span>→ AT_HUB</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-[10px] text-slate-400">
-                      <Clock className="w-3 h-3 inline" /> {scan.timestamp}
-                    </span>
-                    {scan.status === 'success' && (
-                      <button
-                        onClick={() => {
-                          printShippingLabel({
-                            trackingNumber: scan.trackingNumber,
-                            serviceType: 'STANDARD',
-                            shipFromName: 'Hub Warehouse',
-                            shipFromAddress: '',
-                            shipFromCity: '',
-                            shipFromPhone: '',
-                            shipToName: 'Consignee',
-                            shipToAddress: '',
-                            shipToCity: '',
-                            shipToPhone: '',
-                            weightKg: scan.shipment?.weightKg,
-                            paymentType: scan.shipment?.codAmount ? 'COD' : 'PREPAID',
-                            codAmount: scan.shipment?.codAmount,
-                          });
-                        }}
-                        className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                        title="Reprint Label"
-                      >
-                        <Printer className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
+              <div className={`w-8 h-8 rounded flex items-center justify-center shrink-0 ${
+                scan.status === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-red-100 text-red-600'
+              }`}>
+                {scan.status === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <XCircle className="w-4 h-4" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs font-bold text-slate-900">{scan.trackingNumber}</span>
+                  <Badge variant={scan.status === 'success' ? 'green' : 'default'} size="sm">{scan.message}</Badge>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
+                {scan.shipment && (
+                  <div className="flex items-center gap-3 text-[10px] text-slate-500 mt-0.5">
+                    <span>{scan.shipment.weightKg} kg</span>
+                    {scan.shipment.codAmount > 0 && <span>COD: ${scan.shipment.codAmount.toFixed(2)}</span>}
+                    <span className="font-mono">{scan.timestamp}</span>
+                  </div>
+                )}
+              </div>
+              {scan.status === 'success' && (
+                <button
+                  onClick={() => {
+                    printShippingLabel({
+                      trackingNumber: scan.trackingNumber,
+                      serviceType: 'STANDARD',
+                      shipFromName: 'Shohnaat Hub',
+                      shipFromAddress: 'HQ',
+                      shipFromCity: 'Dhaka',
+                      shipFromPhone: '',
+                      shipToName: '',
+                      shipToAddress: '',
+                      shipToCity: '',
+                      shipToPhone: '',
+                      paymentType: (scan.shipment?.codAmount || 0) > 0 ? 'COD' : 'PREPAID',
+                      codAmount: scan.shipment?.codAmount || 0,
+                      weightKg: scan.shipment?.weightKg || 0,
+                    });
+                  }}
+                  className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                  title="Reprint Label"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          ))
+        )}
       </div>
     </DashboardLayout>
   );

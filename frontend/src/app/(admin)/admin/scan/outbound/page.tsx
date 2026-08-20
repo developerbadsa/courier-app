@@ -8,13 +8,12 @@ import {
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout';
 import { Button, Card, Badge, Input, Modal } from '@/components/ui';
-import { apiGet } from '@/lib/api';
+import { apiGet, apiPost, showToast } from '@/lib/api';
 
 /* ── Types ── */
 interface ScannedParcel {
   trackingNumber: string;
-  weightKg: number;
-  codAmount: number;
+  shipmentId: string;
   status: 'added' | 'error';
   message: string;
 }
@@ -34,6 +33,8 @@ export default function ScanOutboundPage() {
   const [dispatchModal, setDispatchModal] = useState(false);
   const [dispatched, setDispatched] = useState(false);
   const [branches, setBranches] = useState<Branch[]>([]);
+  const [manifestId, setManifestId] = useState<string | null>(null);
+  const [dispatching, setDispatching] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -44,17 +45,14 @@ export default function ScanOutboundPage() {
   }, []);
 
   const handleScan = async (tn: string) => {
-    if (!tn.trim()) return;
+    if (!tn.trim() || !destination) return;
     setIsScanning(true);
     const trackingNumber = tn.trim().toUpperCase();
-
-    // Simulate API
-    await new Promise((r) => setTimeout(r, 250));
 
     // Check duplicate
     if (parcels.some((p) => p.trackingNumber === trackingNumber)) {
       setParcels((prev) => [
-        { trackingNumber, weightKg: 0, codAmount: 0, status: 'error', message: 'Already scanned' },
+        { trackingNumber, shipmentId: '', status: 'error', message: 'Already scanned' },
         ...prev,
       ]);
       setManualInput('');
@@ -62,15 +60,57 @@ export default function ScanOutboundPage() {
       return;
     }
 
-    const parcel: ScannedParcel = {
-      trackingNumber,
-      weightKg: Math.round(Math.random() * 10 * 100) / 100,
-      codAmount: Math.random() > 0.5 ? Math.round(Math.random() * 200 * 100) / 100 : 0,
-      status: 'added',
-      message: 'Added to manifest',
-    };
+    try {
+      // If no manifest yet, create one first
+      let currentManifestId = manifestId;
+      if (!currentManifestId) {
+        const createRes = await apiPost<any>('/api/v1/operations/manifests', {
+          fromBranchId: 'hq-001', // Current hub
+          toBranchId: destination,
+          shipmentIds: [], // Empty — we'll add via scan/bag
+          type: 'OUTBOUND',
+        });
+        if (createRes.success && createRes.data?.manifest) {
+          currentManifestId = createRes.data.manifest.id;
+          setManifestId(currentManifestId);
+          showToast('info', 'Manifest created — start scanning parcels');
+        } else {
+          showToast('error', createRes.message || 'Failed to create manifest');
+          setIsScanning(false);
+          return;
+        }
+      }
 
-    setParcels((prev) => [parcel, ...prev]);
+      // Scan parcel into manifest
+      const res = await apiPost<any>('/api/v1/operations/scan/bag', {
+        trackingNumber,
+        manifestId: currentManifestId,
+      });
+
+      if (res.success && res.data) {
+        const parcel: ScannedParcel = {
+          trackingNumber,
+          shipmentId: res.data?.shipmentId || '',
+          status: 'added',
+          message: 'Added to manifest',
+        };
+        setParcels((prev) => [parcel, ...prev]);
+        showToast('success', `Added: ${trackingNumber}`);
+      } else {
+        setParcels((prev) => [
+          { trackingNumber, shipmentId: '', status: 'error', message: res.message || 'Failed to add' },
+          ...prev,
+        ]);
+        showToast('error', res.message || `Failed: ${trackingNumber}`);
+      }
+    } catch (err: any) {
+      setParcels((prev) => [
+        { trackingNumber, shipmentId: '', status: 'error', message: err?.message || 'Network error' },
+        ...prev,
+      ]);
+      showToast('error', `Scan failed: ${err?.message || 'Network error'}`);
+    }
+
     setManualInput('');
     setIsScanning(false);
     inputRef.current?.focus();
@@ -85,14 +125,27 @@ export default function ScanOutboundPage() {
     setParcels((prev) => prev.filter((p) => p.trackingNumber !== tn));
   };
 
-  const handleDispatch = () => {
-    setDispatched(true);
-    setDispatchModal(false);
+  const handleDispatch = async () => {
+    if (!manifestId) return;
+    setDispatching(true);
+
+    try {
+      const res = await apiPost<any>(`/api/v1/operations/manifests/${manifestId}/dispatch`);
+      if (res.success) {
+        setDispatched(true);
+        setDispatchModal(false);
+        showToast('success', 'Manifest dispatched successfully');
+      } else {
+        showToast('error', res.message || 'Dispatch failed');
+      }
+    } catch (err: any) {
+      showToast('error', `Dispatch failed: ${err?.message || 'Network error'}`);
+    } finally {
+      setDispatching(false);
+    }
   };
 
   const addedParcels = parcels.filter((p) => p.status === 'added');
-  const totalWeight = addedParcels.reduce((sum, p) => sum + p.weightKg, 0);
-  const totalCod = addedParcels.reduce((sum, p) => sum + p.codAmount, 0);
 
   if (dispatched) {
     return (
@@ -103,25 +156,21 @@ export default function ScanOutboundPage() {
           </div>
           <h2 className="text-lg font-bold text-slate-900">Outbound Manifest Dispatched</h2>
           <p className="text-sm text-slate-500 mt-1">{addedParcels.length} parcels dispatched to {branches.find((b) => b.id === destination)?.name}</p>
-          <div className="mt-4 grid grid-cols-3 gap-4">
+          <div className="mt-4 grid grid-cols-2 gap-4">
             <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
               <div className="text-lg font-bold text-slate-900">{addedParcels.length}</div>
               <div className="text-[10px] text-slate-500 font-semibold">Parcels</div>
             </div>
             <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
-              <div className="text-lg font-bold text-slate-900">{totalWeight.toFixed(1)}</div>
-              <div className="text-[10px] text-slate-500 font-semibold">Total kg</div>
-            </div>
-            <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
-              <div className="text-lg font-bold text-slate-900">${totalCod.toFixed(0)}</div>
-              <div className="text-[10px] text-slate-500 font-semibold">Total COD</div>
+              <div className="text-lg font-bold text-slate-900 font-mono text-sm">{manifestId?.slice(0, 12)}...</div>
+              <div className="text-[10px] text-slate-500 font-semibold">Manifest ID</div>
             </div>
           </div>
           <div className="flex gap-3 mt-6 justify-center">
             <Link href="/admin">
               <Button variant="outline" size="sm">Back to Admin</Button>
             </Link>
-            <Button variant="primary" size="sm" onClick={() => { setDispatched(false); setParcels([]); setDestination(''); }}>
+            <Button variant="primary" size="sm" onClick={() => { setDispatched(false); setParcels([]); setDestination(''); setManifestId(null); }}>
               Create Another Manifest
             </Button>
           </div>
@@ -150,7 +199,7 @@ export default function ScanOutboundPage() {
               {branches.map((branch) => (
                 <button
                   key={branch.id}
-                  onClick={() => setDestination(branch.id)}
+                  onClick={() => { setDestination(branch.id); setManifestId(null); setParcels([]); }}
                   className={`w-full text-left p-3 rounded border-2 transition-all ${
                     destination === branch.id
                       ? 'bg-blue-50 border-blue-400 ring-2 ring-blue-200'
@@ -191,24 +240,26 @@ export default function ScanOutboundPage() {
                 <AlertTriangle className="w-3 h-3" /> Select a destination hub first
               </p>
             )}
+            {isScanning && (
+              <div className="flex items-center gap-2 mt-2 text-xs text-blue-600">
+                <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
+                Processing...
+              </div>
+            )}
           </Card>
 
           {/* Summary */}
           {parcels.length > 0 && (
             <Card className="p-4">
               <h3 className="text-xs font-bold text-slate-900 mb-3">Manifest Summary</h3>
-              <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="grid grid-cols-2 gap-3 text-center">
                 <div className="p-2 bg-blue-50 rounded border border-blue-100">
                   <div className="text-lg font-bold text-blue-700">{addedParcels.length}</div>
                   <div className="text-[10px] text-blue-500 font-semibold">Parcels</div>
                 </div>
                 <div className="p-2 bg-slate-50 rounded border border-slate-200">
-                  <div className="text-lg font-bold text-slate-700">{totalWeight.toFixed(1)}</div>
-                  <div className="text-[10px] text-slate-500 font-semibold">kg</div>
-                </div>
-                <div className="p-2 bg-emerald-50 rounded border border-emerald-100">
-                  <div className="text-lg font-bold text-emerald-700">${totalCod.toFixed(0)}</div>
-                  <div className="text-[10px] text-emerald-500 font-semibold">COD</div>
+                  <div className="text-lg font-bold text-slate-700 font-mono text-sm">{manifestId ? manifestId.slice(0, 10) : '...'}</div>
+                  <div className="text-[10px] text-slate-500 font-semibold">Manifest</div>
                 </div>
               </div>
               <Button
@@ -217,6 +268,7 @@ export default function ScanOutboundPage() {
                 className="w-full mt-4"
                 disabled={addedParcels.length === 0 || !destination}
                 onClick={() => setDispatchModal(true)}
+                isLoading={dispatching}
                 leftIcon={<Send className="w-3.5 h-3.5" />}
               >
                 Dispatch Manifest ({addedParcels.length} parcels)
@@ -259,12 +311,6 @@ export default function ScanOutboundPage() {
                       <span className="font-mono text-xs font-bold text-slate-900">{parcel.trackingNumber}</span>
                       <Badge variant={parcel.status === 'added' ? 'blue' : 'default'} size="sm">{parcel.message}</Badge>
                     </div>
-                    {parcel.status === 'added' && (
-                      <div className="flex items-center gap-3 text-[10px] text-slate-500 mt-0.5">
-                        <span>{parcel.weightKg} kg</span>
-                        {parcel.codAmount > 0 && <span>COD: ${parcel.codAmount.toFixed(2)}</span>}
-                      </div>
-                    )}
                   </div>
                   {parcel.status === 'added' && (
                     <button
@@ -289,7 +335,7 @@ export default function ScanOutboundPage() {
         footer={
           <>
             <Button variant="outline" size="sm" onClick={() => setDispatchModal(false)}>Cancel</Button>
-            <Button variant="primary" size="sm" onClick={handleDispatch} leftIcon={<Send className="w-3.5 h-3.5" />}>
+            <Button variant="primary" size="sm" onClick={handleDispatch} isLoading={dispatching} leftIcon={<Send className="w-3.5 h-3.5" />}>
               Confirm Dispatch
             </Button>
           </>
@@ -301,11 +347,10 @@ export default function ScanOutboundPage() {
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div><span className="text-blue-500">Destination:</span> <span className="font-semibold">{branches.find((b) => b.id === destination)?.name}</span></div>
               <div><span className="text-blue-500">Parcels:</span> <span className="font-semibold">{addedParcels.length}</span></div>
-              <div><span className="text-blue-500">Total Weight:</span> <span className="font-semibold">{totalWeight.toFixed(1)} kg</span></div>
-              <div><span className="text-blue-500">Total COD:</span> <span className="font-semibold">${totalCod.toFixed(2)}</span></div>
+              <div><span className="text-blue-500">Manifest:</span> <span className="font-mono font-semibold text-[11px]">{manifestId?.slice(0, 16)}...</span></div>
             </div>
           </div>
-          <p className="text-xs text-slate-500">This will create a manifest and transition all scanned parcels to IN_TRANSIT status. The manifest will be ready for linehaul dispatch.</p>
+          <p className="text-xs text-slate-500">This will dispatch the manifest and all parcels will transition to IN_TRANSIT status. The manifest is ready for linehaul.</p>
         </div>
       </Modal>
     </DashboardLayout>
