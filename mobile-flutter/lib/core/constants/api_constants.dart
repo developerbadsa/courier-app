@@ -13,7 +13,8 @@ class ApiConstants {
   static const String getMe = '/api/v1/auth/me';
 
   // Rider Endpoints
-  static const String riderRunsheet = '/api/v1/riders/runsheet';
+  static const String riderRunsheet = '/api/v1/riders/me/tasks';
+  static const String riderCodSummary = '/api/v1/riders/me/cod-summary';
   static const String updateShipmentStatus = '/api/v1/shipments'; // PATCH /api/v1/shipments/:id/status
   static const String riderTelemetry = '/api/v1/tracking/telemetry';
   static const String optimizeRoute = '/api/v1/riders/optimize-route';
@@ -25,8 +26,8 @@ class ApiConstants {
   static const String pickups = '/api/v1/pickups';
 
   // Finance Endpoints
-  static const String financeSummary = '/api/v1/finance/summary';
-  static const String financeLedger = '/api/v1/finance/ledger';
+  static const String financeSummary = '/api/v1/finance/wallet';
+  static const String financeLedger = '/api/v1/finance/entries';
   static const String payoutRequest = '/api/v1/finance/payout-request';
 
   // Tracking Endpoints
