@@ -58,7 +58,10 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
         }
         return;
       }
-      await _locationService.startLiveTracking(riderId: 'rider-01');
+      final riderId = context.read<AuthCubit>().state is Authenticated
+          ? (context.read<AuthCubit>().state as Authenticated).user.id
+          : 'rider-01';
+      await _locationService.startLiveTracking(riderId: riderId);
       setState(() => _isGpsActive = true);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

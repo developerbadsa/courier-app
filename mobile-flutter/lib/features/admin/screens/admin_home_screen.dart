@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/api_constants.dart';
+import '../../../core/network/dio_client.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/status_badge_widget.dart';
@@ -18,20 +20,48 @@ class AdminHomeScreen extends StatefulWidget {
 
 class _AdminHomeScreenState extends State<AdminHomeScreen> {
   int _tabIndex = 0;
+  bool _isLoading = true;
 
-  final List<Map<String, dynamic>> _hubMetrics = [
-    {'title': 'Total Inbound', 'value': '1,284', 'change': '+12%', 'color': AppColors.primary},
-    {'title': 'Out for Delivery', 'value': '412', 'change': '+8%', 'color': Color(0xFFF59E0B)},
-    {'title': 'Delivered Today', 'value': '846', 'change': '98.2%', 'color': AppColors.success},
-    {'title': 'Failed / Exception', 'value': '26', 'change': '-4%', 'color': AppColors.danger},
-  ];
+  List<Map<String, dynamic>> _hubMetrics = [];
+  List<Map<String, dynamic>> _activeRiders = [];
 
-  final List<Map<String, dynamic>> _activeRiders = [
-    {'name': 'Alex Rodriguez', 'vehicle': 'Motorcycle', 'active': '14 Parcels', 'status': 'ON_ROUTE', 'battery': '88%'},
-    {'name': 'David Kim', 'vehicle': 'Cargo Van', 'active': '28 Parcels', 'status': 'ON_ROUTE', 'battery': '94%'},
-    {'name': 'Marcus Brody', 'vehicle': 'Motorcycle', 'active': '8 Parcels', 'status': 'AT_HUB', 'battery': '100%'},
-    {'name': 'Elena Rostova', 'vehicle': 'Cargo Van', 'active': '19 Parcels', 'status': 'ON_ROUTE', 'battery': '72%'},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboard();
+  }
+
+  Future<void> _loadDashboard() async {
+    setState(() => _isLoading = true);
+    try {
+      final client = DioClient();
+      final statsRes = await client.get(ApiConstants.merchantShipments, queryParameters: {'limit': 1});
+      final ridersRes = await client.get('/api/v1/riders');
+
+      final stats = statsRes.data?['stats'] ?? statsRes.data?['data'] ?? {};
+      final riders = ridersRes.data?['data'] ?? [];
+
+      if (mounted) {
+        setState(() {
+          _hubMetrics = [
+            {'title': 'Total Shipments', 'value': '${stats['total'] ?? 0}', 'color': AppColors.primary},
+            {'title': 'Out for Delivery', 'value': '${stats['outForDelivery'] ?? 0}', 'color': const Color(0xFFF59E0B)},
+            {'title': 'Delivered', 'value': '${stats['delivered'] ?? 0}', 'color': AppColors.success},
+            {'title': 'Failed', 'value': '${stats['failed'] ?? 0}', 'color': AppColors.danger},
+          ];
+          _activeRiders = (riders as List).take(10).map((r) => {
+            'name': r['name'] ?? r['email'] ?? 'Rider',
+            'vehicle': r['vehicleType'] ?? 'Bike',
+            'active': '${r['activeTasks'] ?? 0} Parcels',
+            'status': r['isOnDuty'] == true ? 'ON_DUTY' : 'OFF_DUTY',
+          }).toList();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   void _onLogout() {
     context.read<AuthCubit>().logout();
@@ -69,7 +99,10 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           ),
         ],
       ),
-      body: _tabIndex == 0 ? _buildOverviewTab() : _buildFleetTab(),
+      body: RefreshIndicator(
+        onRefresh: _loadDashboard,
+        child: _tabIndex == 0 ? _buildOverviewTab() : _buildFleetTab(),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _tabIndex,
         selectedItemColor: AppColors.primary,
@@ -135,6 +168,12 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
           ),
           const SizedBox(height: 16),
 
+          if (_isLoading)
+            const Center(child: Padding(
+              padding: EdgeInsets.all(40),
+              child: CircularProgressIndicator(color: AppColors.primary),
+            ))
+          else ...[
           // Grid KPIs
           GridView.builder(
             shrinkWrap: true,
@@ -176,6 +215,7 @@ class _AdminHomeScreenState extends State<AdminHomeScreen> {
               );
             },
           ),
+          ], // end else
         ],
       ),
     );

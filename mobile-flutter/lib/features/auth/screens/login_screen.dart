@@ -249,6 +249,27 @@ class _LoginScreenState extends State<LoginScreen> {
                             size: AppButtonSize.lg,
                             icon: const Icon(LucideIcons.arrowRight, size: 18),
                           ),
+                          const SizedBox(height: 18),
+
+                          // Google Play Mandatory Privacy Policy Link
+                          GestureDetector(
+                            onTap: () => AppComplianceDialogs.showPrivacyPolicy(context),
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(LucideIcons.shieldCheck, size: 14, color: AppColors.textMuted),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Privacy Policy & Data Safety',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: AppColors.textMuted,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
                       ),
                     ),
