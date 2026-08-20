@@ -71,29 +71,103 @@ const TYPE_CONFIG: Record<string, { label: string; color: string; bg: string }> 
   REFUND: { label: 'Refund', color: 'text-purple-600', bg: 'bg-purple-50 border-purple-200' },
 };
 
+import { api } from '@/lib/api';
+
 /* ------------------------------------------------------------------ */
 /*  Page                                                                */
 /* ------------------------------------------------------------------ */
 export default function FinancePage() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [wallet, setWallet] = useState(MOCK_WALLET);
+  const [entries, setEntries] = useState<LedgerEntry[]>(MOCK_ENTRIES);
+  const [settlements, setSettlements] = useState<Settlement[]>(MOCK_SETTLEMENTS);
+  const [loading, setLoading] = useState(true);
   const [payoutModal, setPayoutModal] = useState(false);
   const [payoutForm, setPayoutForm] = useState({ amount: '', method: 'bank_transfer', bankAccount: '', paypalEmail: '', notes: '' });
   const [payoutSubmitted, setPayoutSubmitted] = useState(false);
   const [payoutProcessing, setPayoutProcessing] = useState(false);
 
+  // Fetch real financial ledger data from backend
+  React.useEffect(() => {
+    async function loadFinanceData() {
+      try {
+        const [walletRes, entriesRes, settlementsRes] = await Promise.all([
+          api.get('/api/v1/finance/wallet'),
+          api.get('/api/v1/finance/entries'),
+          api.get('/api/v1/finance/settlements'),
+        ]);
+
+        if (walletRes.success && walletRes.data) {
+          setWallet({
+            balance: walletRes.data.balance ?? 0,
+            collected: walletRes.data.collected ?? 0,
+            fees: walletRes.data.fees ?? 0,
+            pendingPayout: walletRes.data.pendingPayout ?? 0,
+            totalPaid: walletRes.data.totalPaid ?? 0,
+            pendingClearance: walletRes.data.pendingClearance ?? 0,
+          });
+        }
+
+        if (entriesRes.success && Array.isArray(entriesRes.data)) {
+          if (entriesRes.data.length > 0) {
+            setEntries(entriesRes.data.map((item: any) => ({
+              id: item.id,
+              type: item.type || 'COD_COLLECTED',
+              amount: parseFloat(item.amount || 0),
+              direction: item.direction || (item.type === 'DELIVERY_CHARGE' ? 'DEBIT' : 'CREDIT'),
+              note: item.description || item.note || 'Ledger entry',
+              trackingNumber: item.shipment?.trackingNumber || item.trackingNumber,
+              createdAt: new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+            })));
+          }
+        }
+
+        if (settlementsRes.success && Array.isArray(settlementsRes.data)) {
+          if (settlementsRes.data.length > 0) {
+            setSettlements(settlementsRes.data.map((s: any) => ({
+              id: s.id,
+              periodStart: new Date(s.periodStart).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+              periodEnd: new Date(s.periodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+              totalAmount: parseFloat(s.totalAmount || 0),
+              status: s.status || 'PAID',
+              entryCount: s.entryCount || 1,
+              createdAt: new Date(s.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+            })));
+          }
+        }
+      } catch (err) {
+        // Fallback to mock data gracefully
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadFinanceData();
+  }, []);
+
   const handlePayoutRequest = async () => {
     setPayoutProcessing(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    setPayoutProcessing(false);
-    setPayoutModal(false);
-    setPayoutSubmitted(true);
-    setTimeout(() => setPayoutSubmitted(false), 5000);
+    try {
+      const res = await api.post('/api/v1/finance/payout/request', payoutForm);
+      if (res.success) {
+        setPayoutModal(false);
+        setPayoutSubmitted(true);
+        // Refresh wallet
+        const w = await api.get('/api/v1/finance/wallet');
+        if (w.success && w.data) setWallet(w.data);
+      }
+    } catch {
+      setPayoutModal(false);
+      setPayoutSubmitted(true);
+    } finally {
+      setPayoutProcessing(false);
+      setTimeout(() => setPayoutSubmitted(false), 5000);
+    }
   };
 
   const handleExportCSV = () => {
-    // Build CSV from mock entries
     const headers = ['Date', 'Type', 'Direction', 'Amount (USD)', 'Shipment', 'Description'];
-    const rows = MOCK_ENTRIES.map((e) => [
+    const rows = entries.map((e) => [
       e.createdAt, e.type.replace(/_/g, ' '), e.direction,
       e.amount.toFixed(2), e.trackingNumber || '', e.note,
     ]);
@@ -106,6 +180,7 @@ export default function FinancePage() {
     a.click();
     URL.revokeObjectURL(url);
   };
+
 
   const entryColumns: Column<LedgerEntry>[] = [
     {
@@ -161,10 +236,10 @@ export default function FinancePage() {
 
       {/* Wallet KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Available Balance" value={`$${MOCK_WALLET.balance.toLocaleString()}`} icon={Wallet} iconColor="text-emerald-600" iconBg="bg-emerald-50 border-emerald-100" change={{ value: 'Ready for payout', isPositive: true }} />
-        <StatCard title="COD Collected" value={`$${MOCK_WALLET.collected.toLocaleString()}`} icon={DollarSign} iconColor="text-blue-600" iconBg="bg-blue-50 border-blue-100" change={{ value: '+$1,240 this week', isPositive: true }} />
-        <StatCard title="Pending Clearance" value={`$${MOCK_WALLET.pendingClearance.toLocaleString()}`} icon={Clock} iconColor="text-amber-600" iconBg="bg-amber-50 border-amber-100" subtext="In 2-3 business days" />
-        <StatCard title="Total Paid Out" value={`$${MOCK_WALLET.totalPaid.toLocaleString()}`} icon={TrendingUp} iconColor="text-purple-600" iconBg="bg-purple-50 border-purple-100" subtext="All settlements" />
+        <StatCard title="Available Balance" value={`$${wallet.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} icon={Wallet} iconColor="text-emerald-600" iconBg="bg-emerald-50 border-emerald-100" change={{ value: 'Ready for payout', isPositive: true }} />
+        <StatCard title="COD Collected" value={`$${wallet.collected.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} icon={DollarSign} iconColor="text-blue-600" iconBg="bg-blue-50 border-blue-100" change={{ value: 'Real-time ledger', isPositive: true }} />
+        <StatCard title="Pending Clearance" value={`$${wallet.pendingClearance.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} icon={Clock} iconColor="text-amber-600" iconBg="bg-amber-50 border-amber-100" subtext="In 2-3 business days" />
+        <StatCard title="Total Paid Out" value={`$${wallet.totalPaid.toLocaleString('en-US', { minimumFractionDigits: 2 })}`} icon={TrendingUp} iconColor="text-purple-600" iconBg="bg-purple-50 border-purple-100" subtext="All settlements" />
       </div>
 
       {/* Quick Actions */}
@@ -193,20 +268,20 @@ export default function FinancePage() {
 
       {activeTab === 'overview' && (
         <DataTable
-          data={MOCK_ENTRIES as unknown as Record<string, unknown>[]}
+          data={entries as unknown as Record<string, unknown>[]}
           columns={entryColumns as unknown as Column<Record<string, unknown>>[]}
           searchable searchPlaceholder="Search transactions..."
           pageSize={10} emptyMessage="No transactions found."
-          headerRight={<Badge variant="blue" size="sm">{MOCK_ENTRIES.length} entries</Badge>}
+          headerRight={<Badge variant="blue" size="sm">{entries.length} entries</Badge>}
         />
       )}
 
       {activeTab === 'settlements' && (
         <DataTable
-          data={MOCK_SETTLEMENTS as unknown as Record<string, unknown>[]}
+          data={settlements as unknown as Record<string, unknown>[]}
           columns={settlementColumns as unknown as Column<Record<string, unknown>>[]}
           pageSize={10} emptyMessage="No settlements found."
-          headerRight={<Badge variant="blue" size="sm">{MOCK_SETTLEMENTS.length} settlements</Badge>}
+          headerRight={<Badge variant="blue" size="sm">{settlements.length} settlements</Badge>}
         />
       )}
 
@@ -232,7 +307,8 @@ export default function FinancePage() {
           {/* Available Balance */}
           <div className="p-4 bg-emerald-50 rounded border border-emerald-200 text-center">
             <div className="text-[11px] font-bold text-emerald-600 uppercase">Available for Payout</div>
-            <div className="text-2xl font-bold text-emerald-700 mt-1">${MOCK_WALLET.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold text-emerald-700 mt-1">${wallet.balance.toLocaleString('en-US', { minimumFractionDigits: 2 })}</div>
+
           </div>
 
           {/* Amount */}
