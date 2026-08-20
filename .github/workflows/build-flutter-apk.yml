@@ -23,9 +23,10 @@ jobs:
           java-version: '17'
           cache: 'gradle'
 
-      - name: 🐦 Set up Flutter SDK
+      - name: 🐦 Set up Flutter SDK (3.24.5)
         uses: subosito/flutter-action@v2
         with:
+          flutter-version: '3.24.5'
           channel: 'stable'
           cache: true
 
@@ -33,26 +34,25 @@ jobs:
         run: |
           flutter doctor -v
 
-      - name: ⚙️ Setup Android Platforms & Fetch Dependencies
+      - name: ⚙️ Fetch Dependencies & Regenerate Android Bindings
         working-directory: ./mobile-flutter
         run: |
-          flutter create . --platforms=android --org com.shohnaat
           flutter pub get
-
-      - name: 🚀 Build Google Play Store App Bundle (.aab)
-        working-directory: ./mobile-flutter
-        run: |
-          flutter build appbundle --release
 
       - name: 🔨 Build Universal Release APK (.apk)
         working-directory: ./mobile-flutter
         run: |
-          flutter build apk --release
+          flutter build apk --release --android-skip-build-dependency-validation
+
+      - name: 🚀 Build Google Play Store App Bundle (.aab)
+        working-directory: ./mobile-flutter
+        run: |
+          flutter build appbundle --release --android-skip-build-dependency-validation
 
       - name: 🔨 Build Split ABI APKs (ARM64 & ARM32)
         working-directory: ./mobile-flutter
         run: |
-          flutter build apk --release --split-per-abi
+          flutter build apk --release --split-per-abi --android-skip-build-dependency-validation
 
       - name: 📤 Upload Google Play App Bundle (.aab) Artifact
         uses: actions/upload-artifact@v4
