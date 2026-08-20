@@ -112,78 +112,71 @@ Your goal is to wire the automated payout clearinghouse in the Superadmin consol
 
 ---
 
-## 🧠 SPRINT 16: AI Smart Dispatch & Traveling Salesman Route Optimization
+## ⚡ SPRINT 16: Next-Gen AI Smart Field Rider PWA Suite (AI Route Optimizer + Offline Sync + Camera Barcode Scanner)
 
 ### 📋 Copy-Paste Prompt for AI Agent:
 ```markdown
-### 🎯 MISSION: Sprint 16 — AI Multi-Stop Delivery Route Optimization Engine
+### 🎯 MISSION: Sprint 16 — Next-Gen AI Smart Field Rider PWA Suite
 
-You are an expert Senior Full-Stack Engineer working on the **Shohnaat Logistics** platform.
+You are an expert Senior Full-Stack Engineer working on the **Shohnaat Logistics** platform (Next.js 14 App Router + Node.js Express + Prisma ORM + PostgreSQL + IndexedDB + HTML5 Camera Barcode API).
 
-Your goal is to build an intelligent **AI Route Optimization & Automated Dispatch Engine** that sequences a rider's 20–50 daily deliveries into the most time- and fuel-efficient order using the 2-Opt Traveling Salesperson Problem (TSP) algorithm with **100% ZERO UI/CSS disruption**.
+Your goal is to build an all-in-one **Next-Gen AI Smart Field Rider PWA Suite** combining:
+1. **AI Route Optimizer:** 2-Opt Traveling Salesman (TSP) algorithm to sequence 20–50 daily deliveries into the most fuel- and time-efficient order.
+2. **Offline-First IndexedDB Sync:** Zero data loss queue that records deliveries, signatures, OTPs, and cash collection offline and auto-syncs when online.
+3. **HTML5 In-Browser Camera Barcode & QR Scanner:** Instant audio-beep camera scanner with torch toggle for high-speed parcel processing.
+
+All implemented with **100% ZERO UI/CSS disruption**.
 
 ---
 
 ### 🛡️ STRICT RULES:
 1. Preserve all existing UI layout tokens, padding (`my-8`, `gap-6`, `p-6`), and Lucide React icons.
 2. Optimization calculations must run in sub-second response times using haversine matrix + 2-opt heuristic.
-3. Must pass `node_modules/.bin/tsc --noEmit` with 0 errors.
+3. Offline queue must guarantee zero data loss with automatic background reconciliation.
+4. Must pass `node_modules/.bin/tsc --noEmit` with 0 errors.
 
 ---
 
 ### 🔨 DELIVERABLES:
-1. **Backend Route Optimization Service (`shohnaat-backend/src/services/routeOptimizer.js`):**
-   - Input: Array of delivery stops `{ shipmentId, lat, lng, priority, timeWindow }` + start hub coordinate.
-   - Algorithm: Fast Nearest Neighbor initialization + 2-Opt local search refinement.
-   - Output: Optimized ordered stop array, total route distance in km, total estimated drive time.
-   - Endpoint: `POST /api/v1/riders/optimize-route`
-2. **Rider App 1-Click "Optimize My Route" Button (`frontend/src/app/(rider)/rider/page.tsx`):**
-   - Add button to Rider Runsheet: `<Button onClick={handleOptimizeRoute} leftIcon={<Sparkles className="w-4 h-4" />}>AI Optimize Route</Button>`
-   - Re-orders deliveries with clear sequential numbering (`Stop #1`, `Stop #2`, `Stop #3`).
-   - Displays estimated time saved (e.g. `✨ Route optimized: Saves 38 mins & 14.2 km`).
-3. **Turn-by-Turn Google Maps / Waze Deep Linking:**
-   - Add "Open Full Route in Google Maps" link with multi-waypoint parameters.
+
+#### 1. 🧠 AI Route Optimization Engine:
+- **Backend Service (`shohnaat-backend/src/services/routeOptimizer.js`):**
+  * Input: Array of delivery stops `{ shipmentId, lat, lng, priority, timeWindow }` + start hub coordinates.
+  * Algorithm: Fast Nearest Neighbor initialization + 2-Opt local search refinement.
+  * Output: Optimized ordered stop array, total route distance in km, total estimated drive time.
+  * Endpoint: `POST /api/v1/riders/optimize-route`
+- **Rider App 1-Click "AI Optimize Route" Button (`frontend/src/app/(rider)/rider/page.tsx`):**
+  * Add button to Rider Runsheet: `<Button onClick={handleOptimizeRoute} leftIcon={<Sparkles className="w-4 h-4" />}>AI Optimize Route</Button>`
+  * Re-orders deliveries with clear sequential badges (`Stop #1`, `Stop #2`, `Stop #3`).
+  * Displays estimated time saved (e.g. `✨ Route optimized: Saves 38 mins & 14.2 km`).
+  * Add "Open Full Route in Google Maps / Waze" multi-waypoint deep link.
+
+#### 2. 📡 Offline-First IndexedDB Sync Queue (`frontend/src/lib/offlineQueue.ts`):
+- Store offline delivery status changes (`DELIVERED`, `FAILED`, `OTP_VERIFIED`, `CASH_COLLECTED`) and customer POD signatures in IndexedDB.
+- Listen for `window.addEventListener('online')` and automatically flush offline queue to `POST /api/v1/shipments/sync-offline` with retry logic.
+- Render persistent offline status banner when disconnected: `📡 Offline Mode — 4 actions queued for auto-sync`.
+
+#### 3. 📷 In-Browser Camera Barcode & QR Scanner (`frontend/src/components/scanner/CameraBarcodeScanner.tsx`):
+- HTML5 camera video stream using native `BarcodeDetector` / `@zxing/library`.
+- Instant audio beep on detection, continuous batch scan mode, and torch/flashlight toggle.
+- Integrated into Rider Delivery flow (`/rider`) and Hub Inbound operations (`/admin/scan`).
+
+---
+
+### 🧪 VERIFICATION CHECKLIST:
+1. Run `frontend/node_modules/.bin/tsc --noEmit --project frontend/tsconfig.json` -> 0 errors.
+2. Test offline mode in browser DevTools Network tab (simulate Offline) -> perform delivery -> re-enable Network -> verify instant auto-sync to PostgreSQL.
+3. Test AI route optimization with multiple coordinates -> verify sequence ordering and Google Maps link generation.
+4. Git commit and push cleanly to `main`.
 ```
 
 ---
 
-## 📱 SPRINT 17: Full Offline PWA Sync & High-Speed Camera Barcode Scanner
+## 🚛 SPRINT 17: Multi-Hub Cross-Docking & Inter-City Manifest Transfer System
 
 ### 📋 Copy-Paste Prompt for AI Agent:
 ```markdown
-### 🎯 MISSION: Sprint 17 — Offline PWA Sync & HTML5 Camera Barcode Scanner
-
-You are an expert Senior Full-Stack Engineer working on the **Shohnaat Logistics** platform.
-
-Your goal is to implement robust **Offline-First IndexedDB synchronization and high-speed in-browser camera barcode scanning** for field riders operating in areas with poor or zero network connectivity with **100% ZERO UI/CSS disruption**.
-
----
-
-### 🛡️ STRICT RULES:
-1. Maintain existing UI styling and dark theme tokens.
-2. Offline queue must guarantee zero data loss: actions taken offline must sync automatically when internet restores.
-3. Must pass `node_modules/.bin/tsc --noEmit` with 0 errors.
-
----
-
-### 🔨 DELIVERABLES:
-1. **IndexedDB Offline Action Queue (`frontend/src/lib/offlineQueue.ts`):**
-   - Store offline delivery status changes (`DELIVERED`, `FAILED`, `OTP_VERIFIED`, `CASH_COLLECTED`) and customer POD signatures in IndexedDB.
-   - Listen for `window.addEventListener('online')` and automatically flush offline queue to `POST /api/v1/shipments/sync-offline` with retry logic.
-   - Render persistent offline banner when disconnected: `📡 Offline Mode — 4 actions queued for auto-sync`.
-2. **Camera Barcode & QR Scanner Component (`frontend/src/components/scanner/CameraBarcodeScanner.tsx`):**
-   - HTML5 video stream using `@zxing/library` or native `BarcodeDetector` API.
-   - Instant audio beep on detection, continuous batch scan mode, and torch/flashlight toggle.
-   - Integrated into Rider Delivery flow and Hub Inbound operations (`/admin/scan`).
-```
-
----
-
-## 🚛 SPRINT 18: Multi-Hub Cross-Docking & Inter-City Manifest Transfer System
-
-### 📋 Copy-Paste Prompt for AI Agent:
-```markdown
-### 🎯 MISSION: Sprint 18 — Multi-Hub Cross-Docking & Linehaul Manifest Transfers
+### 🎯 MISSION: Sprint 17 — Multi-Hub Cross-Docking & Linehaul Manifest Transfers
 
 You are an expert Senior Full-Stack Engineer working on the **Shohnaat Logistics** platform.
 
@@ -206,4 +199,5 @@ Your goal is to build an enterprise **Cross-Docking, Bagging, and Inter-Hub Line
    - Destination hub scans container barcode once -> automatically receives and verifies all 50+ enclosed parcels.
    - Flags missing, misplaced, or damaged parcels with instant discrepancy reporting.
 ```
+
 
