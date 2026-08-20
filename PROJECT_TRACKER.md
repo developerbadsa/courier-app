@@ -41,22 +41,25 @@
 
 | Container Name | Service | Image | Port (Host → Container) | Status | Health Check |
 |---|---|---|---|---|---|
-| **`shohnaat-frontend`** | Next.js 14 Standalone | `shohnaat-logistics-frontend` | `3001 → 3000` | 🟢 Healthy | HTTP GET `/` |
+| **`shohnaat-frontend`** | Next.js 14 Standalone | `shohnaat-logistics-frontend` | `3000 → 3000` | 🟢 Healthy | HTTP GET `/` |
 | **`shohnaat-backend`** | Express Core API | `shohnaat-logistics-backend` | `5001 → 5000` | 🟢 Healthy | HTTP GET `/health` |
 | **`shohnaat-storage`** | Storage Microservice | `shohnaat-storage-service` | `5002 → 5000` | 🟢 Healthy | HTTP GET `/health` |
-| **`shohnaat-db`** | PostgreSQL 16 Alpine | `postgres:16-alpine` | `5432 → 5432` (Internal) | 🟢 Healthy | `pg_isready` |
-| **`shohnaat-redis`** | Redis 7 Alpine | `redis:7-alpine` | `6379 → 6379` (Internal) | 🟢 Healthy | `redis-cli ping` |
+| **`shohnaat-db`** | PostgreSQL 16 Alpine | `postgres:16-alpine` | `5433 → 5432` | 🟢 Healthy | `pg_isready` |
+| **`shohnaat-redis`** | Redis 7 Alpine | `redis:7-alpine` | `6379 → 6379` | 🟢 Healthy | `redis-cli ping` |
+| **`cloudflare-shohnaat`** | Cloudflare Tunnel Connector | `cloudflare/cloudflared:latest` | `Host Network` | 🟢 Connected | `quic / 4 connections` |
 
 ### Infrastructure Details
 
 | Component | Details |
 |-----------|---------|
-| **VPS Provider** | Dedicated Server (`mydev`) |
-| **Domain** | `shohnaat.rahimbadsa.me` (Cloudflare) |
-| **SSL/TLS** | Cloudflare Universal SSL |
-| **Reverse Proxy** | Cloudflare Tunnel → Docker |
-| **Database** | PostgreSQL 16, `shohnaat_prod` database, 30+ tables |
-| **Cache/Queue** | Redis 7 — sessions, caching, BullMQ job queues |
+| **VPS Host** | Dedicated Linux Host (`mydev`) |
+| **Production Domain** | `https://shohnaat.rahimbadsa.me` (Live) |
+| **Production API** | `https://api-shohnaat.rahimbadsa.me` (Live) |
+| **SSL/TLS** | Cloudflare Managed Edge SSL (Universal SSL) |
+| **Reverse Proxy** | Dedicated Cloudflare Tunnel (`shohnaat` / ID: `2571e5d1-984b-43f1-b861-cd56c7955bf0`) |
+| **Database** | PostgreSQL 16, `shohnaat_prod` database, 30+ tables + realistic seeds |
+| **Cache/Queue** | Redis 7 — session caching, BullMQ notification queues |
+| **Storage Engine** | Isolated Microservice with Sharp image processing (`/kyc`, `/pod`, `/parcels`) |
 | **Disk Usage** | 30GB / 57GB (53%) |
 | **RAM Usage** | 1.1GB / 3.2GB (34%) |
 | **CPU Usage** | ~2.4% idle |
