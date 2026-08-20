@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
-import '../theme/app_theme.dart';
+import '../constants/app_colors.dart';
 import 'app_button.dart';
 
 class AppComplianceDialogs {

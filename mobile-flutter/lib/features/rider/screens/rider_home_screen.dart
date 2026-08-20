@@ -6,11 +6,12 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/services/connectivity_service.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/services/offline_sync_service.dart';
-import '../../../core/utils/error_handler.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_compliance_dialogs.dart';
 import '../../../core/widgets/status_badge_widget.dart';
 import '../../auth/cubit/auth_cubit.dart';
+import '../../auth/cubit/auth_state.dart';
 import '../../auth/screens/login_screen.dart';
 import '../cubit/runsheet_cubit.dart';
 import '../cubit/runsheet_state.dart';
@@ -67,7 +68,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
     super.dispose();
   }
 
-  void _checkOfflineQueue() async {
+  Future<void> _checkOfflineQueue() async {
     final queue = await _offlineSyncService.getPendingQueue();
     if (mounted) {
       setState(() => _offlineQueueCount = queue.length);
@@ -122,6 +123,7 @@ class _RiderHomeScreenState extends State<RiderHomeScreen> {
 
   void _optimizeStops(List<DeliveryTaskModel> currentTasks) {
     final optimized = AiRouteOptimizerService.optimizeRoute(tasks: currentTasks);
+    context.read<RunsheetCubit>().updateOptimizedTasks(optimized);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
         content: Text('✨ AI Route Optimized! Estimated time saved: 34 mins & 12.4 km'),

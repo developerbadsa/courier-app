@@ -175,6 +175,14 @@ class RunsheetCubit extends Cubit<RunsheetState> {
     }
   }
 
+  /// Update runsheet order with AI optimized sequence.
+  void updateOptimizedTasks(List<DeliveryTaskModel> optimizedTasks) {
+    if (state is RunsheetLoaded) {
+      _emitLoaded(optimizedTasks, fromCache: (state as RunsheetLoaded).isFromCache);
+      _cacheCurrentTasks(optimizedTasks);
+    }
+  }
+
   void _emitLoaded(List<DeliveryTaskModel> tasks, {bool fromCache = false}) {
     final completed = tasks.where((t) => t.isCompleted).length;
     final pending = tasks.where((t) => !t.isCompleted).length;

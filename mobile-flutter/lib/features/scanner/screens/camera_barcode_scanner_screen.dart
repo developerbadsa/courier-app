@@ -185,7 +185,7 @@ class _CameraBarcodeScannerScreenState extends State<CameraBarcodeScannerScreen>
                         controller: _manualBarcodeInput,
                         decoration: InputDecoration(
                           hintText: 'Enter barcode number...',
-                          prefixIcon: const Icon(LucideIcons.barcode, size: 18),
+                          prefixIcon: const Icon(LucideIcons.scanLine, size: 18),
                           filled: true,
                           fillColor: AppColors.background,
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),

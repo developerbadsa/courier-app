@@ -14,7 +14,6 @@ class AppTheme {
         primary: AppColors.primary,
         secondary: AppColors.primaryDark,
         surface: AppColors.surface,
-        background: AppColors.background,
         error: AppColors.danger,
       ),
       textTheme: GoogleFonts.interTextTheme().copyWith(

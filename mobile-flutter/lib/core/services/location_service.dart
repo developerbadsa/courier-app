@@ -20,6 +20,8 @@ class LocationService {
   LocationService({DioClient? client}) : _client = client ?? DioClient();
 
   bool get isTracking => _isTracking;
+  double get lastLat => _lastLat;
+  double get lastLng => _lastLng;
 
   /// Request location permission via native channel
   Future<bool> handleLocationPermission() async {

@@ -9,6 +9,7 @@ import '../../../core/constants/api_constants.dart';
 import '../../../core/services/connectivity_service.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_compliance_dialogs.dart';
 import '../../../core/widgets/status_badge_widget.dart';
 import '../../auth/cubit/auth_cubit.dart';
 import '../../auth/screens/login_screen.dart';
@@ -329,7 +330,7 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          StatusBadge(status: s['status']),
+                          StatusBadgeWidget(status: s['status']),
                           if ((s['cod'] as double) > 0)
                             Text('\$${(s['cod'] as double).toStringAsFixed(2)}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.success)),
                         ],
