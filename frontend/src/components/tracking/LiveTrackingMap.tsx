@@ -103,7 +103,8 @@ export default function LiveTrackingMap({ data, height = 400, className = '' }: 
     const map = mapInstanceRef.current;
     if (!map) return;
 
-    const L = (await import('leaflet')).default;
+    // @ts-ignore - leaflet types resolve at runtime via dynamic import
+    const L: any = (await import('leaflet')).default;
 
     // Clear old markers
     markersRef.current.forEach((m) => m.remove());
