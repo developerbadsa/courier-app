@@ -183,6 +183,64 @@ class RunsheetCubit extends Cubit<RunsheetState> {
     }
   }
 
+  /// Mark task as delivered (simplified for UI)
+  void markTaskDelivered(String taskId) {
+    if (state is RunsheetLoaded) {
+      final current = (state as RunsheetLoaded).tasks;
+      final updated = current.map((t) {
+        if (t.id == taskId) {
+          return DeliveryTaskModel(
+            id: t.id,
+            trackingNumber: t.trackingNumber,
+            recipientName: t.recipientName,
+            recipientPhone: t.recipientPhone,
+            deliveryAddress: t.deliveryAddress,
+            destinationCity: t.destinationCity,
+            codAmount: t.codAmount,
+            weightKg: t.weightKg,
+            status: 'DELIVERED',
+            driverNotes: t.driverNotes,
+            scheduledTime: t.scheduledTime,
+            latitude: t.latitude,
+            longitude: t.longitude,
+          );
+        }
+        return t;
+      }).toList();
+      _emitLoaded(updated);
+      _cacheCurrentTasks(updated);
+    }
+  }
+
+  /// Mark task as failed (simplified for UI)
+  void markTaskFailed(String taskId) {
+    if (state is RunsheetLoaded) {
+      final current = (state as RunsheetLoaded).tasks;
+      final updated = current.map((t) {
+        if (t.id == taskId) {
+          return DeliveryTaskModel(
+            id: t.id,
+            trackingNumber: t.trackingNumber,
+            recipientName: t.recipientName,
+            recipientPhone: t.recipientPhone,
+            deliveryAddress: t.deliveryAddress,
+            destinationCity: t.destinationCity,
+            codAmount: t.codAmount,
+            weightKg: t.weightKg,
+            status: 'FAILED',
+            driverNotes: t.driverNotes,
+            scheduledTime: t.scheduledTime,
+            latitude: t.latitude,
+            longitude: t.longitude,
+          );
+        }
+        return t;
+      }).toList();
+      _emitLoaded(updated);
+      _cacheCurrentTasks(updated);
+    }
+  }
+
   void _emitLoaded(List<DeliveryTaskModel> tasks, {bool fromCache = false}) {
     final completed = tasks.where((t) => t.isCompleted).length;
     final pending = tasks.where((t) => !t.isCompleted).length;
