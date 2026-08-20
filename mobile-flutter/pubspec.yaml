@@ -27,7 +27,6 @@ dependencies:
   lucide_icons: ^0.257.0
 
   # Hardware & Native Features
-  geolocator: 11.1.0
   url_launcher: ^6.3.0
   signature: ^5.5.0
   intl: ^0.19.0

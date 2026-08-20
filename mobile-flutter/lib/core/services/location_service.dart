@@ -1,194 +1,150 @@
 import 'dart:async';
-import 'package:geolocator/geolocator.dart';
+import 'package:flutter/services.dart';
 import '../constants/api_constants.dart';
 import '../network/dio_client.dart';
 
-/// Enhanced GPS service with background tracking, battery-aware throttling,
-/// and resilient telemetry broadcasting.
+/// Native GPS service using Android/iOS platform channels.
+/// No geolocator dependency — direct MethodChannel communication.
 class LocationService {
   final DioClient _client;
-  StreamSubscription<Position>? _positionStream;
-  Timer? _batteryThrottleTimer;
+  final MethodChannel _channel = const MethodChannel('com.shohnaat/gps');
+  StreamSubscription? _timerSubscription;
   bool _isTracking = false;
   DateTime? _lastBroadcast;
   double _lastLat = 0;
   double _lastLng = 0;
+  String? _riderId;
 
-  // Minimum distance (meters) and time (seconds) between broadcasts
-  static const double _minDistanceMeters = 15;
   static const int _minIntervalSeconds = 10;
-  // Fallback broadcast interval when stationary (for ETA updates)
-  static const int _stationaryIntervalSeconds = 60;
 
   LocationService({DioClient? client}) : _client = client ?? DioClient();
 
   bool get isTracking => _isTracking;
 
-  /// Check and request device GPS permissions
+  /// Request location permission via native channel
   Future<bool> handleLocationPermission() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return false;
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return false;
+    try {
+      final result = await _channel.invokeMethod('requestPermission');
+      return result == true;
+    } catch (_) {
+      return false;
     }
-    if (permission == LocationPermission.deniedForever) return false;
-
-    return true;
   }
 
   /// Get current one-time GPS coordinates
-  Future<Position?> getCurrentLocation() async {
-    final hasPermission = await handleLocationPermission();
-    if (!hasPermission) return null;
-
+  Future<Map<String, double>?> getCurrentLocation() async {
     try {
-      return await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
-      );
-    } catch (_) {
-      return null;
-    }
+      final result = await _channel.invokeMethod('getCurrentLocation');
+      if (result is Map) {
+        return {
+          'latitude': (result['latitude'] ?? 0).toDouble(),
+          'longitude': (result['longitude'] ?? 0).toDouble(),
+        };
+      }
+    } catch (_) {}
+    return null;
   }
 
-  /// Start continuous background GPS broadcasting with smart throttling.
-  /// - Only broadcasts when rider moves >15m or every 60s when stationary.
-  /// - Uses battery-efficient location settings.
+  /// Start continuous GPS broadcasting.
+  /// Uses native platform timer for background efficiency.
   Future<bool> startLiveTracking({required String riderId}) async {
     final hasPermission = await handleLocationPermission();
     if (!hasPermission) return false;
 
     _isTracking = true;
+    _riderId = riderId;
 
-    // Battery-efficient settings: filter updates every 15m distance
-    const locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 15,
-    );
+    // Start native GPS updates (platform handles background)
+    try {
+      await _channel.invokeMethod('startTracking', {
+        'intervalSeconds': _minIntervalSeconds,
+        'distanceFilter': 15,
+      });
+    } catch (_) {}
 
-    _positionStream = Geolocator.getPositionStream(
-      locationSettings: locationSettings,
-    ).listen(
-      (Position position) => _onPositionUpdate(riderId, position),
-      onError: (error) {
-        // Silently handle GPS errors — will retry on next tick
-      },
-    );
+    // Listen for location updates from native side
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'onLocationUpdate' && _isTracking) {
+        final data = call.arguments as Map;
+        final lat = (data['latitude'] ?? 0).toDouble();
+        final lng = (data['longitude'] ?? 0).toDouble();
+        final speed = (data['speed'] ?? 0).toDouble();
+        final heading = (data['heading'] ?? 0).toDouble();
 
-    // Stationary fallback: broadcast every 60s even if no movement
-    _batteryThrottleTimer = Timer.periodic(
-      const Duration(seconds: _stationaryIntervalSeconds),
-      (_) async {
-        if (_isTracking) {
-          final pos = await getCurrentLocation();
-          if (pos != null) {
-            await _broadcastCoordinates(
-              riderId: riderId,
-              latitude: pos.latitude,
-              longitude: pos.longitude,
-              speed: pos.speed,
-              heading: pos.heading,
-              batteryLevel: await _getBatteryLevel(),
-            );
-          }
-        }
-      },
-    );
+        await _broadcastCoordinates(
+          latitude: lat,
+          longitude: lng,
+          speed: speed,
+          heading: heading,
+        );
+      }
+    });
+
+    // Fallback polling if native channel doesn't deliver updates
+    _timerSubscription = Stream.periodic(
+      const Duration(seconds: _minIntervalSeconds),
+      (_) => _pollLocation(),
+    ).listen((_) {});
 
     return true;
   }
 
-  void _onPositionUpdate(String riderId, Position position) {
-    final now = DateTime.now();
-
-    // Throttle: skip if too soon AND distance too small
-    if (_lastBroadcast != null) {
-      final secondsSince = now.difference(_lastBroadcast!).inSeconds;
-      final distance = _haversineDistance(
-        _lastLat, _lastLng, position.latitude, position.longitude,
+  Future<void> _pollLocation() async {
+    if (!_isTracking) return;
+    final loc = await getCurrentLocation();
+    if (loc != null) {
+      await _broadcastCoordinates(
+        latitude: loc['latitude']!,
+        longitude: loc['longitude']!,
+        speed: 0,
+        heading: 0,
       );
-      if (secondsSince < _minIntervalSeconds && distance < _minDistanceMeters) {
-        return; // Skip this update
-      }
     }
-
-    _lastLat = position.latitude;
-    _lastLng = position.longitude;
-    _lastBroadcast = now;
-
-    _broadcastCoordinates(
-      riderId: riderId,
-      latitude: position.latitude,
-      longitude: position.longitude,
-      speed: position.speed,
-      heading: position.heading,
-      batteryLevel: null, // Will be filled by background service
-    );
   }
 
-  /// Stop GPS stream and cleanup timers
+  /// Stop GPS tracking
   Future<void> stopLiveTracking() async {
     _isTracking = false;
-    await _positionStream?.cancel();
-    _positionStream = null;
-    _batteryThrottleTimer?.cancel();
-    _batteryThrottleTimer = null;
+    _riderId = null;
+    await _timerSubscription?.cancel();
+    _timerSubscription = null;
+    try {
+      await _channel.invokeMethod('stopTracking');
+    } catch (_) {}
   }
 
-  /// Broadcast GPS coordinates to backend with retry
   Future<void> _broadcastCoordinates({
-    required String riderId,
     required double latitude,
     required double longitude,
     required double speed,
     required double heading,
-    int? batteryLevel,
   }) async {
+    if (_riderId == null) return;
+
+    final now = DateTime.now();
+    if (_lastBroadcast != null &&
+        now.difference(_lastBroadcast!).inSeconds < _minIntervalSeconds) {
+      return;
+    }
+
+    _lastLat = latitude;
+    _lastLng = longitude;
+    _lastBroadcast = now;
+
     try {
       await _client.post(
         ApiConstants.riderTelemetry,
         data: {
-          'riderId': riderId,
+          'riderId': _riderId,
           'latitude': latitude,
           'longitude': longitude,
           'speed': speed,
           'heading': heading,
-          if (batteryLevel != null) 'battery': batteryLevel,
           'timestamp': DateTime.now().toIso8601String(),
         },
       );
     } catch (_) {
-      // Queued for retry by DioClient interceptor — silent failure ok
+      // Queued for retry by DioClient interceptor
     }
-  }
-
-  /// Estimate battery level (returns null if unavailable)
-  Future<int?> _getBatteryLevel() async {
-    try {
-      // Battery level requires a platform channel in production
-      // For now return null — background geolocation plugin handles this
-      return null;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// Haversine distance in meters between two coordinates
-  double _haversineDistance(double lat1, double lon1, double lat2, double lon2) {
-    const r = 6371000; // Earth radius in meters
-    final dLat = (lat2 - lat1) * 3.141592653589793 / 180;
-    final dLon = (lon2 - lon1) * 3.141592653589793 / 180;
-    final a = (dLat / 2) * (dLat / 2) +
-        (lat1 * 3.141592653589793 / 180).cos() *
-            (lat2 * 3.141592653589793 / 180).cos() *
-            (dLon / 2) * (dLon / 2);
-    final c = 2 * (a < 0 ? -a : a).sqrt().atan2((1 - a).abs().sqrt());
-    return r * c;
   }
 }
