@@ -11,10 +11,12 @@ import {
   Filter,
   Package,
   Loader2,
+  Printer,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
 import { DataTable, Column, StatusBadge, Button, Checkbox, Card } from '@/components/ui';
 import { apiGet, showToast } from '@/lib/api';
+import { printShippingLabel, shipmentToLabelData } from '@/lib/shippingLabelPdf';
 
 /* ── Types ── */
 interface ShipmentRow extends Record<string, unknown> {
@@ -200,6 +202,26 @@ export default function ShipmentsPage() {
     {
       key: 'codAmount', header: 'COD', align: 'right', sortable: true, accessor: (r) => r.codAmount, headerClassName: 'pr-6', className: 'pr-6',
       render: (row) => <span className="font-mono font-bold text-slate-800 text-[12px]">{row.codAmount > 0 ? `$${row.codAmount.toFixed(2)}` : '—'}</span>,
+    },
+    {
+      key: 'print', header: '', className: 'text-right', headerClassName: 'text-right',
+      render: (row) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            printShippingLabel(shipmentToLabelData({
+              trackingNumber: row.trackingNumber || row.id,
+              consignee: { name: row.consigneeName, phone: row.consigneeContact },
+              paymentType: row.codAmount > 0 ? 'COD' : 'PREPAID',
+              codAmount: row.codAmount,
+            }));
+          }}
+          className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+          title="Print Shipping Label"
+        >
+          <Printer className="w-3.5 h-3.5" />
+        </button>
+      ),
     },
   ];
 

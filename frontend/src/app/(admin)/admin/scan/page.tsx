@@ -3,8 +3,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Camera, Zap, CheckCircle2, XCircle, Package, Volume2, VolumeX,
-  RotateCcw, ArrowLeft, AlertTriangle, BarChart3, Clock, Truck, Info,
+  RotateCcw, ArrowLeft, AlertTriangle, BarChart3, Clock, Truck, Info, Printer,
 } from 'lucide-react';
+import { printShippingLabel, type ShippingLabelData } from '@/lib/shippingLabelPdf';
 
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout';
@@ -271,8 +272,35 @@ export default function ScanInboundPage() {
                       </div>
                     )}
                   </div>
-                  <div className="text-[10px] text-slate-400 shrink-0">
-                    <Clock className="w-3 h-3 inline" /> {scan.timestamp}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <span className="text-[10px] text-slate-400">
+                      <Clock className="w-3 h-3 inline" /> {scan.timestamp}
+                    </span>
+                    {scan.status === 'success' && (
+                      <button
+                        onClick={() => {
+                          printShippingLabel({
+                            trackingNumber: scan.trackingNumber,
+                            serviceType: 'STANDARD',
+                            shipFromName: 'Hub Warehouse',
+                            shipFromAddress: '',
+                            shipFromCity: '',
+                            shipFromPhone: '',
+                            shipToName: 'Consignee',
+                            shipToAddress: '',
+                            shipToCity: '',
+                            shipToPhone: '',
+                            weightKg: scan.shipment?.weightKg,
+                            paymentType: scan.shipment?.codAmount ? 'COD' : 'PREPAID',
+                            codAmount: scan.shipment?.codAmount,
+                          });
+                        }}
+                        className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                        title="Reprint Label"
+                      >
+                        <Printer className="w-3 h-3" />
+                      </button>
+                    )}
                   </div>
                 </div>
               ))

@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Package, ArrowLeft, ChevronRight, CheckCircle, User, MapPin, Weight, CreditCard, Loader2, Copy, Check } from 'lucide-react';
+import { Package, ArrowLeft, ChevronRight, CheckCircle, User, MapPin, Weight, CreditCard, Loader2, Copy, Check, Printer } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout';
 import { Button, Card, Input } from '@/components/ui';
 import { apiPost, showToast } from '@/lib/api';
+import { printShippingLabel, type ShippingLabelData } from '@/lib/shippingLabelPdf';
 
 /* ------------------------------------------------------------------ */
 /*  Multi-Step Shipment Creation Wizard                                 */
@@ -20,6 +21,7 @@ export default function CreateShipmentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState('');
   const [copied, setCopied] = useState(false);
+  const [labelData, setLabelData] = useState<ShippingLabelData | null>(null);
   const [form, setForm] = useState({
     // Shipper
     shipperName: '',
@@ -81,6 +83,22 @@ export default function CreateShipmentPage() {
       if (res.success && res.data) {
         const tn = res.data.trackingNumber || res.data.id || '—';
         setTrackingNumber(tn);
+        // Build label data from form + API response
+        setLabelData({
+          trackingNumber: tn,
+          serviceType: form.serviceType as ShippingLabelData['serviceType'],
+          shipFromName: form.shipperName || 'Shipper',
+          shipFromAddress: form.pickupAddress || '',
+          shipFromCity: form.pickupCity || '',
+          shipFromPhone: form.shipperPhone || '',
+          shipToName: form.consigneeName,
+          shipToAddress: form.deliveryAddress || '',
+          shipToCity: form.deliveryCity || '',
+          shipToPhone: form.consigneePhone,
+          weightKg: form.weightKg ? parseFloat(form.weightKg) : undefined,
+          paymentType: form.paymentType as 'COD' | 'PREPAID',
+          codAmount: form.paymentType === 'COD' ? (form.codAmount ? parseFloat(form.codAmount) : 0) : 0,
+        });
         setSubmitted(true);
         showToast('success', `Shipment booked! Tracking: ${tn}`);
       } else {
@@ -122,12 +140,18 @@ export default function CreateShipmentPage() {
           )}
 
           <div className="flex gap-3 mt-6 justify-center">
+            {labelData && (
+              <Button variant="outline" size="sm" onClick={() => printShippingLabel(labelData)} leftIcon={<Printer className="w-4 h-4" />}>
+                Print 4x6" Label
+              </Button>
+            )}
             <Link href="/dashboard/shipments">
               <Button variant="outline" size="sm">View Shipments</Button>
             </Link>
             <Button variant="primary" size="sm" onClick={() => {
               setSubmitted(false);
               setTrackingNumber('');
+              setLabelData(null);
               setStep(0);
               setForm({
                 shipperName: '', shipperPhone: '', pickupAddress: '', pickupCity: '',

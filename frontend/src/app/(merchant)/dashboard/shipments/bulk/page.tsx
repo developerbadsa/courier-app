@@ -4,8 +4,9 @@ import React, { useState, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import {
   ArrowLeft, Truck, Upload, FileSpreadsheet, Download, AlertTriangle,
-  CheckCircle2, XCircle, Loader2, FileText, ChevronDown, Info,
+  CheckCircle2, XCircle, Loader2, FileText, ChevronDown, Info, Printer,
 } from 'lucide-react';
+import { printShippingLabel, type ShippingLabelData } from '@/lib/shippingLabelPdf';
 
 /* ── Types ── */
 interface ParsedRow {
@@ -392,6 +393,36 @@ export default function BulkImportPage() {
             )}
 
             <div className="flex items-center justify-center gap-3">
+              {result.created > 0 && (
+                <button
+                  onClick={() => {
+                    // Print labels for each successfully imported row
+                    parsedRows.slice(0, result.created).forEach((row, i) => {
+                      setTimeout(() => {
+                        const labelData: ShippingLabelData = {
+                          trackingNumber: `BULK-${Date.now()}-${i + 1}`,
+                          serviceType: 'STANDARD',
+                          shipFromName: 'Bulk Import',
+                          shipFromAddress: '',
+                          shipFromCity: '',
+                          shipFromPhone: '',
+                          shipToName: row.consigneeName,
+                          shipToAddress: row.address || '',
+                          shipToCity: '',
+                          shipToPhone: row.consigneePhone,
+                          weightKg: row.weightKg ? parseFloat(row.weightKg) : undefined,
+                          paymentType: (row.paymentType as 'COD' | 'PREPAID') || 'COD',
+                          codAmount: row.codAmount ? parseFloat(row.codAmount) : 0,
+                        };
+                        printShippingLabel(labelData);
+                      }, i * 400);
+                    });
+                  }}
+                  className="flex items-center gap-2 px-5 py-2.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded hover:bg-slate-50"
+                >
+                  <Printer className="w-4 h-4" /> Print All Labels ({result.created})
+                </button>
+              )}
               <Link
                 href="/dashboard/shipments"
                 className="px-5 py-2.5 text-xs font-semibold text-white bg-blue-600 rounded hover:bg-blue-700"
