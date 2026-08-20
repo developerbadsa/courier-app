@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/api_constants.dart';
+import '../../../core/network/dio_client.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 
@@ -13,22 +15,37 @@ class CameraBarcodeScannerScreen extends StatefulWidget {
 }
 
 class _CameraBarcodeScannerScreenState extends State<CameraBarcodeScannerScreen> {
-  final TextEditingController _manualBarcodeInput =
-      TextEditingController(text: 'SHN-8429-2026');
+  final TextEditingController _manualBarcodeInput = TextEditingController();
   bool _isTorchOn = false;
   Map<String, dynamic>? _scannedResult;
+  bool _isLookingUp = false;
+  String? _lookupError;
 
-  void _onSimulateScan(String barcode) {
-    setState(() {
-      _scannedResult = {
-        'trackingNumber': barcode,
-        'recipient': 'Michael Anderson',
-        'address': '456 Congress Ave, Suite 400, Austin, TX',
-        'cod': 45.00,
-        'status': 'OUT_FOR_DELIVERY',
-        'item': 'Electronics / Gadgets',
-      };
-    });
+  void _onLookupScan(String barcode) async {
+    if (barcode.isEmpty) return;
+    setState(() { _isLookingUp = true; _lookupError = null; _scannedResult = null; });
+    try {
+      final client = DioClient();
+      final response = await client.get('${ApiConstants.publicTracking}/$barcode');
+      if (mounted) {
+        final data = response.data?['data'];
+        setState(() {
+          _isLookingUp = false;
+          _scannedResult = {
+            'trackingNumber': data?['trackingNumber'] ?? barcode,
+            'recipient': data?['consignee']?['name'] ?? 'Unknown',
+            'address': data?['deliveryAddress']?['line1'] ?? '',
+            'cod': data?['codAmount'] ?? 0,
+            'status': data?['currentStatus'] ?? 'UNKNOWN',
+            'item': data?['packageDescription'] ?? '',
+          };
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() { _isLookingUp = false; _lookupError = 'Parcel not found: $barcode'; });
+      }
+    }
   }
 
   @override
@@ -112,6 +129,24 @@ class _CameraBarcodeScannerScreenState extends State<CameraBarcodeScannerScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (_lookupError != null) ...[
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFDC2626).withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(LucideIcons.alertTriangle, size: 16, color: Color(0xFFDC2626)),
+                        const SizedBox(width: 8),
+                        Expanded(child: Text(_lookupError!, style: const TextStyle(fontSize: 12, color: Color(0xFF991B1B)))),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 if (_scannedResult != null) ...[
                   AppCard(
                     backgroundColor: AppColors.primaryLight,
@@ -160,9 +195,10 @@ class _CameraBarcodeScannerScreenState extends State<CameraBarcodeScannerScreen>
                     ),
                     const SizedBox(width: 8),
                     AppButton(
-                      text: 'Scan',
+                      text: 'Track',
                       icon: const Icon(LucideIcons.scanLine, size: 16),
-                      onPressed: () => _onSimulateScan(_manualBarcodeInput.text.trim()),
+                      isLoading: _isLookingUp,
+                      onPressed: () => _onLookupScan(_manualBarcodeInput.text.trim()),
                     ),
                   ],
                 ),

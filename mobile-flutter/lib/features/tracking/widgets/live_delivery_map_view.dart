@@ -4,12 +4,14 @@ import '../../../core/constants/app_colors.dart';
 
 class LiveDeliveryMapView extends StatelessWidget {
   final String status;
+  final String trackingNumber;
   final String riderName;
   final String eta;
 
   const LiveDeliveryMapView({
     super.key,
     required this.status,
+    required this.trackingNumber,
     this.riderName = 'Alex Rodriguez (Rider #104)',
     this.eta = '12 mins',
   });

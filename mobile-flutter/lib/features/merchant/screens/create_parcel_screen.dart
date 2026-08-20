@@ -103,9 +103,9 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                 Text(_createdTracking!, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.primary, fontFamily: 'monospace')),
                 const SizedBox(height: 20),
                 AppButton(
-                  label: 'Create Another',
-                  variant: 'outline',
-                  fullWidth: true,
+                  text: 'Create Another',
+                  variant: AppButtonVariant.outline,
+                  isFullWidth: true,
                   onPressed: () => setState(() {
                     _createdTracking = null;
                     _recipientName.clear();
@@ -119,8 +119,8 @@ class _CreateParcelScreenState extends State<CreateParcelScreen> {
                 ),
                 const SizedBox(height: 8),
                 AppButton(
-                  label: 'Back to Dashboard',
-                  fullWidth: true,
+                  text: 'Back to Dashboard',
+                  isFullWidth: true,
                   onPressed: () => Navigator.pop(context),
                 ),
               ],

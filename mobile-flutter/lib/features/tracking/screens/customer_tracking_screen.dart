@@ -117,7 +117,7 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
                     const SizedBox(height: 8),
                     Text(_error!, style: const TextStyle(fontSize: 12, color: AppColors.textMuted), textAlign: TextAlign.center),
                     const SizedBox(height: 8),
-                    AppButton(label: 'Try Again', size: 'sm', onPressed: _onSearch),
+                    AppButton(text: 'Try Again', size: AppButtonSize.sm, onPressed: _onSearch),
                   ],
                 ),
               ),
