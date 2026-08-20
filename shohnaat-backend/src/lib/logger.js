@@ -93,7 +93,16 @@ class ProLogger {
   fatal(msg, err = null, meta = {}) {
     const errorPayload = err instanceof Error ? { err, ...meta } : { ...meta, error: err };
     this.pino.fatal(errorPayload, `🔥 [FATAL] ${msg}`);
+
+    // Trigger instant emergency DB backup snapshot
+    try {
+      const { triggerEmergencyBackup } = require('../services/backupService');
+      triggerEmergencyBackup(`FATAL: ${msg}`).catch(() => {});
+    } catch (e) {
+      // Non-blocking
+    }
   }
+
 
   // ── 3. Security & Threat Channel (WAF, Rate Limits, Failed Logins, SQL Injection) ──
   security(event, meta = {}) {

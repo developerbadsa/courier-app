@@ -147,9 +147,55 @@ router.get('/dependencies', async (req, res, next) => {
         summary: parsed.metadata?.vulnerabilities || { total: 0 },
       },
     });
+// GET /api/v1/security/backups — List all database backups
+router.get('/backups', async (req, res, next) => {
+  try {
+    const { listBackups } = require('../services/backupService');
+    const backups = listBackups();
+    res.json({
+      success: true,
+      count: backups.length,
+      data: backups,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// POST /api/v1/security/backups/create — Trigger on-demand backup
+router.post('/backups/create', async (req, res, next) => {
+  try {
+    const { createDatabaseBackup } = require('../services/backupService');
+    const { reason = 'Admin manual trigger' } = req.body || {};
+    const result = await createDatabaseBackup('manual', reason);
+    res.status(201).json({
+      success: true,
+      message: 'Database backup created successfully',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// GET /api/v1/security/backups/:filename/download — Download backup archive
+router.get('/backups/:filename/download', async (req, res, next) => {
+  try {
+    const path = require('path');
+    const fs = require('fs');
+    const { BACKUPS_DIR } = require('../services/backupService');
+    const filename = path.basename(req.params.filename); // prevent directory traversal
+
+    const filePath = path.join(BACKUPS_DIR, filename);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ success: false, message: 'Backup file not found' });
+    }
+
+    res.download(filePath, filename);
   } catch (error) {
     next(error);
   }
 });
 
 module.exports = router;
+
