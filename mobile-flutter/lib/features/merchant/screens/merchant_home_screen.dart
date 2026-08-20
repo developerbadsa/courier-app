@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/network/dio_client.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/status_badge_widget.dart';
@@ -19,36 +21,52 @@ class MerchantHomeScreen extends StatefulWidget {
 }
 
 class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
-  final List<Map<String, dynamic>> _recentShipments = [
-    {
-      'tracking': 'SHN-8429-2026',
-      'recipient': 'Michael Anderson',
-      'city': 'Austin, TX',
-      'status': 'OUT_FOR_DELIVERY',
-      'cod': 45.00,
-    },
-    {
-      'tracking': 'SHN-9102-2026',
-      'recipient': 'Sarah Jenkins',
-      'city': 'Austin, TX',
-      'status': 'IN_TRANSIT',
-      'cod': 0.00,
-    },
-    {
-      'tracking': 'SHN-7341-2026',
-      'recipient': 'Robert Vance',
-      'city': 'Round Rock, TX',
-      'status': 'PENDING',
-      'cod': 120.00,
-    },
-    {
-      'tracking': 'SHN-5092-2026',
-      'recipient': 'Emily Clark',
-      'city': 'Austin, TX',
-      'status': 'DELIVERED',
-      'cod': 32.50,
-    },
-  ];
+  List<Map<String, dynamic>> _recentShipments = [];
+  bool _isLoading = true;
+  String? _error;
+  int _totalShipments = 0;
+  double _totalCod = 0;
+  int _totalDelivered = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDashboard();
+  }
+
+  Future<void> _loadDashboard() async {
+    setState(() { _isLoading = true; _error = null; });
+
+    try {
+      final client = DioClient();
+      final response = await client.get(ApiConstants.merchantShipments);
+
+      if (response.data?['data'] is List) {
+        final data = response.data['data'] as List;
+        setState(() {
+          _recentShipments = data.take(10).map((s) => {
+            'tracking': s['trackingNumber'] ?? '',
+            'recipient': s['consignee']?['name'] ?? 'Customer',
+            'city': s['deliveryAddressSnap']?['city'] ?? '',
+            'status': s['currentStatus'] ?? 'PENDING',
+            'cod': double.tryParse(s['codAmount']?.toString() ?? '0') ?? 0,
+            'id': s['id'] ?? '',
+          }).toList();
+          _totalShipments = response.data?['pagination']?['total'] ?? data.length;
+          _totalCod = _recentShipments.fold(0.0, (sum, s) => sum + (s['cod'] as double));
+          _totalDelivered = _recentShipments.where((s) => s['status'] == 'DELIVERED').length;
+          _isLoading = false;
+        });
+      } else {
+        setState(() { _isLoading = false; });
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Failed to load shipments';
+        _isLoading = false;
+      });
+    }
+  }
 
   void _onLogout() {
     context.read<AuthCubit>().logout();
@@ -62,159 +80,154 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.navyBackground,
-        title: const Text('Merchant Portal'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        title: const Text('Merchant Dashboard', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
         actions: [
           IconButton(
-            icon: const Icon(LucideIcons.search, color: Colors.white),
-            tooltip: 'Track Parcel',
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const CustomerTrackingScreen()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(LucideIcons.logOut, color: AppColors.textMuted, size: 18),
+            icon: const Icon(LucideIcons.logOut, size: 18),
             onPressed: _onLogout,
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: RefreshIndicator(
+        onRefresh: _loadDashboard,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
           children: [
-            // Available COD Balance Card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        'AVAILABLE COD BALANCE',
-                        style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w700),
-                      ),
-                      Icon(LucideIcons.wallet, color: Colors.white70, size: 18),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    '\$1,420.50 USD',
-                    style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900),
-                  ),
-                  const SizedBox(height: 14),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text('Pending: \$380.00', style: TextStyle(color: Colors.white, fontSize: 11)),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+            // KPI Cards
+            Row(
+              children: [
+                _buildKpiCard('Total', '$_totalShipments', LucideIcons.package, AppColors.primary),
+                const SizedBox(width: 8),
+                _buildKpiCard('Delivered', '$_totalDelivered', LucideIcons.checkCircle2, AppColors.success),
+                const SizedBox(width: 8),
+                _buildKpiCard('COD', '\$${_totalCod.toStringAsFixed(0)}', LucideIcons.dollarSign, AppColors.warning),
+              ],
             ),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
 
             // Quick Actions
             Row(
               children: [
                 Expanded(
                   child: AppButton(
-                    text: 'Book Parcel',
-                    icon: const Icon(LucideIcons.packagePlus, size: 16),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const CreateParcelScreen()),
-                      );
-                    },
+                    label: 'Create Parcel',
+                    icon: LucideIcons.plus,
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateParcelScreen())),
                   ),
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 8),
                 Expanded(
                   child: AppButton(
-                    text: 'Request Pickup',
-                    variant: AppButtonVariant.outline,
-                    icon: const Icon(LucideIcons.calendarPlus, size: 16),
-                    onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const PickupRequestsScreen()),
-                      );
-                    },
+                    label: 'Track Parcel',
+                    icon: LucideIcons.search,
+                    variant: 'outline',
+                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CustomerTrackingScreen())),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 22),
-
-            // Recent Shipments Section
-            const Text(
-              'Recent Shipments',
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
+            const SizedBox(height: 8),
+            AppButton(
+              label: 'Pickup Requests',
+              icon: LucideIcons.truck,
+              variant: 'outline',
+              fullWidth: true,
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PickupRequestsScreen())),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
 
-            ..._recentShipments.map((s) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: AppCard(
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => CustomerTrackingScreen(initialTracking: s['tracking']),
-                      ),
-                    );
-                  },
+            // Recent Shipments
+            const Text('Recent Shipments', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+            const SizedBox(height: 8),
+
+            if (_isLoading)
+              const Center(child: Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ))
+            else if (_error != null)
+              AppCard(
+                child: Center(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(s['tracking'], style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primary)),
-                          StatusBadgeWidget(status: s['status'], isSmall: true),
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text('Recipient: ${s['recipient']}', style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                      Text('Destination: ${s['city']}', style: const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
-                      const SizedBox(height: 6),
-                      Text(
-                        s['cod'] > 0 ? 'COD: \$${s['cod'].toStringAsFixed(2)}' : 'PREPAID',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: s['cod'] > 0 ? const Color(0xFFB45309) : AppColors.success,
+                      const Icon(LucideIcons.alertTriangle, color: AppColors.danger, size: 24),
+                      const SizedBox(height: 8),
+                      Text(_error!, style: const TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                      const SizedBox(height: 8),
+                      AppButton(label: 'Retry', size: 'sm', onPressed: _loadDashboard),
+                    ],
+                  ),
+                ),
+              )
+            else if (_recentShipments.isEmpty)
+              AppCard(
+                child: Center(
+                  child: Column(
+                    children: [
+                      const Icon(LucideIcons.package, color: AppColors.textMuted, size: 32),
+                      const SizedBox(height: 8),
+                      const Text('No shipments yet', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                      const SizedBox(height: 8),
+                      AppButton(label: 'Create First Shipment', size: 'sm', onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CreateParcelScreen()))),
+                    ],
+                  ),
+                ),
+              )
+            else
+              ..._recentShipments.map((s) => Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: AppCard(
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(4),
                         ),
+                        child: const Icon(LucideIcons.package, size: 16, color: AppColors.primary),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(s['tracking'], style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, fontFamily: 'monospace')),
+                            Text('${s['recipient']} — ${s['city']}', style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                          ],
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          StatusBadge(status: s['status']),
+                          if ((s['cod'] as double) > 0)
+                            Text('\$${(s['cod'] as double).toStringAsFixed(2)}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: AppColors.success)),
+                        ],
                       ),
                     ],
                   ),
                 ),
-              );
-            }),
+              )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildKpiCard(String label, String value, IconData icon, Color color) {
+    return Expanded(
+      child: AppCard(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(height: 4),
+            Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: color)),
+            Text(label, style: const TextStyle(fontSize: 9, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
           ],
         ),
       ),

@@ -22,25 +22,30 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController =
       TextEditingController(text: 'rider@shohnaat.com');
   final TextEditingController _passwordController =
-      TextEditingController(text: 'admin123');
+      TextEditingController(text: 'rider123');
   bool _obscurePassword = true;
   String _selectedRole = 'rider';
 
   final Map<String, Map<String, String>> _rolePresets = {
     'rider': {
       'email': 'rider@shohnaat.com',
-      'pass': 'admin123',
+      'pass': 'rider123',
       'label': 'Field Rider App',
     },
     'merchant': {
       'email': 'merchant@shohnaat.com',
-      'pass': 'admin123',
+      'pass': 'merchant123',
       'label': 'Merchant Portal',
     },
     'super_admin': {
       'email': 'admin@shohnaat.com',
       'pass': 'admin123',
       'label': 'Admin Console',
+    },
+    'operator': {
+      'email': 'operator@shohnaat.com',
+      'pass': 'operator123',
+      'label': 'Hub Operator',
     },
   };
 

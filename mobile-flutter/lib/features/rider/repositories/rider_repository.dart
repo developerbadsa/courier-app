@@ -79,34 +79,51 @@ class RiderRepository {
         final list = (response.data['data'] as List)
             .map((item) => DeliveryTaskModel.fromJson(item as Map<String, dynamic>))
             .toList();
-        return list.isNotEmpty ? list : _mockTasks;
+        return list;
       }
-      return _mockTasks;
-    } catch (_) {
-      // Return mock tasks on network disconnect for seamless demo
-      return _mockTasks;
+      return [];
+    } catch (e) {
+      throw Exception('Failed to load runsheet: $e');
     }
   }
 
-  Future<bool> updateStatus({
+  Future<bool> completeDelivery({
     required String shipmentId,
-    required String status,
-    String? reason,
-    double? collectedAmount,
+    double? codCollected,
+    bool? otpVerified,
   }) async {
     try {
-      final response = await _client.patch(
-        '${ApiConstants.updateShipmentStatus}/$shipmentId/status',
+      final response = await _client.post(
+        '/api/v1/riders/complete-delivery',
         data: {
-          'status': status,
-          if (reason != null) 'reason': reason,
-          if (collectedAmount != null) 'collectedAmount': collectedAmount,
+          'shipmentId': shipmentId,
+          if (codCollected != null) 'codCollected': codCollected,
+          if (otpVerified != null) 'otpVerified': otpVerified,
         },
       );
       return response.statusCode == 200 || response.statusCode == 201;
-    } catch (_) {
-      // Optimistic success for offline mode
-      return true;
+    } catch (e) {
+      throw Exception('Delivery update failed: $e');
+    }
+  }
+
+  Future<bool> reportFailure({
+    required String shipmentId,
+    required String reasonCode,
+    String? notes,
+  }) async {
+    try {
+      final response = await _client.post(
+        '/api/v1/riders/report-failure',
+        data: {
+          'shipmentId': shipmentId,
+          'reasonCode': reasonCode,
+          if (notes != null) 'notes': notes,
+        },
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      throw Exception('Failure report failed: $e');
     }
   }
 }

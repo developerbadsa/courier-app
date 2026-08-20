@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/network/dio_client.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/status_badge_widget.dart';
 import '../widgets/live_delivery_map_view.dart';
 
@@ -18,46 +21,46 @@ class CustomerTrackingScreen extends StatefulWidget {
 class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
   late TextEditingController _trackingController;
   Map<String, dynamic>? _parcelData;
+  List<dynamic> _statusHistory = [];
   bool _isSearching = false;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
     _trackingController = TextEditingController(
-      text: widget.initialTracking ?? 'SHN-8429-2026',
+      text: widget.initialTracking ?? '',
     );
-    _onSearch();
+    if (widget.initialTracking != null && widget.initialTracking!.isNotEmpty) {
+      _onSearch();
+    }
   }
 
-  void _onSearch() async {
+  Future<void> _onSearch() async {
     final query = _trackingController.text.trim();
     if (query.isEmpty) return;
 
-    setState(() => _isSearching = true);
-    await Future.delayed(const Duration(milliseconds: 600));
+    setState(() { _isSearching = true; _error = null; _parcelData = null; });
 
-    setState(() {
-      _isSearching = false;
-      _parcelData = {
-        'trackingNumber': query,
-        'status': 'OUT_FOR_DELIVERY',
-        'estimatedDelivery': 'Today by 2:00 PM',
-        'recipient': 'Michael Anderson',
-        'destination': 'Austin, TX',
-        'events': [
-          {'title': 'Out for Delivery', 'desc': 'Rider Alex is on the way to your doorstep.', 'time': '10:15 AM Today', 'done': true},
-          {'title': 'Arrived at Sorting Hub', 'desc': 'Austin Central Logistics Facility', 'time': '07:30 AM Today', 'done': true},
-          {'title': 'Picked up from Warehouse', 'desc': 'Merchant Fulfillment Center #01', 'time': '08:00 PM Yesterday', 'done': true},
-          {'title': 'Shipment Booked & Manifested', 'desc': 'Order confirmed with merchant.', 'time': '04:20 PM Yesterday', 'done': true},
-        ],
-      };
-    });
-  }
+    try {
+      final client = DioClient();
+      final response = await client.get('${ApiConstants.publicTracking}/$query');
 
-  @override
-  void dispose() {
-    _trackingController.dispose();
-    super.dispose();
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+          _parcelData = response.data?['data'];
+          _statusHistory = _parcelData?['statusHistory'] ?? [];
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isSearching = false;
+          _error = 'Tracking number not found or network error';
+        });
+      }
+    }
   }
 
   @override
@@ -65,156 +68,203 @@ class _CustomerTrackingScreenState extends State<CustomerTrackingScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Live Parcel Tracking'),
-        backgroundColor: AppColors.navyBackground,
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        title: const Text('Track Parcel', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
       ),
-      body: SingleChildScrollView(
+      body: ListView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Search Box
-            Row(
+        children: [
+          // Search Bar
+          AppCard(
+            child: Row(
               children: [
                 Expanded(
-                  child: TextField(
+                  child: AppTextField(
+                    label: 'Tracking Number',
                     controller: _trackingController,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                    decoration: InputDecoration(
-                      hintText: 'Enter tracking number...',
-                      prefixIcon: const Icon(LucideIcons.search, size: 18),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                    ),
+                    icon: LucideIcons.search,
+                    onSubmitted: (_) => _onSearch(),
                   ),
                 ),
                 const SizedBox(width: 8),
                 AppButton(
-                  text: 'Track',
+                  label: 'Track',
+                  icon: LucideIcons.arrowRight,
+                  size: 'sm',
                   isLoading: _isSearching,
                   onPressed: _onSearch,
                 ),
               ],
             ),
-            const SizedBox(height: 18),
+          ),
+          const SizedBox(height: 16),
 
-            if (_parcelData != null) ...[
-              // Live Interactive Delivery Map
-              const LiveDeliveryMapView(
-                status: 'OUT_FOR_DELIVERY',
-                riderName: 'Alex Rodriguez (Rider #104)',
-                eta: '14 mins',
+          // Results
+          if (_isSearching)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(color: AppColors.primary),
               ),
-              const SizedBox(height: 16),
-
-              // Status Summary Card
-              AppCard(
+            )
+          else if (_error != null)
+            AppCard(
+              child: Center(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          _parcelData!['trackingNumber'],
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColors.primary),
-                        ),
-                        StatusBadgeWidget(status: _parcelData!['status']),
-                      ],
-                    ),
-                    const Divider(height: 20),
-                    Row(
-                      children: [
-                        const Icon(LucideIcons.clock, size: 16, color: AppColors.textMuted),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Estimated Delivery: ${_parcelData!['estimatedDelivery']}',
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        const Icon(LucideIcons.mapPin, size: 16, color: AppColors.textMuted),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Destination: ${_parcelData!['destination']}',
-                          style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
-                        ),
-                      ],
-                    ),
+                    const Icon(LucideIcons.alertTriangle, color: AppColors.danger, size: 24),
+                    const SizedBox(height: 8),
+                    Text(_error!, style: const TextStyle(fontSize: 12, color: AppColors.textMuted), textAlign: TextAlign.center),
+                    const SizedBox(height: 8),
+                    AppButton(label: 'Try Again', size: 'sm', onPressed: _onSearch),
                   ],
                 ),
               ),
-              const SizedBox(height: 18),
-
-              // Tracking Stepper Timeline
-              const Text(
-                'Activity Timeline',
-                style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: AppColors.textPrimary),
-              ),
-              const SizedBox(height: 12),
-
-              ...(_parcelData!['events'] as List).asMap().entries.map((entry) {
-                final idx = entry.key;
-                final event = entry.value;
-                final isLast = idx == (_parcelData!['events'] as List).length - 1;
-
-                return Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Column(
-                      children: [
-                        Container(
-                          width: 14,
-                          height: 14,
-                          decoration: BoxDecoration(
-                            color: idx == 0 ? AppColors.primary : AppColors.success,
-                            shape: BoxShape.circle,
-                          ),
+            )
+          else if (_parcelData != null) ...[
+            // Status Card
+            AppCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryLight,
+                          borderRadius: BorderRadius.circular(4),
                         ),
-                        if (!isLast)
-                          Container(
-                            width: 2,
-                            height: 48,
-                            color: AppColors.border,
-                          ),
-                      ],
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 18),
+                        child: const Icon(LucideIcons.package, color: AppColors.primary, size: 20),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              event['title'],
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.textPrimary),
-                            ),
-                            Text(
-                              event['desc'],
-                              style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                              _parcelData!['trackingNumber'] ?? 'N/A',
+                              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700, fontFamily: 'monospace'),
                             ),
                             const SizedBox(height: 2),
-                            Text(
-                              event['time'],
-                              style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
-                            ),
+                            StatusBadge(status: _parcelData!['currentStatus'] ?? 'UNKNOWN'),
                           ],
                         ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _buildInfoRow('Consignee', _parcelData!['consignee']?['name'] ?? 'N/A'),
+                  _buildInfoRow('Phone', _parcelData!['consignee']?['phone'] ?? 'N/A'),
+                  _buildInfoRow('Address', _parcelData!['deliveryAddress']?['line1'] ?? _parcelData!['deliveryAddressSnap']?['street'] ?? 'N/A'),
+                  if (_parcelData!['codAmount'] != null && (_parcelData!['codAmount'] as num) > 0)
+                    _buildInfoRow('COD', '\$${_parcelData!['codAmount']} USD'),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Live Map
+            if (_parcelData!['currentStatus'] == 'OUT_FOR_DELIVERY' || _parcelData!['currentStatus'] == 'IN_TRANSIT')
+              AppCard(
+                padding: EdgeInsets.zero,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: SizedBox(
+                    height: 200,
+                    child: LiveDeliveryMapView(
+                      trackingNumber: _parcelData!['trackingNumber'] ?? '',
+                      status: _parcelData!['currentStatus'] ?? '',
                     ),
-                  ],
-                );
-              }),
+                  ),
+                ),
+              ),
+
+            if (_statusHistory.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              const Text('Status History', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+              const SizedBox(height: 8),
+              ...(_statusHistory.reversed).map((entry) => Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: AppCard(
+                  padding: const EdgeInsets.all(10),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: _getStatusColor(entry['status'] ?? ''),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(entry['status'] ?? '', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700)),
+                            if (entry['note'] != null)
+                              Text(entry['note'], style: const TextStyle(fontSize: 10, color: AppColors.textMuted)),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        entry['createdAt'] != null
+                          ? DateTime.tryParse(entry['createdAt'])?.toLocal().toString().substring(0, 16) ?? ''
+                          : '',
+                        style: const TextStyle(fontSize: 9, color: AppColors.textMuted),
+                      ),
+                    ],
+                  ),
+                ),
+              )),
             ],
-          ],
-        ),
+          ] else if (!_isSearching && _parcelData == null && _error == null)
+            AppCard(
+              child: Center(
+                child: Column(
+                  children: [
+                    const Icon(LucideIcons.mapPin, color: AppColors.textMuted, size: 32),
+                    const SizedBox(height: 8),
+                    const Text('Enter a tracking number to get started', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Row(
+        children: [
+          Text('$label: ', style: const TextStyle(fontSize: 10, color: AppColors.textMuted, fontWeight: FontWeight.w600)),
+          Expanded(child: Text(value, style: const TextStyle(fontSize: 10, color: AppColors.textPrimary))),
+        ],
+      ),
+    );
+  }
+
+  Color _getStatusColor(String status) {
+    switch (status) {
+      case 'DELIVERED': return AppColors.success;
+      case 'OUT_FOR_DELIVERY': return AppColors.info;
+      case 'IN_TRANSIT': return AppColors.info;
+      case 'FAILED': return AppColors.danger;
+      case 'PENDING': return AppColors.warning;
+      default: return AppColors.textMuted;
+    }
+  }
+
+  @override
+  void dispose() {
+    _trackingController.dispose();
+    super.dispose();
   }
 }

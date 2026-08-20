@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/network/dio_client.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_text_field.dart';
@@ -13,161 +15,230 @@ class CreateParcelScreen extends StatefulWidget {
 }
 
 class _CreateParcelScreenState extends State<CreateParcelScreen> {
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _recipientName = TextEditingController();
   final TextEditingController _recipientPhone = TextEditingController();
   final TextEditingController _deliveryAddress = TextEditingController();
-  final TextEditingController _city = TextEditingController(text: 'Austin, TX');
+  final TextEditingController _city = TextEditingController();
   final TextEditingController _codAmount = TextEditingController(text: '0.00');
   final TextEditingController _weightKg = TextEditingController(text: '1.5');
+  final TextEditingController _notes = TextEditingController();
   bool _isSubmitting = false;
+  String? _createdTracking;
 
   void _onSubmit() async {
-    if (_recipientName.text.isEmpty || _deliveryAddress.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill recipient name and delivery address.'),
-          backgroundColor: AppColors.danger,
-        ),
-      );
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(seconds: 1)); // Simulated network request
 
-    if (mounted) {
-      setState(() => _isSubmitting = false);
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-          title: const Row(
-            children: [
-              Icon(LucideIcons.checkCircle2, color: AppColors.success, size: 24),
-              SizedBox(width: 8),
-              Text('Shipment Created!'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Tracking Number:', style: TextStyle(fontSize: 12, color: AppColors.textMuted)),
-              const Text(
-                'SHN-9942-2026',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColors.primary),
-              ),
-              const SizedBox(height: 12),
-              Text('Recipient: ${_recipientName.text}'),
-              Text('Address: ${_deliveryAddress.text}, ${_city.text}'),
-              Text('COD: \$${_codAmount.text} USD'),
-            ],
-          ),
-          actions: [
-            AppButton(
-              text: 'Done',
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        ),
+    try {
+      final client = DioClient();
+      final response = await client.post(
+        ApiConstants.createShipment,
+        data: {
+          'consignee': {
+            'name': _recipientName.text.trim(),
+            'phone': _recipientPhone.text.trim(),
+          },
+          'deliveryAddress': {
+            'line1': _deliveryAddress.text.trim(),
+            'city': _city.text.trim(),
+          },
+          'codAmount': double.tryParse(_codAmount.text) ?? 0,
+          'weightKg': double.tryParse(_weightKg.text) ?? 1.5,
+          'serviceType': 'STANDARD',
+          'paymentType': (double.tryParse(_codAmount.text) ?? 0) > 0 ? 'COD' : 'PREPAID',
+          if (_notes.text.isNotEmpty) 'notes': _notes.text.trim(),
+        },
       );
+
+      if (mounted) {
+        setState(() {
+          _isSubmitting = false;
+          _createdTracking = response.data?['data']?['trackingNumber'] ?? 'Created';
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to create shipment: ${e.toString()}'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_createdTracking != null) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          title: const Text('Shipment Created', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+        ),
+        body: Center(
+          child: AppCard(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppColors.successLight,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Icon(LucideIcons.checkCircle2, color: AppColors.success, size: 28),
+                ),
+                const SizedBox(height: 12),
+                const Text('Shipment Created!', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 4),
+                const Text('Tracking Number', style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+                const SizedBox(height: 4),
+                Text(_createdTracking!, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AppColors.primary, fontFamily: 'monospace')),
+                const SizedBox(height: 20),
+                AppButton(
+                  label: 'Create Another',
+                  variant: 'outline',
+                  fullWidth: true,
+                  onPressed: () => setState(() {
+                    _createdTracking = null;
+                    _recipientName.clear();
+                    _recipientPhone.clear();
+                    _deliveryAddress.clear();
+                    _city.clear();
+                    _codAmount.text = '0.00';
+                    _weightKg.text = '1.5';
+                    _notes.clear();
+                  }),
+                ),
+                const SizedBox(height: 8),
+                AppButton(
+                  label: 'Back to Dashboard',
+                  fullWidth: true,
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Book New Parcel'),
-        backgroundColor: AppColors.navyBackground,
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        title: const Text('Create Parcel', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(16),
           children: [
-            // Recipient Details Card
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Recipient Details', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                  const Divider(height: 16),
+                  const Text('Recipient Info', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                  const SizedBox(height: 12),
                   AppTextField(
-                    label: 'Recipient Full Name *',
-                    hint: 'e.g. John Doe',
+                    label: 'Recipient Name',
                     controller: _recipientName,
+                    icon: LucideIcons.user,
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   AppTextField(
-                    label: 'Recipient Phone *',
-                    hint: 'e.g. +1-512-555-0100',
+                    label: 'Phone Number',
                     controller: _recipientPhone,
+                    icon: LucideIcons.phone,
                     keyboardType: TextInputType.phone,
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   AppTextField(
-                    label: 'Delivery Address *',
-                    hint: 'Street, House/Apt, Suite #',
+                    label: 'Delivery Address',
                     controller: _deliveryAddress,
+                    icon: LucideIcons.mapPin,
+                    validator: (v) => v == null || v.isEmpty ? 'Required' : null,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   AppTextField(
-                    label: 'Destination City',
-                    hint: 'Austin, TX',
+                    label: 'City',
                     controller: _city,
+                    icon: LucideIcons.building,
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 14),
-
-            // Parcel & Pricing Card
+            const SizedBox(height: 12),
             AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Parcel Specs & COD', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                  const Divider(height: 16),
+                  const Text('Package Details', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
                         child: AppTextField(
-                          label: 'Weight (kg)',
-                          controller: _weightKg,
+                          label: 'COD Amount (\$)',
+                          controller: _codAmount,
+                          icon: LucideIcons.dollarSign,
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: AppTextField(
-                          label: 'Cash Collection (COD \$)',
-                          controller: _codAmount,
+                          label: 'Weight (kg)',
+                          controller: _weightKg,
+                          icon: LucideIcons.scale,
                           keyboardType: const TextInputType.numberWithOptions(decimal: true),
                         ),
                       ),
                     ],
                   ),
+                  const SizedBox(height: 10),
+                  AppTextField(
+                    label: 'Notes (optional)',
+                    controller: _notes,
+                    icon: LucideIcons.fileText,
+                    maxLines: 2,
+                  ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-
+            const SizedBox(height: 20),
             AppButton(
-              text: 'Confirm & Generate Tracking Number',
-              size: AppButtonSize.lg,
-              isFullWidth: true,
+              label: _isSubmitting ? 'Creating...' : 'Create Shipment',
+              icon: _isSubmitting ? null : LucideIcons.send,
+              fullWidth: true,
               isLoading: _isSubmitting,
-              icon: const Icon(LucideIcons.packagePlus, size: 18),
-              onPressed: _onSubmit,
+              onPressed: _isSubmitting ? null : _onSubmit,
             ),
           ],
         ),
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _recipientName.dispose();
+    _recipientPhone.dispose();
+    _deliveryAddress.dispose();
+    _city.dispose();
+    _codAmount.dispose();
+    _weightKg.dispose();
+    _notes.dispose();
+    super.dispose();
   }
 }

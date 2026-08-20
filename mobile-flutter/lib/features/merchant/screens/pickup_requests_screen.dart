@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/network/dio_client.dart';
+import '../../../core/constants/api_constants.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_text_field.dart';
@@ -21,16 +23,38 @@ class _PickupRequestsScreenState extends State<PickupRequestsScreen> {
 
   void _onRequest() async {
     setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(seconds: 1));
-    if (mounted) {
-      setState(() => _isSubmitting = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Pickup Request Scheduled Successfully!'),
-          backgroundColor: AppColors.success,
-        ),
+    try {
+      final client = DioClient();
+      await client.post(
+        ApiConstants.pickups,
+        data: {
+          'parcelCount': int.tryParse(_parcelCount.text) ?? 1,
+          'timeSlot': _selectedSlot,
+          'vehicleType': _vehicle,
+          'notes': _notes.text.trim(),
+          'preferredDate': DateTime.now().toIso8601String().split('T')[0],
+        },
       );
-      Navigator.of(context).pop();
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pickup Request Scheduled Successfully!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed: ${e.toString()}'),
+            backgroundColor: AppColors.danger,
+          ),
+        );
+      }
     }
   }
 

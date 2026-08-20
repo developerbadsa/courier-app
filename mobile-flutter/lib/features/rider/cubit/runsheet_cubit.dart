@@ -46,10 +46,9 @@ class RunsheetCubit extends Cubit<RunsheetState> {
       }).toList();
 
       _emitLoaded(updated);
-      await _repository.updateStatus(
+      await _repository.completeDelivery(
         shipmentId: shipmentId,
-        status: 'DELIVERED',
-        collectedAmount: codCollected,
+        codCollected: codCollected,
       );
     }
   }
@@ -80,10 +79,9 @@ class RunsheetCubit extends Cubit<RunsheetState> {
       }).toList();
 
       _emitLoaded(updated);
-      await _repository.updateStatus(
+      await _repository.reportFailure(
         shipmentId: shipmentId,
-        status: 'FAILED',
-        reason: reason,
+        reasonCode: reason,
       );
     }
   }
