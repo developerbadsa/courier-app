@@ -336,8 +336,19 @@ export default function AdminFinancePage() {
             <div className="grid grid-cols-3 gap-3">
               <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
                 <div className="text-[10px] font-bold text-slate-500 uppercase">Method</div>
-                <div className="text-xs font-bold text-slate-800 mt-1">{processModal.method === 'bank_transfer' ? '🏦 Bank' : '📧 PayPal'}</div>
+                <div className="text-xs font-bold text-slate-800 mt-1 flex items-center justify-center gap-1">
+                  {processModal.method === 'bank_transfer' ? (
+                    <>
+                      <Building2 className="w-3.5 h-3.5 text-blue-600 shrink-0" /> Bank Wire
+                    </>
+                  ) : (
+                    <>
+                      <Mail className="w-3.5 h-3.5 text-indigo-600 shrink-0" /> PayPal
+                    </>
+                  )}
+                </div>
               </div>
+
               <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
                 <div className="text-[10px] font-bold text-slate-500 uppercase">Requested</div>
                 <div className="text-xs font-bold text-slate-800 mt-1">{processModal.requestedAt}</div>

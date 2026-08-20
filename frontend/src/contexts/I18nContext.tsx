@@ -143,6 +143,8 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   );
 }
 
+import { Globe } from 'lucide-react';
+
 export function useI18n() {
   return useContext(I18nContext);
 }
@@ -158,8 +160,8 @@ export function LanguageToggle({ className = '' }: { className?: string }) {
 
   if (!mounted) {
     return (
-      <div className={`inline-flex items-center px-2 py-1 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-md ${className}`}>
-        🌐 EN
+      <div className={`inline-flex items-center gap-1.5 px-2 py-1 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-md ${className}`}>
+        <Globe className="w-3.5 h-3.5 text-slate-500" /> EN
       </div>
     );
   }
@@ -170,8 +172,9 @@ export function LanguageToggle({ className = '' }: { className?: string }) {
       className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold rounded-md border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 transition-colors shadow-xs ${className}`}
       title={locale === 'en' ? 'Switch to Arabic' : 'Switch to English'}
     >
-      <span>🌐</span>
+      <Globe className="w-3.5 h-3.5 text-blue-600 shrink-0" />
       <span>{locale === 'en' ? 'EN' : 'العربية'}</span>
     </button>
   );
 }
+

@@ -3,8 +3,9 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
   Camera, Zap, CheckCircle2, XCircle, Package, Volume2, VolumeX,
-  RotateCcw, ArrowLeft, AlertTriangle, BarChart3, Clock, Truck,
+  RotateCcw, ArrowLeft, AlertTriangle, BarChart3, Clock, Truck, Info,
 } from 'lucide-react';
+
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout';
 import { Button, Card, Badge, Input } from '@/components/ui';
@@ -201,9 +202,11 @@ export default function ScanInboundPage() {
                 className="font-mono text-sm"
                 disabled={isScanning}
               />
-              <p className="text-[10px] text-slate-400 mt-2">
-                💡 USB scanner acts as keyboard — scan triggers Enter automatically
+              <p className="text-[10px] text-slate-400 mt-2 flex items-center gap-1.5">
+                <Info className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                <span>USB scanner acts as keyboard — scan triggers Enter automatically</span>
               </p>
+
             </form>
           </Card>
 

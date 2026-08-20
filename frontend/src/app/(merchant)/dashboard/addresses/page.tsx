@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import {
-  MapPin, Plus, Edit2, Trash2, Star, Home, Building2,
+  MapPin, Package, Plus, Edit2, Trash2, Star, Home, Building2,
   ArrowLeft, Phone, User, FileText,
 } from 'lucide-react';
+
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout';
 import { Button, Card, Modal, Input, Badge } from '@/components/ui';
@@ -263,7 +264,18 @@ export default function AddressesPage() {
                       : 'border-slate-200 bg-white text-slate-500 hover:bg-slate-50'
                   }`}
                 >
-                  {t === 'PICKUP' ? '📦 Pickup Location' : '📍 Delivery Address'}
+                  <span className="flex items-center justify-center gap-1.5">
+                    {t === 'PICKUP' ? (
+                      <>
+                        <Package className="w-3.5 h-3.5" /> Pickup Location
+                      </>
+                    ) : (
+                      <>
+                        <MapPin className="w-3.5 h-3.5" /> Delivery Address
+                      </>
+                    )}
+                  </span>
+
                 </button>
               ))}
             </div>

@@ -249,16 +249,24 @@ export default function BulkImportPage() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {[
-                      { col: 'consigneeName', req: '✅ Yes', ex: 'John Doe' },
-                      { col: 'consigneePhone', req: '✅ Yes', ex: '+1-555-0100' },
-                      { col: 'address', req: 'Optional', ex: '123 Main St, Miami FL' },
-                      { col: 'weightKg', req: 'Optional', ex: '2.5' },
-                      { col: 'codAmount', req: 'Optional', ex: '45.00' },
-                      { col: 'paymentType', req: 'COD/PREPAID', ex: 'COD' },
+                      { col: 'consigneeName', req: true, ex: 'John Doe' },
+                      { col: 'consigneePhone', req: true, ex: '+1-555-0100' },
+                      { col: 'address', req: false, ex: '123 Main St, Miami FL' },
+                      { col: 'weightKg', req: false, ex: '2.5' },
+                      { col: 'codAmount', req: false, ex: '45.00' },
+                      { col: 'paymentType', req: false, ex: 'COD / PREPAID' },
                     ].map((r) => (
                       <tr key={r.col} className="text-slate-700">
                         <td className="py-2 px-3 font-mono font-semibold">{r.col}</td>
-                        <td className="py-2 px-3">{r.req}</td>
+                        <td className="py-2 px-3">
+                          {r.req ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Required
+                            </span>
+                          ) : (
+                            <span className="text-[11px] font-medium text-slate-400">Optional</span>
+                          )}
+                        </td>
                         <td className="py-2 px-3 font-mono text-slate-500">{r.ex}</td>
                       </tr>
                     ))}
@@ -276,10 +284,12 @@ export default function BulkImportPage() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className="text-sm font-bold text-slate-900">Preview Data</h2>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    📄 {file?.name} — {parsedRows.length} shipments ready to import
+                  <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>{file?.name} — {parsedRows.length} shipments ready to import</span>
                   </p>
                 </div>
+
                 <button
                   onClick={() => { setStep('upload'); setParsedRows([]); setFile(null); }}
                   className="text-xs text-slate-500 hover:text-slate-700 font-semibold"
