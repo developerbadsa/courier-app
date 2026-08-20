@@ -1,5 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
+cd /d "%~dp0"
 
 echo ========================================================
 echo   📦 Building Shohnaat Logistics Android Release APK
@@ -13,35 +14,42 @@ if %errorlevel% neq 0 (
     if exist "C:\src\flutter\bin\flutter.bat" (
         set "FLUTTER_CMD=C:\src\flutter\bin\flutter.bat"
     ) else (
-        echo [!] Flutter SDK is not found in PATH.
-        echo [!] You can build the APK in 2 ways:
-        echo     1. Via GitHub Actions (Cloud Builder): Push to git and download APK from Actions tab.
-        echo     2. Local Windows: Run powershell -ExecutionPolicy Bypass -File install_flutter_windows.ps1
-        echo.
+        echo [!] Flutter SDK is not found at C:\src\flutter.
         pause
         exit /b 1
     )
 )
 
-echo [1/3] Setting up Android build files...
-call %FLUTTER_CMD% create . --platforms=android --org com.shohnaat
-
-echo [2/3] Fetching Flutter dependencies...
+echo [1/2] Fetching Flutter dependencies...
 call %FLUTTER_CMD% pub get
 
-echo [3/3] Compiling Release APK...
-call %FLUTTER_CMD% build apk --release --android-skip-build-dependency-validation
+echo.
+echo [2/2] Compiling Release APK (assembleRelease)...
+call %FLUTTER_CMD% build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation
+
+if exist "C:\tmp\shohnaat_b\app\outputs\flutter-apk\app-release.apk" (
+    if not exist "build\app\outputs\flutter-apk" mkdir "build\app\outputs\flutter-apk"
+    if not exist "release-apk" mkdir "release-apk"
+    copy /y "C:\tmp\shohnaat_b\app\outputs\flutter-apk\app-release.apk" "build\app\outputs\flutter-apk\app-release.apk" >nul
+    copy /y "C:\tmp\shohnaat_b\app\outputs\flutter-apk\app-release.apk" "release-apk\Shohnaat-Logistics-v1.0.0-release.apk" >nul
+)
 
 echo.
-if exist "build\app\outputs\flutter-apk\app-release.apk" (
+if exist "release-apk\Shohnaat-Logistics-v1.0.0-release.apk" (
+    echo ========================================================
+    echo ✅ SUCCESS: Release APK Built Successfully!
+    echo ========================================================
+    echo Location: %~dp0release-apk\Shohnaat-Logistics-v1.0.0-release.apk
+    echo.
+    echo You can transfer this APK to any Android phone via USB/WhatsApp/Drive to install!
+) else if exist "build\app\outputs\flutter-apk\app-release.apk" (
     echo ========================================================
     echo ✅ SUCCESS: Release APK Built Successfully!
     echo ========================================================
     echo Location: %~dp0build\app\outputs\flutter-apk\app-release.apk
     echo.
-    echo You can transfer this APK to any Android phone via USB/WhatsApp/Drive to install!
 ) else (
-    echo [!] Build completed. Check build\app\outputs\flutter-apk\
+    echo [!] Build completed. Check release-apk\ or build\app\outputs\flutter-apk\
 )
 echo.
 pause

@@ -1,8 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
+cd /d "%~dp0"
 
 echo ========================================================
-echo   📦 Building Shohnaat Logistics Google Play App Bundle (.aab)
+echo   📦 Building Google Play Store App Bundle (.aab)
 echo ========================================================
 echo.
 
@@ -13,21 +14,22 @@ if %errorlevel% neq 0 (
     if exist "C:\src\flutter\bin\flutter.bat" (
         set "FLUTTER_CMD=C:\src\flutter\bin\flutter.bat"
     ) else (
-        echo [!] Flutter SDK was not found in your system PATH.
-        echo [!] You can also download the ready .aab from GitHub Actions tab!
+        echo [!] Flutter SDK is not found.
         pause
         exit /b 1
     )
 )
 
-echo [1/3] Setting up Android build files...
-call %FLUTTER_CMD% create . --platforms=android --org com.shohnaat
+echo [1/3] Cleaning previous build cache...
+call %FLUTTER_CMD% clean
 
+echo.
 echo [2/3] Fetching Flutter dependencies...
 call %FLUTTER_CMD% pub get
 
-echo [3/3] Compiling Google Play Release App Bundle (.aab)...
-call %FLUTTER_CMD% build appbundle --release --android-skip-build-dependency-validation
+echo.
+echo [3/3] Compiling Play Store Release App Bundle (bundleRelease)...
+call %FLUTTER_CMD% build appbundle --release --no-tree-shake-icons --android-skip-build-dependency-validation
 
 echo.
 if exist "build\app\outputs\bundle\release\app-release.aab" (
@@ -36,9 +38,9 @@ if exist "build\app\outputs\bundle\release\app-release.aab" (
     echo ========================================================
     echo Location: %~dp0build\app\outputs\bundle\release\app-release.aab
     echo.
-    echo Upload this .aab file directly to Google Play Console Production / Internal Testing track!
+    echo Upload this .aab file directly to Google Play Console!
 ) else (
-    echo [!] Build completed. Check build\app\outputs\bundle\release\
+    echo [!] Build finished. Check build\app\outputs\bundle\release\
 )
 echo.
 pause

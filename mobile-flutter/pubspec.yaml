@@ -23,8 +23,7 @@ dependencies:
   flutter_secure_storage: ^9.2.2
 
   # Typography & Icons
-  google_fonts: ^6.2.1
-  lucide_icons: ^0.257.0
+  lucide_icons_flutter: ^3.1.15
 
   # Hardware & Native Features
   url_launcher: ^6.3.0
