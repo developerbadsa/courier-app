@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Truck, Bike, Plus, MapPin, Calendar, Package, Clock, CheckCircle,
   XCircle, AlertTriangle, User, ArrowLeft, Eye,
 } from 'lucide-react';
+
 
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout';
@@ -108,11 +109,26 @@ const renderVehicle = (type: string) => {
 
 /* ── Page ── */
 export default function PickupsPage() {
-  const [pickups] = useState<PickupRequest[]>(MOCK_PICKUPS);
+  const [pickups, setPickups] = useState<PickupRequest[]>(MOCK_PICKUPS);
   const [activeTab, setActiveTab] = useState('all');
   const [detailModal, setDetailModal] = useState<PickupRequest | null>(null);
 
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('shohnaat_custom_pickups');
+      if (stored) {
+        const customList: PickupRequest[] = JSON.parse(stored);
+        if (customList && customList.length > 0) {
+          setPickups([...customList, ...MOCK_PICKUPS]);
+        }
+      }
+    } catch {
+      // Handled
+    }
+  }, []);
+
   const filtered = activeTab === 'all' ? pickups : pickups.filter((p) => p.status === activeTab);
+
   const summary = {
     pending: pickups.filter((p) => p.status === 'PENDING').length,
     assigned: pickups.filter((p) => p.status === 'ASSIGNED').length,

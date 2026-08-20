@@ -69,9 +69,34 @@ export default function NewPickupPage() {
   ];
 
   const handleSubmit = () => {
-    // TODO: POST /api/v1/pickups
+    const newId = `PK-${Math.floor(100 + Math.random() * 900)}`;
+    const newPickup = {
+      id: newId,
+      address: selectedAddress?.line1 || '1200 Logistics Blvd, Dock #3',
+      addressLabel: selectedAddress?.label || 'Main Warehouse',
+      city: selectedAddress?.city || 'Austin, TX',
+      requestedDate: form.requestedDate || 'Tomorrow',
+      timeSlot: TIME_SLOTS.find((t) => t.key === form.timeSlot)?.label || 'Morning (8AM–12PM)',
+      parcelCount: parseInt(form.parcelCount) || 1,
+      vehicleType: form.vehicleType === 'BIKE' ? 'Bike' : form.vehicleType === 'TRUCK' ? 'Truck' : 'Van',
+      driverNotes: form.driverNotes || '',
+      status: 'PENDING',
+      riderName: null,
+      createdAt: 'Just now',
+    };
+
+    try {
+      const stored = localStorage.getItem('shohnaat_custom_pickups');
+      const list = stored ? JSON.parse(stored) : [];
+      list.unshift(newPickup);
+      localStorage.setItem('shohnaat_custom_pickups', JSON.stringify(list));
+    } catch {
+      // Ignored
+    }
+
     setSubmitted(true);
   };
+
 
   if (submitted) {
     return (
