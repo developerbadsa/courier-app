@@ -52,6 +52,8 @@ export const viewport: Viewport = {
   themeColor: '#2563eb',
 };
 
+import StoreProvider from '@/store/StoreProvider';
+
 export default function RootLayout({
   children,
 }: {
@@ -68,11 +70,14 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="Shohnaat Rider" />
       </head>
       <body className={`${inter.className} min-h-screen bg-slate-50 text-slate-900 antialiased font-sans`}>
-        <QueryProvider>
-          <ErrorBoundary>{children}</ErrorBoundary>
-          <ToastContainer />
-        </QueryProvider>
+        <StoreProvider>
+          <QueryProvider>
+            <ErrorBoundary>{children}</ErrorBoundary>
+            <ToastContainer />
+          </QueryProvider>
+        </StoreProvider>
       </body>
     </html>
   );
 }
+

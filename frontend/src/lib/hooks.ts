@@ -209,3 +209,72 @@ export function useRiders() {
 export function useHubs() {
   return useApiQuery<unknown[]>(['hubs'], '/api/v1/hubs');
 }
+
+export function useAddresses(params?: { type?: string }) {
+  const qs = new URLSearchParams();
+  if (params?.type) qs.set('type', params.type);
+  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+  return useApiQuery<unknown[]>(
+    ['addresses', JSON.stringify(params || {})],
+    `/api/v1/addresses${suffix}`,
+  );
+}
+
+export function useZones() {
+  return useApiQuery<unknown[]>(['zones'], '/api/v1/zones');
+}
+
+export function useAuditLogs(params?: { page?: number; limit?: number }) {
+  const query = params || {};
+  const qs = new URLSearchParams();
+  if (query.page) qs.set('page', String(query.page));
+  if (query.limit) qs.set('limit', String(query.limit));
+  const suffix = qs.toString() ? `?${qs.toString()}` : '';
+  return useApiQuery<unknown[]>(
+    ['audit-logs', JSON.stringify(query)],
+    `/api/v1/audit-logs${suffix}`,
+  );
+}
+
+export function useDeveloperKeys() {
+  return useApiQuery<unknown[]>(['developer-keys'], '/api/v1/developer/keys');
+}
+
+export function useDeveloperWebhooks() {
+  return useApiQuery<unknown[]>(['developer-webhooks'], '/api/v1/developer/webhooks');
+}
+
+export function useDeveloperLogs() {
+  return useApiQuery<unknown[]>(['developer-logs'], '/api/v1/developer/logs');
+}
+
+export function useShipmentStats() {
+  return useApiQuery<{ totalShipments: number; pending: number; inTransit: number; delivered: number; failed: number; codCollected: number; deliveryRate: number }>(
+    ['shipment-stats'],
+    '/api/v1/shipments/stats',
+  );
+}
+
+export function useNotificationSettings() {
+  return useApiQuery<unknown>(['notification-settings'], '/api/v1/notifications/settings');
+}
+
+export function useNotificationQueue() {
+  return useApiQuery<unknown>(['notification-queue'], '/api/v1/notifications/queue');
+}
+
+export function useNotificationStats() {
+  return useApiQuery<unknown[]>(['notification-stats'], '/api/v1/notifications/stats');
+}
+
+export function useNotificationLogs() {
+  return useApiQuery<unknown[]>(['notification-logs'], '/api/v1/notifications/logs');
+}
+
+export function useAdminFinanceStats() {
+  return useApiQuery<unknown>(['admin-finance-stats'], '/api/v1/finance/admin/stats');
+}
+
+export function useAdminSettlements() {
+  return useApiQuery<unknown[]>(['admin-settlements'], '/api/v1/finance/admin/settlements');
+}

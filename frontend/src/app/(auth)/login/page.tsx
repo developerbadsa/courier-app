@@ -14,6 +14,10 @@ import {
 } from 'lucide-react';
 import { Input, Button, Checkbox, Select } from '@/components/ui';
 import { apiPost, showToast } from '@/lib/api';
+import { useAppDispatch } from '@/store/hooks';
+import { setCredentials } from '@/store/slices/authSlice';
+
+
 
 const ROLE_PRESETS: Record<
   string,
@@ -46,6 +50,7 @@ const ROLE_PRESETS: Record<
 };
 
 export default function LoginPage() {
+  const dispatch = useAppDispatch();
   const [selectedRole, setSelectedRole] = useState<string>('merchant');
   const [email, setEmail] = useState<string>('merchant@shohnaat.com');
   const [password, setPassword] = useState<string>('merchant123');
@@ -71,18 +76,25 @@ export default function LoginPage() {
     setIsLoading(true);
     setError(null);
 
-    const result = await apiPost<{ accessToken: string; user: { roles: string[] } }>(
+    const result = await apiPost<{ accessToken: string; user: { id: string; name: string; email: string; roles: string[] } }>(
       '/api/v1/auth/login',
       { email, password },
     );
 
     if (result.success && result.data) {
-      localStorage.setItem('shohnaat_token', result.data.accessToken);
-      localStorage.setItem('shohnaat_user', JSON.stringify(result.data.user));
+      const userRoles = result.data.user?.roles || [];
+      const role = Array.isArray(userRoles) ? userRoles[0] : 'merchant';
+
+      dispatch(
+        setCredentials({
+          user: result.data.user,
+          token: result.data.accessToken,
+          role,
+        })
+      );
+
       showToast('success', 'Signed in successfully');
 
-      const userRoles = result.data.user?.roles || [];
-      const role = Array.isArray(userRoles) ? userRoles[0] : '';
       if (role === 'super_admin' || role === 'operator') {
         window.location.href = '/admin';
       } else if (role === 'rider') {
@@ -96,6 +108,7 @@ export default function LoginPage() {
 
     setIsLoading(false);
   };
+
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 bg-slate-50 selection:bg-blue-600 selection:text-white font-sans">
