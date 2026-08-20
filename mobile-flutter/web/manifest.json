@@ -1,0 +1,23 @@
+{
+    "name": "Shohnaat Logistics Mobile",
+    "short_name": "Shohnaat",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0b1329",
+    "theme_color": "#2563eb",
+    "description": "Shohnaat Logistics Cross-Platform Mobile App",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
