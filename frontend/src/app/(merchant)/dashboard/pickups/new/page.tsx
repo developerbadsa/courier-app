@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import {
   ArrowLeft, ChevronRight, CheckCircle, MapPin, Calendar,
-  Clock, Package, Truck, FileText, Home, Building2, Star,
+  Clock, Package, Truck, Bike, Sun, Sunrise, FileText, Home, Building2, Star,
 } from 'lucide-react';
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout';
@@ -29,15 +29,16 @@ const MOCK_ADDRESSES: Address[] = [
 const STEPS = ['Warehouse', 'Schedule', 'Details', 'Review'];
 
 const TIME_SLOTS = [
-  { key: 'MORNING', label: 'Morning', time: '8:00 AM — 12:00 PM', icon: '🌅' },
-  { key: 'AFTERNOON', label: 'Afternoon', time: '1:00 PM — 5:00 PM', icon: '☀️' },
+  { key: 'MORNING', label: 'Morning', time: '8:00 AM — 12:00 PM', icon: Sunrise },
+  { key: 'AFTERNOON', label: 'Afternoon', time: '1:00 PM — 5:00 PM', icon: Sun },
 ];
 
 const VEHICLE_TYPES = [
-  { key: 'BIKE', label: 'Bike', desc: 'Up to 5 parcels', icon: '🏍️', capacity: 5 },
-  { key: 'VAN', label: 'Van', desc: 'Up to 50 parcels', icon: '🚐', capacity: 50 },
-  { key: 'TRUCK', label: 'Truck', desc: '50+ parcels', icon: '🚛', capacity: 999 },
+  { key: 'BIKE', label: 'Bike', desc: 'Up to 5 parcels', icon: Bike, color: 'text-blue-600', capacity: 5 },
+  { key: 'VAN', label: 'Van', desc: 'Up to 50 parcels', icon: Truck, color: 'text-amber-600', capacity: 50 },
+  { key: 'TRUCK', label: 'Truck', desc: '50+ parcels', icon: Truck, color: 'text-indigo-600', capacity: 999 },
 ];
+
 
 /* ── Page ── */
 export default function NewPickupPage() {
@@ -99,10 +100,17 @@ export default function NewPickupPage() {
               <span className="text-slate-500">Parcels</span>
               <span className="font-semibold text-slate-800">{form.parcelCount}</span>
             </div>
-            <div className="flex justify-between text-xs">
+            <div className="flex justify-between text-xs items-center">
               <span className="text-slate-500">Vehicle</span>
-              <span className="font-semibold text-slate-800">{VEHICLE_TYPES.find((v) => v.key === form.vehicleType)?.icon} {form.vehicleType}</span>
+              <span className="font-semibold text-slate-800 flex items-center gap-1.5">
+                {(() => {
+                  const Icon = VEHICLE_TYPES.find((v) => v.key === form.vehicleType)?.icon || Truck;
+                  return <Icon className="w-3.5 h-3.5 text-blue-600" />;
+                })()}
+                {form.vehicleType}
+              </span>
             </div>
+
           </div>
 
           <div className="flex gap-3 mt-6 justify-center">
@@ -244,7 +252,7 @@ export default function NewPickupPage() {
                     }`}
                   >
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-lg">{slot.icon}</span>
+                      <slot.icon className="w-4 h-4 text-amber-500 shrink-0" />
                       <span className="text-sm font-bold text-slate-900">{slot.label}</span>
                     </div>
                     <div className="text-xs text-slate-500">{slot.time}</div>
@@ -286,13 +294,16 @@ export default function NewPickupPage() {
                         : 'bg-white border-slate-200 hover:border-slate-300'
                     }`}
                   >
-                    <div className="text-2xl mb-1">{v.icon}</div>
+                    <div className="w-10 h-10 mx-auto rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center mb-2">
+                      <v.icon className={`w-5 h-5 ${v.color}`} />
+                    </div>
                     <div className="text-xs font-bold text-slate-900">{v.label}</div>
                     <div className="text-[10px] text-slate-500 mt-0.5">{v.desc}</div>
                   </button>
                 ))}
               </div>
             </div>
+
 
             {/* Driver Notes */}
             <div>
@@ -345,10 +356,16 @@ export default function NewPickupPage() {
                 <div className="text-xl font-bold text-blue-700">{form.parcelCount || '—'}</div>
                 <div className="text-[10px] font-bold text-blue-500 uppercase">Parcels</div>
               </div>
-              <div>
-                <div className="text-xl">{VEHICLE_TYPES.find((v) => v.key === form.vehicleType)?.icon}</div>
+              <div className="flex flex-col items-center justify-center">
+                <div className="mb-1">
+                  {(() => {
+                    const Icon = VEHICLE_TYPES.find((v) => v.key === form.vehicleType)?.icon || Truck;
+                    return <Icon className="w-5 h-5 text-blue-600 mx-auto" />;
+                  })()}
+                </div>
                 <div className="text-[10px] font-bold text-blue-500 uppercase">{form.vehicleType}</div>
               </div>
+
               <div>
                 <div className="text-sm font-bold text-blue-700">{TIME_SLOTS.find((t) => t.key === form.timeSlot)?.label}</div>
                 <div className="text-[10px] font-bold text-blue-500 uppercase">Time Slot</div>

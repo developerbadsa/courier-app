@@ -215,9 +215,14 @@ export default function FleetPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded border transition-colors ${filter === f ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+            className={`px-3 py-1.5 text-xs font-semibold rounded border transition-colors flex items-center gap-1.5 ${filter === f ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}
           >
-            {f === 'all' ? `All (${stats.total})` : f === 'on-duty' ? `On Duty (${stats.onDuty})` : f === 'off-duty' ? `Off Duty (${stats.total - stats.onDuty})` : f === 'bike' ? `🏍️ Bike (${stats.bikes})` : f === 'van' ? `🚐 Van (${stats.vans})` : `🚛 Truck (${stats.trucks})`}
+            {f === 'bike' && <Bike className="w-3.5 h-3.5 text-blue-600" />}
+            {f === 'van' && <Truck className="w-3.5 h-3.5 text-amber-600" />}
+            {f === 'truck' && <Truck className="w-3.5 h-3.5 text-indigo-600" />}
+            <span>
+              {f === 'all' ? `All (${stats.total})` : f === 'on-duty' ? `On Duty (${stats.onDuty})` : f === 'off-duty' ? `Off Duty (${stats.total - stats.onDuty})` : f === 'bike' ? `Bike (${stats.bikes})` : f === 'van' ? `Van (${stats.vans})` : `Truck (${stats.trucks})`}
+            </span>
           </button>
         ))}
       </div>
@@ -251,14 +256,15 @@ export default function FleetPage() {
             <label className="text-[13px] font-semibold text-slate-700 mb-2 block">Vehicle Type</label>
             <div className="flex gap-2">
               {(['Bike', 'Van', 'Truck'] as const).map((v) => (
-                <button key={v} onClick={() => setForm({ ...form, vehicleType: v })} className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded border transition-colors ${form.vehicleType === v ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
-                  {v === 'Bike' ? '🏍️' : v === 'Van' ? '🚐' : '🚛'} {v}
+                <button key={v} onClick={() => setForm({ ...form, vehicleType: v })} className={`flex items-center gap-2 px-4 py-2.5 text-xs font-semibold rounded border transition-colors ${form.vehicleType === v ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-slate-200 text-slate-500 hover:bg-slate-50'}`}>
+                  {v === 'Bike' ? <Bike className="w-4 h-4 text-blue-600" /> : <Truck className="w-4 h-4 text-amber-600" />} {v}
                 </button>
               ))}
             </div>
           </div>
         </div>
       </Modal>
+
     </DashboardLayout>
   );
 }

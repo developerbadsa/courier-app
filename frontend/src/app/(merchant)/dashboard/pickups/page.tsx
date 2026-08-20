@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import {
-  Truck, Plus, MapPin, Calendar, Package, Clock, CheckCircle,
+  Truck, Bike, Plus, MapPin, Calendar, Package, Clock, CheckCircle,
   XCircle, AlertTriangle, User, ArrowLeft, Eye,
 } from 'lucide-react';
+
 import Link from 'next/link';
 import { DashboardLayout } from '@/components/layout';
 import { Button, Card, DataTable, Column, Tabs, Badge, StatusBadge, Modal } from '@/components/ui';
@@ -76,10 +77,33 @@ const STATUS_BADGE: Record<string, string> = {
   CANCELLED: 'CANCELLED',
 };
 
-const VEHICLE_ICONS: Record<string, string> = {
-  Bike: '🏍️',
-  Van: '🚐',
-  Truck: '🚛',
+const renderVehicle = (type: string) => {
+  switch (type) {
+    case 'Bike':
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+          <Bike className="w-3.5 h-3.5 text-blue-600 shrink-0" /> Bike
+        </span>
+      );
+    case 'Van':
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+          <Truck className="w-3.5 h-3.5 text-amber-600 shrink-0" /> Van
+        </span>
+      );
+    case 'Truck':
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+          <Truck className="w-3.5 h-3.5 text-indigo-600 shrink-0" /> Truck
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700">
+          <Truck className="w-3.5 h-3.5 text-slate-500 shrink-0" /> {type}
+        </span>
+      );
+  }
 };
 
 /* ── Page ── */
@@ -111,7 +135,7 @@ export default function PickupsPage() {
         <div>
           <div className="text-xs font-semibold text-slate-900">{row.addressLabel}</div>
           <div className="flex items-center gap-1 text-[11px] text-slate-500">
-            <MapPin className="w-3 h-3" /> {row.city}
+            <MapPin className="w-3 h-3 text-slate-400" /> {row.city}
           </div>
         </div>
       ),
@@ -124,7 +148,7 @@ export default function PickupsPage() {
             <Calendar className="w-3 h-3 text-slate-400" /> {row.requestedDate}
           </div>
           <div className="flex items-center gap-1 text-[11px] text-slate-500">
-            <Clock className="w-3 h-3" /> {row.timeSlot}
+            <Clock className="w-3 h-3 text-slate-400" /> {row.timeSlot}
           </div>
         </div>
       ),
@@ -139,18 +163,15 @@ export default function PickupsPage() {
     },
     {
       key: 'vehicleType', header: 'Vehicle',
-      render: (row) => (
-        <span className="text-xs font-semibold text-slate-700">
-          {VEHICLE_ICONS[row.vehicleType] || '🚗'} {row.vehicleType}
-        </span>
-      ),
+      render: (row) => renderVehicle(row.vehicleType),
     },
     {
       key: 'rider', header: 'Rider',
       render: (row) => row.riderName
-        ? <span className="flex items-center gap-1 text-xs font-medium text-slate-700"><User className="w-3 h-3" /> {row.riderName}</span>
+        ? <span className="flex items-center gap-1.5 text-xs font-medium text-slate-700"><User className="w-3 h-3 text-slate-400" /> {row.riderName}</span>
         : <span className="text-[11px] text-slate-400 italic">Unassigned</span>,
     },
+
     {
       key: 'status', header: 'Status',
       render: (row) => <StatusBadge status={STATUS_BADGE[row.status] || row.status} size="sm" />,
@@ -256,9 +277,10 @@ export default function PickupsPage() {
                 <div className="text-[10px] text-slate-500 font-semibold">Parcels</div>
               </div>
               <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
-                <div className="text-lg font-bold text-slate-900">{VEHICLE_ICONS[detailModal.vehicleType]} {detailModal.vehicleType}</div>
-                <div className="text-[10px] text-slate-500 font-semibold">Vehicle</div>
+                <div className="text-sm font-bold text-slate-900 flex justify-center items-center gap-1 mt-1">{renderVehicle(detailModal.vehicleType)}</div>
+                <div className="text-[10px] text-slate-500 font-semibold mt-0.5">Vehicle</div>
               </div>
+
               <div className="p-3 bg-slate-50 rounded border border-slate-200 text-center">
                 <div className="text-sm font-bold text-slate-900">{detailModal.riderName || '—'}</div>
                 <div className="text-[10px] text-slate-500 font-semibold">Rider</div>
