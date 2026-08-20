@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:geolocator/geolocator.dart';
 import '../constants/api_constants.dart';
 import '../network/dio_client.dart';
@@ -67,26 +66,11 @@ class LocationService {
 
     _isTracking = true;
 
-    // Battery-efficient settings: low power, updates every 50m
-    // but we filter for 15m+ in the listener for smoother tracking
-    final locationSettings = Platform.isAndroid
-        ? AndroidSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 15,
-            intervalDuration: const Duration(seconds: 10),
-            foregroundNotificationIntentDetails: AndroidSettings.constructor(
-              channelName: 'Shohnaat GPS Tracking',
-              title: 'Shohnaat Logistics',
-              subtitle: 'Broadcasting live location to dispatch',
-              importance: Importancy.low,
-              enableWakeLock: true,
-            ),
-          )
-        : LocationSettings(
-            accuracy: LocationAccuracy.high,
-            distanceFilter: 15,
-            timeLimit: const Duration(seconds: 15),
-          );
+    // Battery-efficient settings: filter updates every 15m distance
+    const locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 15,
+    );
 
     _positionStream = Geolocator.getPositionStream(
       locationSettings: locationSettings,

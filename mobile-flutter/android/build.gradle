@@ -5,12 +5,23 @@ allprojects {
     }
 }
 
-rootProject.buildDir = "../build"
+rootProject.buildDir = '../build'
 subprojects {
     project.buildDir = "${rootProject.buildDir}/${project.name}"
 }
 subprojects {
-    project.evaluationDependsOn(":app")
+    project.evaluationDependsOn(':app')
+
+    // Ensure all subprojects (geolocator_android, etc.) have compileSdk set
+    afterEvaluate { project ->
+        if (project.hasProperty('android')) {
+            project.android {
+                if (compileSdk == null) {
+                    compileSdk 34
+                }
+            }
+        }
+    }
 }
 
 tasks.register("clean", Delete) {
