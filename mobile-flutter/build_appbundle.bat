@@ -27,7 +27,7 @@ echo [2/3] Fetching Flutter dependencies...
 call %FLUTTER_CMD% pub get
 
 echo [3/3] Compiling Google Play Release App Bundle (.aab)...
-call %FLUTTER_CMD% build appbundle --release
+call %FLUTTER_CMD% build appbundle --release --android-skip-build-dependency-validation
 
 echo.
 if exist "build\app\outputs\bundle\release\app-release.aab" (

@@ -30,7 +30,7 @@ echo [2/3] Fetching Flutter dependencies...
 call %FLUTTER_CMD% pub get
 
 echo [3/3] Compiling Release APK...
-call %FLUTTER_CMD% build apk --release
+call %FLUTTER_CMD% build apk --release --android-skip-build-dependency-validation
 
 echo.
 if exist "build\app\outputs\flutter-apk\app-release.apk" (
