@@ -34,7 +34,7 @@ async function main() {
   console.log(`  ✓ Branch: ${branch.name}`);
 
   // Create admin user
-  const adminPassword = await bcrypt.hash('admin123', 12);
+  const adminPassword = await bcrypt.hash('Admin#2026!Global', 12);
   
   const adminUser = await prisma.user.upsert({
     where: { email: 'admin@shohnaat.com' },
