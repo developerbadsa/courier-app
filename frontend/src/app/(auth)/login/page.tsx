@@ -88,10 +88,11 @@ export default function LoginPage() {
           localStorage.setItem('shohnaat_user', JSON.stringify(data.data.user));
         }
 
-        const role = data.data?.user?.role?.name || '';
-        if (role === 'super_admin' || role === 'operator') {
+        const userRoles = data.data?.user?.roles || [];
+        const role = Array.isArray(userRoles) ? userRoles[0] : (data.data?.user?.role?.name || '');
+        if (role === 'super_admin' || role === 'operator' || userRoles.includes('super_admin') || userRoles.includes('operator')) {
           window.location.href = '/admin';
-        } else if (role === 'rider') {
+        } else if (role === 'rider' || userRoles.includes('rider')) {
           window.location.href = '/rider';
         } else {
           window.location.href = '/dashboard';
@@ -107,6 +108,7 @@ export default function LoginPage() {
           setError(data.message || 'Invalid email or password.');
         }
       }
+
     } catch {
       if (email === 'admin@shohnaat.com' && password === 'admin123') {
         window.location.href = '/admin';

@@ -110,8 +110,10 @@ export default function BulkImportPage() {
     setImporting(true);
     try {
       const token = localStorage.getItem('shohnaat_token');
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'}/api/v1/shipments/bulk`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const res = await fetch(`${apiUrl}/api/v1/shipments/bulk`, {
         method: 'POST',
+
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
