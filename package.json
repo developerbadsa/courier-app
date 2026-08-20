@@ -1,0 +1,30 @@
+{
+  "name": "shohnaat-logistics-workspace",
+  "version": "1.0.0",
+  "description": "Shohnaat Enterprise Multi-Tenant Courier & Logistics SaaS Workspace",
+  "scripts": {
+    "dev": "concurrently -n \"BACKEND,FRONTEND\" -c \"bgBlue.bold,bgMagenta.bold\" \"npm run dev --prefix shohnaat-backend\" \"npm run dev --prefix frontend\"",
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "npm run dev --prefix shohnaat-backend",
+    "dev:storage": "npm run dev --prefix shohnaat-storage-service",
+    "build:frontend": "npm run build --prefix frontend",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "tunnel": "npm run tunnel --prefix shohnaat-backend",
+    "deploy": "powershell -ExecutionPolicy Bypass -File deploy.ps1"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "logistics",
+    "courier",
+    "saas",
+    "nextjs",
+    "express",
+    "docker"
+  ],
+  "author": "Shohnaat Engineering",
+  "license": "ISC"
+}
