@@ -35,6 +35,7 @@ interface MerchantBalance {
 const EMPTY_STATS = { activeMerchants: 0, totalPaidOut: 0, payoutsCompleted: 0, pendingPayoutAmount: 0, pendingPayoutCount: 0, totalCODCollected: 0 };
 
 import { apiGet, apiPost } from '@/lib/api';
+import { downloadSettlementReceipt } from '@/lib/settlementReceiptPdf';
 
 /* ── Page ── */
 export default function AdminFinancePage() {
@@ -45,6 +46,9 @@ export default function AdminFinancePage() {
   const [processModal, setProcessModal] = useState<PayoutRequest | null>(null);
   const [batchModal, setBatchModal] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [processProvider, setProcessProvider] = useState<'sandbox' | 'stripe' | 'paypal'>('sandbox');
+  const [processStatus, setProcessStatus] = useState<string>('');
+  const [processResult, setProcessResult] = useState<{ success: boolean; gatewayReference?: string; error?: string } | null>(null);
 
   // Fetch real settlements and stats from backend
   React.useEffect(() => {
@@ -105,20 +109,39 @@ export default function AdminFinancePage() {
   };
 
   const handleProcess = async (id: string) => {
+    setProcessing(true);
+    setProcessStatus('Validating merchant balance...');
+    setProcessResult(null);
+
     try {
-      await apiPost(`/api/v1/finance/admin/settlements/${id}/process`, { provider: 'sandbox' });
-    } catch {}
-    setPayouts((prev) => prev.map((p) => p.id === id ? { ...p, status: 'PAID' as const, processedAt: 'Just now' } : p));
-    setProcessModal(null);
+      setProcessStatus(`Routing via ${processProvider === 'stripe' ? 'Stripe Connect' : processProvider === 'paypal' ? 'PayPal Payouts' : 'Sandbox'}...`);
+      const res = await apiPost<any>(`/api/v1/finance/admin/settlements/${id}/process`, { provider: processProvider });
+
+      if (res.success) {
+        setProcessResult({ success: true, gatewayReference: res.data?.gatewayReference });
+        setPayouts((prev) => prev.map((p) => p.id === id ? { ...p, status: 'PAID' as const, processedAt: 'Just now' } : p));
+        // Refresh data after brief delay
+        setTimeout(() => { setProcessModal(null); setProcessResult(null); }, 2000);
+      } else {
+        setProcessResult({ success: false, error: res.message || 'Payout failed' });
+      }
+    } catch (err: any) {
+      setProcessResult({ success: false, error: err?.message || 'Network error during payout' });
+    } finally {
+      setProcessing(false);
+      setProcessStatus('');
+    }
   };
 
   const handleBatchProcess = async () => {
     setProcessing(true);
+    setProcessStatus('Processing batch settlements...');
     try {
-      await apiPost('/api/v1/finance/admin/settlements/batch-process', { provider: 'sandbox' });
+      await apiPost('/api/v1/finance/admin/settlements/batch-process', { provider: processProvider });
+      setPayouts((prev) => prev.map((p) => p.status === 'PROCESSING' ? { ...p, status: 'PAID' as const, processedAt: 'Just now' } : p));
     } catch {}
-    setPayouts((prev) => prev.map((p) => p.status === 'PROCESSING' ? { ...p, status: 'PAID' as const, processedAt: 'Just now' } : p));
     setProcessing(false);
+    setProcessStatus('');
     setBatchModal(false);
   };
 
@@ -179,6 +202,31 @@ export default function AdminFinancePage() {
           <Button variant="outline" size="sm" className="h-7 text-[11px]" onClick={(e) => { e.stopPropagation(); handleApprove(row.id); }}>
             Retry
           </Button>
+        ) : row.status === 'PAID' ? (
+          <div className="flex items-center justify-end gap-1">
+            <span className="text-[11px] text-slate-400 mr-1">{row.processedAt}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-7 text-[11px]"
+              onClick={(e) => {
+                e.stopPropagation();
+                downloadSettlementReceipt({
+                  settlementId: row.id,
+                  merchantName: row.merchantName,
+                  merchantId: row.merchantId,
+                  amount: row.amount,
+                  currency: 'USD',
+                  method: row.method,
+                  status: row.status,
+                  transactionId: row.id,
+                  paidAt: row.processedAt || 'Paid',
+                });
+              }}
+            >
+              <Download className="w-3 h-3 mr-1" /> Receipt
+            </Button>
+          </div>
         ) : <span className="text-[11px] text-slate-400">{row.processedAt}</span>
       ),
     },
@@ -274,19 +322,25 @@ export default function AdminFinancePage() {
       {/* ═══ Approve & Process Modal ═══ */}
       <Modal
         isOpen={!!processModal}
-        onClose={() => setProcessModal(null)}
+        onClose={() => { if (!processing) { setProcessModal(null); setProcessResult(null); } }}
         title="Review Payout Request"
         size="lg"
         footer={
-          <>
-            <Button variant="outline" size="sm" onClick={() => setProcessModal(null)}>Cancel</Button>
-            <Button variant="outline" size="sm" onClick={() => processModal && handleApprove(processModal.id)}>
-              Approve
-            </Button>
-            <Button variant="primary" size="sm" onClick={() => processModal && handleProcess(processModal.id)} leftIcon={<Send className="w-3.5 h-3.5" />}>
-              Process & Pay
-            </Button>
-          </>
+          processResult ? (
+            <>
+              <Button variant="outline" size="sm" onClick={() => { setProcessModal(null); setProcessResult(null); }}>Close</Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" size="sm" onClick={() => setProcessModal(null)} disabled={processing}>Cancel</Button>
+              <Button variant="outline" size="sm" onClick={() => processModal && handleApprove(processModal.id)} disabled={processing}>
+                Approve
+              </Button>
+              <Button variant="primary" size="sm" isLoading={processing} onClick={() => processModal && handleProcess(processModal.id)} leftIcon={!processing ? <Send className="w-3.5 h-3.5" /> : undefined}>
+                {processing ? processStatus : 'Process & Pay'}
+              </Button>
+            </>
+          )
         }
       >
         {processModal && (
@@ -335,9 +389,72 @@ export default function AdminFinancePage() {
               </div>
             </div>
 
-            <div className="p-3 bg-blue-50 rounded border border-blue-200 text-[11px] text-blue-700">
-              <strong>Processing:</strong> The payout will be routed through {processModal.method === 'bank_transfer' ? 'Stripe Connect Transfers API' : 'PayPal Payouts Batch API'}. Funds typically arrive in 2-3 business days (bank) or instantly (PayPal).
+            {/* Provider Selection */}
+            <div className="p-3 bg-slate-50 rounded border border-slate-200">
+              <div className="text-[10px] font-bold text-slate-500 uppercase mb-2">Payout Provider</div>
+              <div className="flex gap-2">
+                {([
+                  { value: 'sandbox' as const, label: 'Sandbox', desc: 'Test mode — no real money' },
+                  { value: 'stripe' as const, label: 'Stripe Connect', desc: 'Bank wire transfer' },
+                  { value: 'paypal' as const, label: 'PayPal Payouts', desc: 'Instant PayPal transfer' },
+                ]).map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    disabled={processing}
+                    onClick={() => setProcessProvider(opt.value)}
+                    className={`flex-1 p-2.5 rounded border text-left transition-colors ${
+                      processProvider === opt.value
+                        ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                        : 'border-slate-200 bg-white hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="text-xs font-bold text-slate-800">{opt.label}</div>
+                    <div className="text-[10px] text-slate-500 mt-0.5">{opt.desc}</div>
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {/* Processing Status */}
+            {processing && processStatus && (
+              <div className="p-3 bg-blue-50 rounded border border-blue-200 text-[11px] text-blue-700 flex items-center gap-2">
+                <div className="w-3.5 h-3.5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin shrink-0" />
+                <span>{processStatus}</span>
+              </div>
+            )}
+
+            {/* Result */}
+            {processResult && (
+              <div className={`p-3 rounded border text-[11px] ${
+                processResult.success
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                  : 'bg-red-50 border-red-200 text-red-700'
+              }`}>
+                {processResult.success ? (
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <div>
+                      <span className="font-bold">Payout completed successfully</span>
+                      {processResult.gatewayReference && (
+                        <div className="text-[10px] text-emerald-600 mt-1 font-mono">Gateway Ref: {processResult.gatewayReference}</div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                    <span className="font-bold">{processResult.error}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!processing && !processResult && (
+              <div className="p-3 bg-blue-50 rounded border border-blue-200 text-[11px] text-blue-700">
+                <strong>Processing:</strong> The payout will be routed through {processModal.method === 'bank_transfer' ? 'Stripe Connect Transfers API' : 'PayPal Payouts Batch API'}. Select a provider above — use <strong>Sandbox</strong> for testing, <strong>Stripe/PayPal</strong> for live payouts.
+              </div>
+            )}
           </div>
         )}
       </Modal>

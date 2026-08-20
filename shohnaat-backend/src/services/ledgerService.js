@@ -403,7 +403,8 @@ class LedgerService {
   }
 
   /**
-   * Process payout (Stripe Connect / PayPal Payouts)
+   * Process payout (Stripe Connect / PayPal Payouts / Sandbox)
+   * Executes actual gateway transfer, then atomically updates ledger.
    */
   async processPayout(settlementId, { provider, payoutDestination }) {
     const settlement = await this.prisma.settlement.findUnique({
@@ -414,28 +415,95 @@ class LedgerService {
     if (!settlement) throw new Error('Settlement not found');
     if (settlement.status !== 'PROCESSING') throw new Error('Settlement not in PROCESSING status');
 
+    const amount = parseFloat(settlement.totalAmount);
+    if (amount <= 0) throw new Error('Payout amount must be greater than zero');
+
+    // Verify merchant has sufficient balance
+    const balance = await this.getMerchantBalance(settlement.merchantId);
+    if (balance.balance < amount) {
+      throw new Error(`Insufficient merchant balance: $${balance.balance.toFixed(2)} available, $${amount.toFixed(2)} requested`);
+    }
+
     const crypto = require('crypto');
     const transactionId = `payout_${provider}_${crypto.randomBytes(8).toString('hex')}`;
 
-    // Record payout in ledger
-    await this.recordSettlementPayout({
-      settlementId,
-      merchantId: settlement.merchantId,
-      amount: parseFloat(settlement.totalAmount),
-      transactionId,
-    });
+    // ═══ Execute via payment gateway ═══
+    let gatewayResult = null;
+    let gatewayReference = null;
 
-    // Mark as paid
-    await this.prisma.settlement.update({
-      where: { id: settlementId },
-      data: { status: 'PAID', paidAt: new Date() },
+    // Lazy-load PaymentService to avoid circular dependencies
+    const PaymentService = require('./paymentService');
+    const paymentService = new PaymentService(this.prisma);
+
+    try {
+      if (provider === 'stripe') {
+        // Stripe Connect transfer to merchant's connected account
+        gatewayResult = await paymentService.createStripePayout({
+          amount,
+          destinationAccountId: payoutDestination || settlement.merchant?.stripeAccountId || null,
+          description: `Shohnaat settlement payout - ${settlement.id}`,
+        });
+        gatewayReference = gatewayResult.id;
+      } else if (provider === 'paypal') {
+        // PayPal Payouts batch API
+        gatewayResult = await paymentService.createPayPalPayout({
+          amount,
+          email: payoutDestination || settlement.merchant?.paypalEmail || null,
+          note: `Settlement payout for ${settlement.merchant?.businessName || 'Merchant'}`,
+        });
+        gatewayReference = gatewayResult.id;
+      } else {
+        // sandbox — mock payout, no real money movement
+        gatewayResult = paymentService._mockPayout(amount, 'sandbox');
+        gatewayReference = gatewayResult.id;
+      }
+    } catch (gatewayError) {
+      // Mark settlement as FAILED if gateway call fails
+      await this.prisma.settlement.update({
+        where: { id: settlementId },
+        data: { status: 'FAILED' },
+      }).catch(() => {});
+
+      throw new Error(`Gateway ${provider} failed: ${gatewayError.message}`);
+    }
+
+    // ═══ Atomic ledger update: all-or-nothing ═══
+    await this.prisma.$transaction(async (tx) => {
+      // 1. Record payout ledger entry (DEBIT merchant — reduces balance)
+      const merchantAccount = await tx.ledgerAccount.findUnique({
+        where: { merchantId: settlement.merchantId },
+      });
+      if (!merchantAccount) throw new Error('Merchant ledger account not found');
+
+      await tx.ledgerEntry.create({
+        data: {
+          transactionId,
+          type: 'SETTLEMENT_PAYOUT',
+          amount,
+          direction: 'DEBIT',
+          accountId: merchantAccount.id,
+          settlementId,
+          note: `Settlement payout via ${provider}${gatewayReference ? ' — ' + gatewayReference : ''}`,
+        },
+      });
+
+      // 2. Mark settlement as PAID with gateway reference
+      await tx.settlement.update({
+        where: { id: settlementId },
+        data: {
+          status: 'PAID',
+          paidAt: new Date(),
+        },
+      });
     });
 
     return {
       settlementId,
-      amount: parseFloat(settlement.totalAmount),
+      amount,
       provider,
       transactionId,
+      gatewayReference,
+      gatewayStatus: gatewayResult.status || 'completed',
       paidAt: new Date(),
     };
   }
