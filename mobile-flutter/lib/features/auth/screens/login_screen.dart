@@ -109,24 +109,19 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: [
                     // Brand Icon & Header
                     Center(
-                      child: Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColors.primary.withOpacity(0.4),
-                              blurRadius: 16,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          LucideIcons.truck,
-                          color: Colors.white,
-                          size: 28,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(16),
+                        child: Image.asset(
+                          'assets/images/app_logo.png',
+                          width: 64,
+                          height: 64,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 64,
+                            height: 64,
+                            color: AppColors.primary,
+                            child: const Icon(LucideIcons.truck, color: Colors.white, size: 32),
+                          ),
                         ),
                       ),
                     ),

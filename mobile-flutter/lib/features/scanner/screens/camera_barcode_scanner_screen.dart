@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/status_badge_widget.dart';
 
 class CameraBarcodeScannerScreen extends StatefulWidget {
   const CameraBarcodeScannerScreen({super.key});
@@ -14,42 +17,89 @@ class CameraBarcodeScannerScreen extends StatefulWidget {
       _CameraBarcodeScannerScreenState();
 }
 
-class _CameraBarcodeScannerScreenState extends State<CameraBarcodeScannerScreen> {
+class _CameraBarcodeScannerScreenState extends State<CameraBarcodeScannerScreen>
+    with SingleTickerProviderStateMixin {
+  final MobileScannerController _scannerController = MobileScannerController(
+    detectionSpeed: DetectionSpeed.noDuplicates,
+    facing: CameraFacing.back,
+    torchEnabled: false,
+  );
+
   final TextEditingController _manualBarcodeInput = TextEditingController();
   bool _isTorchOn = false;
+  bool _isCameraFront = false;
+  bool _hasCameraPermission = true;
   Map<String, dynamic>? _scannedResult;
   bool _isLookingUp = false;
   String? _lookupError;
+  late AnimationController _animController;
+  late Animation<double> _laserAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkCameraPermission();
+
+    _animController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+
+    _laserAnimation = Tween<double>(begin: 0.1, end: 0.9).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeInOut),
+    );
+  }
+
+  Future<void> _checkCameraPermission() async {
+    final status = await Permission.camera.request();
+    if (mounted) {
+      setState(() {
+        _hasCameraPermission = status.isGranted;
+      });
+    }
+  }
 
   void _onLookupScan(String barcode) async {
-    if (barcode.isEmpty) return;
-    setState(() { _isLookingUp = true; _lookupError = null; _scannedResult = null; });
+    final cleanCode = barcode.trim();
+    if (cleanCode.isEmpty || _isLookingUp) return;
+
+    setState(() {
+      _isLookingUp = true;
+      _lookupError = null;
+      _scannedResult = null;
+    });
+
     try {
       final client = DioClient();
-      final response = await client.get('${ApiConstants.publicTracking}/$barcode');
+      final response = await client.get('${ApiConstants.publicTracking}/$cleanCode');
       if (mounted) {
         final data = response.data?['data'];
         setState(() {
           _isLookingUp = false;
           _scannedResult = {
-            'trackingNumber': data?['trackingNumber'] ?? barcode,
-            'recipient': data?['consignee']?['name'] ?? 'Unknown',
-            'address': data?['deliveryAddress']?['line1'] ?? '',
-            'cod': data?['codAmount'] ?? 0,
-            'status': data?['currentStatus'] ?? 'UNKNOWN',
-            'item': data?['packageDescription'] ?? '',
+            'trackingNumber': data?['trackingNumber'] ?? cleanCode,
+            'recipient': data?['consignee']?['name'] ?? 'Recipient',
+            'address': data?['deliveryAddress']?['line1'] ?? data?['deliveryAddressSnap']?['street'] ?? 'Main Hub Area',
+            'cod': (data?['codAmount'] ?? 0).toDouble(),
+            'status': data?['currentStatus'] ?? 'IN_TRANSIT',
+            'item': data?['packageDescription'] ?? 'Standard Package',
           };
         });
       }
     } catch (e) {
       if (mounted) {
-        setState(() { _isLookingUp = false; _lookupError = 'Parcel not found: $barcode'; });
+        setState(() {
+          _isLookingUp = false;
+          _lookupError = 'Parcel not found in system: $cleanCode';
+        });
       }
     }
   }
 
   @override
   void dispose() {
+    _animController.dispose();
+    _scannerController.dispose();
     _manualBarcodeInput.dispose();
     super.dispose();
   }
@@ -59,7 +109,7 @@ class _CameraBarcodeScannerScreenState extends State<CameraBarcodeScannerScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('High-Speed Parcel Scanner'),
+        title: const Text('Real-Time Optical Scanner'),
         backgroundColor: AppColors.navyBackground,
         actions: [
           IconButton(
@@ -67,51 +117,146 @@ class _CameraBarcodeScannerScreenState extends State<CameraBarcodeScannerScreen>
               _isTorchOn ? LucideIcons.zap : LucideIcons.zapOff,
               color: _isTorchOn ? Colors.amber : Colors.white,
             ),
-            onPressed: () => setState(() => _isTorchOn = !_isTorchOn),
+            tooltip: 'Toggle Flashlight',
+            onPressed: () async {
+              await _scannerController.toggleTorch();
+              setState(() => _isTorchOn = !_isTorchOn);
+            },
+          ),
+          IconButton(
+            icon: const Icon(LucideIcons.camera, color: Colors.white),
+            tooltip: 'Flip Camera',
+            onPressed: () async {
+              await _scannerController.switchCamera();
+              setState(() => _isCameraFront = !_isCameraFront);
+            },
           ),
         ],
       ),
       body: Column(
         children: [
-          // Simulated Viewfinder Camera Stream
+          // Real Camera Viewport
           Expanded(
             child: Stack(
               alignment: Alignment.center,
               children: [
-                Container(
-                  color: const Color(0xFF0F172A),
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                if (_hasCameraPermission)
+                  MobileScanner(
+                    controller: _scannerController,
+                    onDetect: (BarcodeCapture capture) {
+                      for (final barcode in capture.barcodes) {
+                        final rawValue = barcode.rawValue;
+                        if (rawValue != null && rawValue.isNotEmpty) {
+                          _manualBarcodeInput.text = rawValue;
+                          _onLookupScan(rawValue);
+                          break;
+                        }
+                      }
+                    },
+                  )
+                else
+                  Container(
+                    color: const Color(0xFF0F172A),
+                    padding: const EdgeInsets.all(24),
+                    child: Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(LucideIcons.cameraOff, size: 54, color: AppColors.danger),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Camera Permission Required',
+                            style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Please allow camera access in device settings to scan parcel waybill barcodes & QR codes.',
+                            style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          AppButton(
+                            text: 'Grant Camera Permission',
+                            onPressed: _checkCameraPermission,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // Viewfinder HUD Overlay
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.45),
+                    ),
+                  ),
+                ),
+
+                // Scanner Clear Target Window
+                Center(
+                  child: SizedBox(
+                    width: 270,
+                    height: 270,
+                    child: Stack(
                       children: [
-                        Icon(LucideIcons.camera, size: 48, color: Colors.white.withOpacity(0.4)),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Point camera at parcel 4x6" label barcode',
-                          style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13),
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(color: AppColors.primary, width: 2.5),
+                            borderRadius: BorderRadius.circular(16),
+                            color: Colors.transparent,
+                          ),
+                        ),
+                        // Animated Scanning Laser
+                        AnimatedBuilder(
+                          animation: _laserAnimation,
+                          builder: (context, child) {
+                            return Positioned(
+                              top: 270 * _laserAnimation.value,
+                              left: 8,
+                              right: 8,
+                              child: Container(
+                                height: 3,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Colors.transparent, AppColors.primary, Colors.cyanAccent, Colors.transparent],
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.primary.withValues(alpha: 0.8),
+                                      blurRadius: 10,
+                                      spreadRadius: 2,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
                   ),
                 ),
 
-                // Viewfinder Target Box
-                Container(
-                  width: 260,
-                  height: 180,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: AppColors.primary, width: 2.5),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: const Center(
-                    child: Text(
-                      'SCANNER TARGET',
-                      style: TextStyle(
-                        color: Colors.white54,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 2,
-                      ),
+                // Scanning Guidance Text
+                Positioned(
+                  bottom: 24,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withValues(alpha: 0.75),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(LucideIcons.scan, color: Colors.cyanAccent, size: 16),
+                        SizedBox(width: 8),
+                        Text(
+                          'Align Barcode or QR Code within frame',
+                          style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600),
+                        ),
+                      ],
                     ),
                   ),
                 ),
@@ -119,37 +264,49 @@ class _CameraBarcodeScannerScreenState extends State<CameraBarcodeScannerScreen>
             ),
           ),
 
-          // Manual Barcode Input & Instant Lookup Sheet
+          // Bottom Results & Manual Input Drawer
           Container(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              boxShadow: [
+                BoxShadow(color: Colors.black12, blurRadius: 16, offset: Offset(0, -4)),
+              ],
             ),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (_lookupError != null) ...[
+                if (_isLookingUp)
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                  )
+                else if (_lookupError != null)
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
                       color: const Color(0xFFFEF2F2),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: const Color(0xFFDC2626).withOpacity(0.3)),
+                      border: Border.all(color: AppColors.danger.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
-                        const Icon(LucideIcons.alertTriangle, size: 16, color: Color(0xFFDC2626)),
+                        const Icon(LucideIcons.alertCircle, color: AppColors.danger, size: 18),
                         const SizedBox(width: 8),
-                        Expanded(child: Text(_lookupError!, style: const TextStyle(fontSize: 12, color: Color(0xFF991B1B)))),
+                        Expanded(
+                          child: Text(
+                            _lookupError!,
+                            style: const TextStyle(color: AppColors.danger, fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        ),
                       ],
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                ],
-                if (_scannedResult != null) ...[
+                  )
+                else if (_scannedResult != null)
                   AppCard(
-                    backgroundColor: AppColors.primaryLight,
+                    padding: const EdgeInsets.all(12),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -158,45 +315,51 @@ class _CameraBarcodeScannerScreenState extends State<CameraBarcodeScannerScreen>
                           children: [
                             Text(
                               _scannedResult!['trackingNumber'],
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.primary),
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, fontFamily: 'monospace'),
                             ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(color: AppColors.success, borderRadius: BorderRadius.circular(4)),
-                              child: const Text('MATCHED', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                            ),
+                            StatusBadgeWidget(status: _scannedResult!['status']),
                           ],
                         ),
-                        const Divider(height: 14),
-                        Text('Recipient: ${_scannedResult!['recipient']}', style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-                        Text('Address: ${_scannedResult!['address']}', style: const TextStyle(color: AppColors.textSecondary, fontSize: 12)),
-                        const SizedBox(height: 4),
-                        Text('COD: \$${_scannedResult!['cod']} USD', style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFFB45309), fontSize: 12.5)),
+                        const SizedBox(height: 6),
+                        Text(
+                          '${_scannedResult!['recipient']} — ${_scannedResult!['address']}',
+                          style: const TextStyle(fontSize: 11.5, color: AppColors.textSecondary),
+                        ),
+                        if ((_scannedResult!['cod'] as double) > 0) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            'COD to Collect: \$${(_scannedResult!['cod'] as double).toStringAsFixed(2)} USD',
+                            style: const TextStyle(fontSize: 11.5, fontWeight: FontWeight.bold, color: AppColors.success),
+                          ),
+                        ],
                       ],
                     ),
                   ),
-                  const SizedBox(height: 14),
-                ],
 
+                const SizedBox(height: 12),
+
+                // Manual Input Fallback
                 Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: _manualBarcodeInput,
                         decoration: InputDecoration(
-                          hintText: 'Enter barcode number...',
-                          prefixIcon: const Icon(LucideIcons.scanLine, size: 18),
+                          hintText: 'Enter waybill/barcode #',
+                          hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12.5),
+                          prefixIcon: const Icon(LucideIcons.scanLine, size: 18, color: AppColors.textMuted),
                           filled: true,
                           fillColor: AppColors.background,
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide.none),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                         ),
+                        onSubmitted: _onLookupScan,
                       ),
                     ),
                     const SizedBox(width: 8),
                     AppButton(
-                      text: 'Track',
-                      icon: const Icon(LucideIcons.scanLine, size: 16),
+                      text: 'Search',
+                      icon: const Icon(LucideIcons.search, size: 16),
                       isLoading: _isLookingUp,
                       onPressed: () => _onLookupScan(_manualBarcodeInput.text.trim()),
                     ),

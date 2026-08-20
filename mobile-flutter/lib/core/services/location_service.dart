@@ -1,18 +1,17 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../constants/api_constants.dart';
 import '../network/dio_client.dart';
 
-/// Native GPS service using Android/iOS platform channels.
-/// No geolocator dependency — direct MethodChannel communication.
+/// GPS service using permission_handler for runtime permissions
+/// and native MethodChannel for background location tracking.
 class LocationService {
   final DioClient _client;
   final MethodChannel _channel = const MethodChannel('com.shohnaat/gps');
   StreamSubscription? _timerSubscription;
   bool _isTracking = false;
   DateTime? _lastBroadcast;
-  double _lastLat = 0;
-  double _lastLng = 0;
   String? _riderId;
 
   static const int _minIntervalSeconds = 10;
@@ -20,17 +19,28 @@ class LocationService {
   LocationService({DioClient? client}) : _client = client ?? DioClient();
 
   bool get isTracking => _isTracking;
-  double get lastLat => _lastLat;
-  double get lastLng => _lastLng;
 
-  /// Request location permission via native channel
+  /// Request location permission using permission_handler (runtime dialog)
   Future<bool> handleLocationPermission() async {
-    try {
-      final result = await _channel.invokeMethod('requestPermission');
-      return result == true;
-    } catch (_) {
-      return false;
+    var status = await Permission.location.status;
+
+    if (status.isGranted) return true;
+
+    // Request permission — shows system dialog
+    status = await Permission.location.request();
+
+    if (status.isGranted) return true;
+
+    // If permanently denied, open app settings
+    if (status.isPermanentlyDenied) {
+      await openAppSettings();
+      // Re-check after user returns from settings
+      await Future.delayed(const Duration(seconds: 1));
+      status = await Permission.location.status;
+      return status.isGranted;
     }
+
+    return false;
   }
 
   /// Get current one-time GPS coordinates
@@ -41,14 +51,15 @@ class LocationService {
         return {
           'latitude': (result['latitude'] ?? 0).toDouble(),
           'longitude': (result['longitude'] ?? 0).toDouble(),
+          'speed': (result['speed'] ?? 0).toDouble(),
+          'heading': (result['heading'] ?? 0).toDouble(),
         };
       }
     } catch (_) {}
     return null;
   }
 
-  /// Start continuous GPS broadcasting.
-  /// Uses native platform timer for background efficiency.
+  /// Start continuous GPS broadcasting
   Future<bool> startLiveTracking({required String riderId}) async {
     final hasPermission = await handleLocationPermission();
     if (!hasPermission) return false;
@@ -56,7 +67,6 @@ class LocationService {
     _isTracking = true;
     _riderId = riderId;
 
-    // Start native GPS updates (platform handles background)
     try {
       await _channel.invokeMethod('startTracking', {
         'intervalSeconds': _minIntervalSeconds,
@@ -64,25 +74,20 @@ class LocationService {
       });
     } catch (_) {}
 
-    // Listen for location updates from native side
+    // Listen for native location updates
     _channel.setMethodCallHandler((call) async {
       if (call.method == 'onLocationUpdate' && _isTracking) {
         final data = call.arguments as Map;
-        final lat = (data['latitude'] ?? 0).toDouble();
-        final lng = (data['longitude'] ?? 0).toDouble();
-        final speed = (data['speed'] ?? 0).toDouble();
-        final heading = (data['heading'] ?? 0).toDouble();
-
         await _broadcastCoordinates(
-          latitude: lat,
-          longitude: lng,
-          speed: speed,
-          heading: heading,
+          latitude: (data['latitude'] ?? 0).toDouble(),
+          longitude: (data['longitude'] ?? 0).toDouble(),
+          speed: (data['speed'] ?? 0).toDouble(),
+          heading: (data['heading'] ?? 0).toDouble(),
         );
       }
     });
 
-    // Fallback polling if native channel doesn't deliver updates
+    // Fallback polling if native channel doesn't deliver
     _timerSubscription = Stream.periodic(
       const Duration(seconds: _minIntervalSeconds),
       (_) => _pollLocation(),
@@ -98,13 +103,12 @@ class LocationService {
       await _broadcastCoordinates(
         latitude: loc['latitude']!,
         longitude: loc['longitude']!,
-        speed: 0,
-        heading: 0,
+        speed: loc['speed']!,
+        heading: loc['heading']!,
       );
     }
   }
 
-  /// Stop GPS tracking
   Future<void> stopLiveTracking() async {
     _isTracking = false;
     _riderId = null;
@@ -128,9 +132,6 @@ class LocationService {
         now.difference(_lastBroadcast!).inSeconds < _minIntervalSeconds) {
       return;
     }
-
-    _lastLat = latitude;
-    _lastLng = longitude;
     _lastBroadcast = now;
 
     try {
