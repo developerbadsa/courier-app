@@ -500,7 +500,7 @@ export default function MaintenanceSettingsPage() {
                   1
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">
-                  Target Audience / Roles (কাদের জন্য অফলাইন হবে)
+                  Target Audience & User Roles
                 </h3>
               </div>
               <p className="text-xs text-slate-500 mt-1 ml-10">
@@ -597,7 +597,7 @@ export default function MaintenanceSettingsPage() {
                   2
                 </div>
                 <h3 className="text-lg font-bold text-slate-900">
-                  Target Pages & Modules (কোন কোন পেজ অফলাইন থাকবে)
+                  Target Pages & Functional Modules
                 </h3>
               </div>
               <p className="text-xs text-slate-500 mt-1 ml-10">
@@ -752,7 +752,7 @@ export default function MaintenanceSettingsPage() {
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-900">
-                Maintenance Schedule & Countdown Timer (শিডিউল ও টাইমার)
+                Maintenance Schedule & Countdown Timer
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 Optionally schedule when maintenance should automatically start and display an expected completion countdown timer to users.
@@ -801,7 +801,7 @@ export default function MaintenanceSettingsPage() {
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-900">
-                Notice Banner & Support Information (কাস্টম বার্তা ও হেল্পলাইন)
+                Notice Banner & Support Information
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 Customize the headline, explanation text, and urgent support contacts presented to affected customers.
@@ -880,7 +880,7 @@ export default function MaintenanceSettingsPage() {
             </div>
             <div>
               <h3 className="text-lg font-bold text-slate-900">
-                Emergency Access & Secret Bypass (ইমার্জেন্সি বাইপাস কোড ও IP)
+                Emergency Access & Secret Bypass
               </h3>
               <p className="text-xs text-slate-500 mt-0.5">
                 Generate secret bypass keys for QA testing and whitelist authorized office IP addresses.
