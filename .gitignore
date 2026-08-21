@@ -56,3 +56,10 @@ uploads/
 *.pem
 *.key
 *.crt
+
+# Build artifacts — APK files (too large for git)
+*.apk
+mobile-flutter/release-apk/
+mobile-flutter/build/
+frontend/.next/
+frontend/out/
