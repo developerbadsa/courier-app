@@ -111,7 +111,7 @@ export default function BulkImportPage() {
     setImporting(true);
     try {
       const token = localStorage.getItem('shohnaat_token');
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || (typeof window !== 'undefined' && window.location.hostname.includes('shohnaat') ? 'https://api-shohnaat.rahimbadsa.me' : 'http://localhost:5001');
       const res = await fetch(`${apiUrl}/api/v1/shipments/bulk`, {
         method: 'POST',
 

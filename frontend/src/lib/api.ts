@@ -90,8 +90,25 @@ function getErrorMessage(error: AxiosError<{ message?: string }>): string {
 /* ─────────────────────────────────────────────────────────────
  *  Axios instance with interceptors
  * ───────────────────────────────────────────────────────────── */
+function getApiBaseUrl(): string {
+  // Priority 1: Explicit env var (set at build/deploy time)
+  if (process.env.NEXT_PUBLIC_API_URL) return process.env.NEXT_PUBLIC_API_URL;
+
+  // Priority 2: Auto-detect based on current domain
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    // Live production domain → use live API
+    if (host.includes('shohnaat.rahimbadsa.me')) return 'https://api-shohnaat.rahimbadsa.me';
+    // Localhost / LAN IP → use local backend
+    return 'http://localhost:5001';
+  }
+
+  // Server-side fallback
+  return 'http://localhost:5001';
+}
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000',
+  baseURL: getApiBaseUrl(),
   timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
