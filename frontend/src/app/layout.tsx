@@ -52,7 +52,10 @@ export const viewport: Viewport = {
   themeColor: '#2563eb',
 };
 
+import { Suspense } from 'react';
 import StoreProvider from '@/store/StoreProvider';
+import { MaintenanceProvider } from '@/contexts/MaintenanceContext';
+import { MaintenanceBanner, MaintenanceGuard } from '@/components/maintenance';
 
 export default function RootLayout({
   children,
@@ -72,7 +75,16 @@ export default function RootLayout({
       <body className={`${inter.className} min-h-screen bg-slate-50 text-slate-900 antialiased font-sans`}>
         <StoreProvider>
           <QueryProvider>
-            <ErrorBoundary>{children}</ErrorBoundary>
+            <Suspense fallback={null}>
+              <MaintenanceProvider>
+                <MaintenanceBanner />
+                <ErrorBoundary>
+                  <MaintenanceGuard>
+                    {children}
+                  </MaintenanceGuard>
+                </ErrorBoundary>
+              </MaintenanceProvider>
+            </Suspense>
             <ToastContainer />
           </QueryProvider>
         </StoreProvider>
@@ -80,4 +92,5 @@ export default function RootLayout({
     </html>
   );
 }
+
 

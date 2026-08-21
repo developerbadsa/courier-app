@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { usePathname } from 'next/navigation';
 import { Plus } from 'lucide-react';
 import { Sidebar, type UserRole } from './Sidebar';
 import { TopBar } from './TopBar';
@@ -24,11 +25,19 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   onPrimaryAction,
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const pathname = usePathname();
+
+  const effectiveRole: UserRole = useMemo(() => {
+    if (pathname?.startsWith('/admin')) return 'admin';
+    if (pathname?.startsWith('/rider')) return 'rider';
+    if (role && role !== 'merchant') return role;
+    return role || 'merchant';
+  }, [role, pathname]);
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans">
       <Sidebar
-        role={role}
+        role={effectiveRole}
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />

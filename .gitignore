@@ -61,5 +61,8 @@ uploads/
 *.apk
 mobile-flutter/release-apk/
 mobile-flutter/build/
+mobile-flutter/ios/Flutter/
+*.tsbuildinfo
 frontend/.next/
 frontend/out/
+

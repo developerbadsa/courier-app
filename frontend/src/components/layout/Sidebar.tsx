@@ -19,6 +19,7 @@ import {
   ShieldCheck,
   Search,
   Bell,
+  Wrench,
 } from 'lucide-react';
 
 export type UserRole = 'merchant' | 'admin' | 'rider' | 'operator';
@@ -42,11 +43,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     email: string;
     role: string;
     initials: string;
+    isSuperAdmin: boolean;
   }>({
     name: 'Ahmed K.',
     email: 'merchant@shohnaat.com',
     role: 'Merchant',
     initials: 'AM',
+    isSuperAdmin: false,
   });
 
   useEffect(() => {
@@ -54,28 +57,51 @@ export const Sidebar: React.FC<SidebarProps> = ({
       const stored = localStorage.getItem('shohnaat_user');
       if (stored) {
         const u = JSON.parse(stored);
-        const name = u.name || 'Ahmed K.';
-        const email = u.email || 'merchant@shohnaat.com';
-        const roleName = u.role?.name || role;
+        const name = u.name || 'System Admin';
+        const email = u.email || 'admin@shohnaat.com';
+        const rawRole = (u.role?.name || u.role || (u.roles && u.roles[0]) || role || '').toString();
+        const isSuper = rawRole.toLowerCase().includes('admin') || rawRole.toLowerCase() === 'super_admin';
         const initials =
           name
             .split(' ')
             .map((n: string) => n[0])
             .join('')
             .toUpperCase()
-            .slice(0, 2) || 'AM';
+            .slice(0, 2) || 'AD';
 
         setUserInfo({
           name,
           email,
-          role: roleName.charAt(0).toUpperCase() + roleName.slice(1),
+          role: rawRole.charAt(0).toUpperCase() + rawRole.slice(1),
           initials,
+          isSuperAdmin: isSuper,
         });
       }
     } catch {
       // Fallback default
     }
   }, [role]);
+
+  // Compute effective role automatically from path, props, or user session
+  const effectiveRole: UserRole = React.useMemo(() => {
+    if (pathname?.startsWith('/admin')) return 'admin';
+    if (pathname?.startsWith('/rider')) return 'rider';
+    if (role && role !== 'merchant') return role;
+
+    try {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('shohnaat_user') : null;
+      if (stored) {
+        const u = JSON.parse(stored);
+        const roleStr = (u.role?.name || u.role || (u.roles && u.roles[0]) || '').toLowerCase();
+        if (roleStr.includes('admin') || roleStr === 'super_admin' || roleStr === 'operator') {
+          return 'admin';
+        }
+        if (roleStr === 'rider') return 'rider';
+      }
+    } catch {}
+
+    return role || 'merchant';
+  }, [role, pathname]);
 
   const handleLogout = () => {
     try {
@@ -88,7 +114,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const getNavItems = () => {
-    if (role === 'admin' || role === 'operator') {
+    if (effectiveRole === 'admin' || effectiveRole === 'operator') {
       return [
         { label: 'Overview', href: '/admin', icon: LayoutDashboard },
         { label: 'Shipments', href: '/dashboard/shipments', icon: Truck },
@@ -99,11 +125,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { label: 'Rate Cards', href: '/admin/rates', icon: CreditCard },
         { label: 'Finance', href: '/admin/finance', icon: BarChart3 },
         { label: 'Audit Logs', href: '/admin/audit-logs', icon: FileText },
+        { label: 'Maintenance Mode', href: '/admin/settings/maintenance', icon: Wrench, badge: 'Settings' },
+        { label: 'System Settings', href: '/admin/settings', icon: Settings },
         { label: 'Notifications', href: '/admin/settings/notifications', icon: Bell },
       ];
     }
 
-    if (role === 'rider') {
+    if (effectiveRole === 'rider') {
       return [
         { label: 'Rider Task List', href: '/rider', icon: Truck },
         { label: 'Live Tracking', href: '/track', icon: MapPin },
@@ -111,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
 
     // Default: Merchant
-    return [
+    const merchantItems = [
       { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
       { label: 'Shipments', href: '/dashboard/shipments', icon: Truck },
       { label: 'Pickups', href: '/dashboard/pickups', icon: Package },
@@ -120,6 +148,16 @@ export const Sidebar: React.FC<SidebarProps> = ({
       { label: 'Finance', href: '/dashboard/finance', icon: CreditCard },
       { label: 'Developer API', href: '/dashboard/developer', icon: Settings },
     ];
+
+    // If super admin is browsing merchant portal, append admin shortcuts
+    if (userInfo.isSuperAdmin) {
+      merchantItems.push(
+        { label: '⚡ Super Admin Console', href: '/admin', icon: ShieldCheck },
+        { label: '🔧 Maintenance Mode', href: '/admin/settings/maintenance', icon: Wrench }
+      );
+    }
+
+    return merchantItems;
   };
 
   const navItems = getNavItems();
@@ -129,7 +167,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* ── Brand Logo Header ── */}
       <div className="h-16 flex items-center justify-between px-5 shrink-0 border-b border-slate-800/80">
         <Link
-          href={role === 'admin' ? '/admin' : '/dashboard'}
+          href={effectiveRole === 'admin' ? '/admin' : '/dashboard'}
           className="flex items-center gap-2.5"
         >
           <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white font-black text-sm">
@@ -140,7 +178,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               SHOHNAAT
             </span>
             <span className="text-[10px] text-slate-400 font-semibold tracking-wider uppercase">
-              {role === 'admin' ? 'Operations OS' : 'Logistics'}
+              {effectiveRole === 'admin' ? 'Operations OS' : 'Logistics'}
             </span>
           </div>
         </Link>
@@ -181,7 +219,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   isActive ? 'text-white' : 'text-slate-400'
                 }`}
               />
-              <span>{item.label}</span>
+              <span className="flex-1 truncate">{item.label}</span>
+              {(item as any).badge && (
+                <span className="ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300">
+                  {(item as any).badge}
+                </span>
+              )}
             </Link>
           );
         })}

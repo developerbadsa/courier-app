@@ -30,6 +30,8 @@ const trackingRoutes = require('./routes/tracking');
 const notificationRoutes = require('./routes/notifications');
 const securityRoutes = require('./routes/security');
 const liveTrackingRoutes = require('./routes/liveTracking');
+const settingsRoutes = require('./routes/settings');
+const maintenanceGuard = require('./middleware/maintenanceGuard');
 const { createWorker: createNotificationWorker } = require('./services/notificationService');
 
 // Initialize Express App
@@ -58,9 +60,12 @@ app.use('/uploads', express.static(path.join(process.cwd(), 'uploads'), {
 // Pro Request Logging & Latency Telemetry
 app.use(requestLoggerMiddleware);
 
+// Global Maintenance Mode Guard (Enforces offline mode for targeted roles & routes)
+app.use(maintenanceGuard);
 
 // Routes
 app.use('/health', healthRoutes);
+app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/merchants', merchantRoutes);
 app.use('/api/v1/shipments', shipmentRoutes);
