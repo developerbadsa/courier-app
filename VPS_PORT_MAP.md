@@ -56,7 +56,7 @@
 
 | Domain | Target | Port |
 |--------|--------|------|
-| `shohnaat.rahimbadsa.me` | `localhost:3000` | Shohnaat Frontend |
+| `shohnaat.rahimbadsa.me` | `localhost:3000` | Shohnaat Frontend ✅ |
 | `api-shohnaat.rahimbadsa.me` | `localhost:5001` | Shohnaat Backend API |
 | `bike-server.rahimbadsa.me` | `localhost:4000` | Bike Server |
 | `podesk.rahimbadsa.me` | `localhost:9999` | ⛔ OFF (Vercel) |
