@@ -35,6 +35,14 @@ if exist "build\app\outputs\flutter-apk\app-arm64-v8a-release.apk" (
 
 echo.
 if exist "release-apk\Shohnaat-Logistics-v1.0.0-arm64.apk" (
+    echo.
+    echo   [Auto-Deploy] Copying to web downloads folder...
+    set "WEB_DL=..\frontend\public\downloads\shohnaat-rider.apk"
+    copy /y "release-apk\Shohnaat-Logistics-v1.0.0-arm64.apk" "!WEB_DL!" >nul 2>&1
+    if exist "!WEB_DL!" (
+        echo   ✅ APK deployed to web: /downloads/shohnaat-rider.apk
+        echo   🌐 Download URL: https://shohnaat.rahimbadsa.me/downloads/shohnaat-rider.apk
+    )
     echo ========================================================
     echo ✅ SUCCESS: Fast ARM64 APK Built Successfully!
     echo ========================================================

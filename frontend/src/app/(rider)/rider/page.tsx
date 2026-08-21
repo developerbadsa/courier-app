@@ -27,6 +27,8 @@ import { StatusBadge, Button, Card, Modal, Badge } from '@/components/ui';
 import { apiGet, apiPost, showToast } from '@/lib/api';
 import { initOfflineSync, isOnline, enqueueAction, getPendingCount } from '@/lib/offlineQueue';
 import CameraBarcodeScanner from '@/components/scanner/CameraBarcodeScanner';
+import DownloadAppBanner from '@/components/DownloadAppBanner';
+import AppSuggestionPopup from '@/components/AppSuggestionPopup';
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                               */
@@ -300,6 +302,11 @@ export default function RiderPage() {
           </div>
         )}
 
+        {/* Download App Banner */}
+        <div className="px-3 pt-3">
+          <DownloadAppBanner />
+        </div>
+
         {/* Quick Stats Bar */}
         <div className="grid grid-cols-3 gap-2 p-3 bg-white border-b border-slate-200">
           <div className="text-center p-2 bg-blue-50 rounded border border-blue-100">
@@ -551,6 +558,9 @@ export default function RiderPage() {
             </div>
           )}
         </main>
+
+        {/* ── App Suggestion Popup (after 3s delay) ── */}
+        <AppSuggestionPopup />
 
         {/* ── Bottom Nav ── */}
         <nav className="h-14 border-t border-slate-200 bg-white grid grid-cols-3 fixed bottom-0 max-w-md w-full z-30 shadow-md">

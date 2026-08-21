@@ -38,10 +38,7 @@ class _PickupRequestsScreenState extends State<PickupRequestsScreen> {
       if (mounted) {
         setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Pickup Request Scheduled Successfully!'),
-            backgroundColor: AppColors.success,
-          ),
+          const SnackBar(content: Text('Pickup Request Scheduled!'), backgroundColor: AppColors.success),
         );
         Navigator.of(context).pop();
       }
@@ -49,10 +46,7 @@ class _PickupRequestsScreenState extends State<PickupRequestsScreen> {
       if (mounted) {
         setState(() => _isSubmitting = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed: ${e.toString()}'),
-            backgroundColor: AppColors.danger,
-          ),
+          SnackBar(content: Text('Failed: ${e.toString()}'), backgroundColor: AppColors.danger),
         );
       }
     }
@@ -63,8 +57,8 @@ class _PickupRequestsScreenState extends State<PickupRequestsScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text('Schedule Warehouse Pickup'),
-        backgroundColor: AppColors.navyBackground,
+        backgroundColor: AppColors.navy,
+        title: const Text('Schedule Warehouse Pickup', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -76,12 +70,8 @@ class _PickupRequestsScreenState extends State<PickupRequestsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text('Pickup Details', style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
-                  const Divider(height: 16),
-                  AppTextField(
-                    label: 'Estimated Parcel Count *',
-                    controller: _parcelCount,
-                    keyboardType: TextInputType.number,
-                  ),
+                  const Divider(height: 20, color: AppColors.borderLight),
+                  AppTextField(label: 'Estimated Parcel Count *', controller: _parcelCount, keyboardType: TextInputType.number),
                   const SizedBox(height: 14),
 
                   const Text('Time Slot', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
@@ -96,14 +86,15 @@ class _PickupRequestsScreenState extends State<PickupRequestsScreen> {
                     onChanged: (val) => setState(() => _selectedSlot = val!),
                     decoration: InputDecoration(
                       filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      fillColor: AppColors.inputFill,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AppColors.border)),
                       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     ),
                   ),
                   const SizedBox(height: 14),
 
-                  const Text('Preferred Vehicle Type', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
+                  const Text('Preferred Vehicle', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 6),
                   Row(
                     children: [
@@ -113,8 +104,8 @@ class _PickupRequestsScreenState extends State<PickupRequestsScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: _vehicle == 'BIKE' ? AppColors.primaryLight : Colors.white,
-                              borderRadius: BorderRadius.circular(8),
+                              color: _vehicle == 'BIKE' ? AppColors.primaryLight : AppColors.surface,
+                              borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: _vehicle == 'BIKE' ? AppColors.primary : AppColors.border),
                             ),
                             child: const Row(
@@ -135,8 +126,8 @@ class _PickupRequestsScreenState extends State<PickupRequestsScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: _vehicle == 'VAN' ? AppColors.primaryLight : Colors.white,
-                              borderRadius: BorderRadius.circular(8),
+                              color: _vehicle == 'VAN' ? AppColors.primaryLight : AppColors.surface,
+                              borderRadius: BorderRadius.circular(12),
                               border: Border.all(color: _vehicle == 'VAN' ? AppColors.primary : AppColors.border),
                             ),
                             child: const Row(
@@ -153,17 +144,11 @@ class _PickupRequestsScreenState extends State<PickupRequestsScreen> {
                     ],
                   ),
                   const SizedBox(height: 14),
-                  AppTextField(
-                    label: 'Driver Instructions (Optional)',
-                    hint: 'Gate code, loading dock number...',
-                    controller: _notes,
-                    maxLines: 2,
-                  ),
+                  AppTextField(label: 'Driver Instructions (Optional)', hint: 'Gate code, loading dock...', controller: _notes, maxLines: 2),
                 ],
               ),
             ),
             const SizedBox(height: 24),
-
             AppButton(
               text: 'Submit Pickup Request',
               size: AppButtonSize.lg,

@@ -108,7 +108,7 @@ class _ShohnaatAppState extends State<ShohnaatApp> with WidgetsBindingObserver {
         child: MaterialApp(
           title: 'Shohnaat Logistics',
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.darkLuxuryTheme,
+          theme: AppTheme.lightTheme,
           home: const SplashScreen(),
         ),
       ),

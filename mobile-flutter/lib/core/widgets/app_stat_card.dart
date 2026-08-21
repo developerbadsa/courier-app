@@ -12,23 +12,11 @@ class AppStatCard extends StatelessWidget {
   final bool isTrendPositive;
   final VoidCallback? onTap;
 
-  const AppStatCard({
-    super.key,
-    required this.title,
-    required this.value,
-    required this.icon,
-    this.iconColor,
-    this.gradient,
-    this.subtitle,
-    this.trend,
-    this.isTrendPositive = true,
-    this.onTap,
-  });
+  const AppStatCard({super.key, required this.title, required this.value, required this.icon, this.iconColor, this.gradient, this.subtitle, this.trend, this.isTrendPositive = true, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final effectiveGradient = gradient ?? AppColors.darkCardGradient;
-    final effectiveIconColor = iconColor ?? AppColors.cyanAccent;
+    final effectiveIconColor = iconColor ?? AppColors.primary;
 
     return Material(
       color: Colors.transparent,
@@ -37,17 +25,14 @@ class AppStatCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Ink(
           decoration: BoxDecoration(
-            gradient: effectiveGradient,
+            color: AppColors.surface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: AppColors.navyBorder.withValues(alpha: 0.8),
-              width: 1.2,
-            ),
+            border: Border.all(color: AppColors.border, width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
           ),
@@ -62,12 +47,8 @@ class AppStatCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: effectiveIconColor.withValues(alpha: 0.15),
+                      color: effectiveIconColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: effectiveIconColor.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
                     ),
                     child: Icon(icon, color: effectiveIconColor, size: 20),
                   ),
@@ -75,13 +56,8 @@ class AppStatCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: (isTrendPositive ? AppColors.success : AppColors.danger)
-                            .withValues(alpha: 0.15),
+                        color: (isTrendPositive ? AppColors.successLight : AppColors.dangerLight),
                         borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: (isTrendPositive ? AppColors.success : AppColors.danger)
-                              .withValues(alpha: 0.3),
-                        ),
                       ),
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -114,7 +90,7 @@ class AppStatCard extends StatelessWidget {
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                      color: AppColors.textPrimary,
                       letterSpacing: -0.5,
                     ),
                   ),
@@ -133,7 +109,7 @@ class AppStatCard extends StatelessWidget {
                       subtitle!,
                       style: TextStyle(
                         fontSize: 10,
-                        color: effectiveIconColor.withValues(alpha: 0.9),
+                        color: effectiveIconColor,
                         fontWeight: FontWeight.w500,
                       ),
                     ),

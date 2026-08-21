@@ -1,84 +1,97 @@
 import 'package:flutter/material.dart';
 
+/// Shohnaat Logistics — Mobile Design Tokens
+/// Matches web app's clean, professional, light-theme palette.
 class AppColors {
-  // Brand Primary & Electric Accents
-  static const Color primary = Color(0xFF2563EB); // Electric Royal Blue
+  // ═══════════════════════════════════════════════════════════════
+  //  PRIMARY — Blue (#2563EB) — Buttons, links, active states
+  // ═══════════════════════════════════════════════════════════════
+  static const Color primary = Color(0xFF2563EB);
   static const Color primaryDark = Color(0xFF1D4ED8);
   static const Color primaryLight = Color(0xFFEFF6FF);
-  static const Color cyanAccent = Color(0xFF06B6D4); // Electric Cyan
-  static const Color indigoAccent = Color(0xFF6366F1); // Vivid Indigo
 
-  // Deep Dark Luxury Palette (Matching High-End Enterprise Dashboard)
-  static const Color navyBackground = Color(0xFF0B132B); // Rich Deep Obsidian Navy
-  static const Color navySurface = Color(0xFF111D3E); // Deep Card Surface
-  static const Color navyCard = Color(0xFF16234D); // Raised Card
-  static const Color navyCardHover = Color(0xFF1C2D62);
-  static const Color navyBorder = Color(0xFF23356E); // Subtle glowing border
+  // ═══════════════════════════════════════════════════════════════
+  //  NAVY — Brand header / app bar background
+  // ═══════════════════════════════════════════════════════════════
+  static const Color navy = Color(0xFF0F172A);
+  static const Color navyDark = Color(0xFF080D1A);
 
-  // Glassmorphism Tints
-  static const Color glassWhite = Color(0x1AFFFFFF);
-  static const Color glassBorder = Color(0x33FFFFFF);
-  static const Color glassDark = Color(0x800B132B);
+  // ═══════════════════════════════════════════════════════════════
+  //  SURFACES — Light, clean backgrounds
+  // ═══════════════════════════════════════════════════════════════
+  static const Color background = Color(0xFFF8FAFC);     // Page bg (slate-50)
+  static const Color surface = Colors.white;              // Card bg
+  static const Color surfaceElevated = Color(0xFFFAFBFC); // Elevated card bg
+  static const Color inputFill = Color(0xFFF1F5F9);       // Input background (slate-100)
+  static const Color border = Color(0xFFE2E8F0);          // Borders, dividers (slate-200)
+  static const Color borderLight = Color(0xFFF1F5F9);     // Subtle dividers (slate-100)
 
-  // Status & Priority Colors
-  static const Color success = Color(0xFF10B981); // Emerald 500
-  static const Color successLight = Color(0xFFECFDF5);
-  static const Color warning = Color(0xFFF59E0B); // Amber Gold
+  // ═══════════════════════════════════════════════════════════════
+  //  TEXT — Professional hierarchy
+  // ═══════════════════════════════════════════════════════════════
+  static const Color textPrimary = Color(0xFF0F172A);      // Slate 900
+  static const Color textSecondary = Color(0xFF334155);    // Slate 700
+  static const Color textMuted = Color(0xFF64748B);        // Slate 500
+  static const Color textLight = Color(0xFF94A3B8);        // Slate 400
+  static const Color textWhite = Colors.white;
+
+  // ═══════════════════════════════════════════════════════════════
+  //  STATUS — Meaningful, accessible colors
+  // ═══════════════════════════════════════════════════════════════
+  static const Color success = Color(0xFF16A34A);
+  static const Color successLight = Color(0xFFF0FDF4);
+  static const Color warning = Color(0xFFF59E0B);
   static const Color warningLight = Color(0xFFFFFBEB);
-  static const Color danger = Color(0xFFEF4444); // Crimson
+  static const Color danger = Color(0xFFEF4444);
   static const Color dangerLight = Color(0xFFFEF2F2);
-  static const Color info = Color(0xFF0EA5E9); // Sky 500
+  static const Color info = Color(0xFF0EA5E9);
   static const Color infoLight = Color(0xFFF0F9FF);
   static const Color purple = Color(0xFF8B5CF6);
   static const Color purpleLight = Color(0xFFF5F3FF);
+  static const Color teal = Color(0xFF14B8A6);
+  static const Color tealLight = Color(0xFFF0FDFA);
 
-  // Neutrals
-  static const Color background = Color(0xFFF1F5F9); // Crisp Slate 100
-  static const Color surface = Colors.white;
-  static const Color border = Color(0xFFE2E8F0);
-  static const Color borderDark = Color(0xFFCBD5E1);
+  // ═══════════════════════════════════════════════════════════════
+  //  ACCENT — Highlight colors
+  // ═══════════════════════════════════════════════════════════════
+  static const Color cyanAccent = Color(0xFF06B6D4);
+  static const Color amberAccent = Color(0xFFF59E0B);
 
-  // Text Tokens
-  static const Color textPrimary = Color(0xFF0F172A); // Slate 900
-  static const Color textSecondary = Color(0xFF475569); // Slate 600
-  static const Color textMuted = Color(0xFF94A3B8); // Slate 400
-  static const Color textWhite = Colors.white;
-  static const Color textCyan = Color(0xFF38BDF8);
-
-  // Linear Gradient Presets
+  // ═══════════════════════════════════════════════════════════════
+  //  GRADIENTS — Subtle, professional
+  // ═══════════════════════════════════════════════════════════════
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF2563EB), Color(0xFF06B6D4)],
+    colors: [Color(0xFF2563EB), Color(0xFF3B82F6)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
-  static const LinearGradient darkCardGradient = LinearGradient(
-    colors: [Color(0xFF16234D), Color(0xFF0E1838)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
-  static const LinearGradient heroGradient = LinearGradient(
-    colors: [Color(0xFF0B132B), Color(0xFF1E3A8A), Color(0xFF0F172A)],
+  static const LinearGradient navyGradient = LinearGradient(
+    colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
     begin: Alignment.topCenter,
     end: Alignment.bottomCenter,
   );
 
   static const LinearGradient successGradient = LinearGradient(
-    colors: [Color(0xFF059669), Color(0xFF10B981)],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  );
-
-  static const LinearGradient amberGradient = LinearGradient(
-    colors: [Color(0xFFD97706), Color(0xFFF59E0B)],
+    colors: [Color(0xFF16A34A), Color(0xFF22C55E)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient purpleGradient = LinearGradient(
-    colors: [Color(0xFF6D28D9), Color(0xFF8B5CF6)],
+    colors: [Color(0xFF7C3AED), Color(0xFF8B5CF6)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  // Legacy aliases for minimal breakage during migration
+  static const Color navyBackground = navy;
+  static const Color navySurface = surface;
+  static const Color navyCard = surface;
+  static const Color navyCardHover = Color(0xFFF1F5F9);
+  static const Color navyBorder = border;
+  static const Color glassWhite = Color(0x0D000000);
+  static const Color glassBorder = Color(0x1A000000);
+  static const Color darkCardGradient_colors_0 = Color(0xFFF8FAFC);
+  static const Color darkCardGradient_colors_1 = Color(0xFFF1F5F9);
 }

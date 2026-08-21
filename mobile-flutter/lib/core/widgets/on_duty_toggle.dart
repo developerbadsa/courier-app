@@ -6,11 +6,7 @@ class OnDutyToggle extends StatelessWidget {
   final bool isOnDuty;
   final ValueChanged<bool> onChanged;
 
-  const OnDutyToggle({
-    super.key,
-    required this.isOnDuty,
-    required this.onChanged,
-  });
+  const OnDutyToggle({super.key, required this.isOnDuty, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +15,7 @@ class OnDutyToggle extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isOnDuty ? AppColors.successLight : AppColors.background,
+          color: isOnDuty ? AppColors.successLight : AppColors.inputFill,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isOnDuty ? AppColors.success : AppColors.border,
@@ -33,7 +29,7 @@ class OnDutyToggle extends StatelessWidget {
               width: 8,
               height: 8,
               decoration: BoxDecoration(
-                color: isOnDuty ? AppColors.success : AppColors.textMuted,
+                color: isOnDuty ? AppColors.success : AppColors.textLight,
                 shape: BoxShape.circle,
               ),
             ),

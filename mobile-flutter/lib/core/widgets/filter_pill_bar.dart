@@ -7,12 +7,7 @@ class FilterPillItem {
   final int? count;
   final IconData? icon;
 
-  const FilterPillItem({
-    required this.key,
-    required this.label,
-    this.count,
-    this.icon,
-  });
+  const FilterPillItem({required this.key, required this.label, this.count, this.icon});
 }
 
 class FilterPillBar extends StatelessWidget {
@@ -20,12 +15,7 @@ class FilterPillBar extends StatelessWidget {
   final String selectedKey;
   final ValueChanged<String> onSelected;
 
-  const FilterPillBar({
-    super.key,
-    required this.items,
-    required this.selectedKey,
-    required this.onSelected,
-  });
+  const FilterPillBar({super.key, required this.items, required this.selectedKey, required this.onSelected});
 
   @override
   Widget build(BuildContext context) {
@@ -47,21 +37,18 @@ class FilterPillBar extends StatelessWidget {
               curve: Curves.easeInOut,
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
-                gradient: isSelected ? AppColors.primaryGradient : null,
-                color: isSelected ? null : AppColors.navySurface,
+                color: isSelected ? AppColors.primary : AppColors.surface,
                 borderRadius: BorderRadius.circular(22),
                 border: Border.all(
-                  color: isSelected
-                      ? AppColors.cyanAccent
-                      : AppColors.navyBorder.withValues(alpha: 0.8),
-                  width: isSelected ? 1.4 : 1,
+                  color: isSelected ? AppColors.primary : AppColors.border,
+                  width: 1,
                 ),
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.4),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
+                          color: AppColors.primary.withValues(alpha: 0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
                         ),
                       ]
                     : null,
@@ -92,7 +79,7 @@ class FilterPillBar extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? Colors.white.withValues(alpha: 0.25)
-                            : AppColors.navyBorder,
+                            : AppColors.inputFill,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -100,7 +87,7 @@ class FilterPillBar extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 10.5,
                           fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : AppColors.cyanAccent,
+                          color: isSelected ? Colors.white : AppColors.primary,
                         ),
                       ),
                     ),

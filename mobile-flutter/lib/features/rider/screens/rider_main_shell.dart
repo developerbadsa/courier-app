@@ -18,6 +18,7 @@ class RiderMainShell extends StatefulWidget {
 
 class _RiderMainShellState extends State<RiderMainShell> {
   late int _currentIndex;
+  final CameraBarcodeScannerScreen _scannerScreen = const CameraBarcodeScannerScreen();
 
   @override
   void initState() {
@@ -25,33 +26,39 @@ class _RiderMainShellState extends State<RiderMainShell> {
     _currentIndex = widget.initialTab;
   }
 
-  final List<Widget> _screens = const [
-    RiderHomeScreen(),
-    RiderRouteMapScreen(),
-    CameraBarcodeScannerScreen(),
-    RiderCodWalletScreen(),
-    RiderProfileScreen(),
-  ];
+  void _onTabChanged(int index) {
+    // Pause camera when leaving scanner tab
+    if (_currentIndex == 2 && index != 2) {
+      // Signal scanner to pause (scanner handles this via lifecycle)
+    }
+    setState(() => _currentIndex = index);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.navyBackground,
+      backgroundColor: AppColors.background,
       body: IndexedStack(
         index: _currentIndex,
-        children: _screens,
+        children: [
+          const RiderHomeScreen(),
+          const RiderRouteMapScreen(),
+          _scannerScreen,
+          const RiderCodWalletScreen(),
+          const RiderProfileScreen(),
+        ],
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: AppColors.navySurface,
-          border: Border(
-            top: BorderSide(color: AppColors.navyBorder.withValues(alpha: 0.8), width: 1.2),
+          color: AppColors.surface,
+          border: const Border(
+            top: BorderSide(color: AppColors.border, width: 1),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.4),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 12,
+              offset: const Offset(0, -2),
             ),
           ],
         ),
@@ -77,13 +84,13 @@ class _RiderMainShellState extends State<RiderMainShell> {
   Widget _buildNavItem(int index, IconData icon, String label) {
     final isSelected = _currentIndex == index;
     return InkWell(
-      onTap: () => setState(() => _currentIndex = index),
+      onTap: () => _onTabChanged(index),
       borderRadius: BorderRadius.circular(16),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withValues(alpha: 0.18) : Colors.transparent,
+          color: isSelected ? AppColors.primaryLight : Colors.transparent,
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -92,7 +99,7 @@ class _RiderMainShellState extends State<RiderMainShell> {
             Icon(
               icon,
               size: 20,
-              color: isSelected ? AppColors.cyanAccent : AppColors.textMuted,
+              color: isSelected ? AppColors.primary : AppColors.textMuted,
             ),
             const SizedBox(height: 3),
             Text(
@@ -100,7 +107,7 @@ class _RiderMainShellState extends State<RiderMainShell> {
               style: TextStyle(
                 fontSize: 10.5,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                color: isSelected ? Colors.white : AppColors.textMuted,
+                color: isSelected ? AppColors.primary : AppColors.textMuted,
               ),
             ),
           ],
@@ -110,9 +117,8 @@ class _RiderMainShellState extends State<RiderMainShell> {
   }
 
   Widget _buildCenterScannerItem(int index) {
-    final isSelected = _currentIndex == index;
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = index),
+      onTap: () => _onTabChanged(index),
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -120,15 +126,11 @@ class _RiderMainShellState extends State<RiderMainShell> {
           gradient: AppColors.primaryGradient,
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.5),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
+              color: AppColors.primary.withValues(alpha: 0.25),
+              blurRadius: 12,
+              offset: const Offset(0, 3),
             ),
           ],
-          border: Border.all(
-            color: isSelected ? AppColors.cyanAccent : Colors.white24,
-            width: 2,
-          ),
         ),
         child: const Icon(
           LucideIcons.scanLine,

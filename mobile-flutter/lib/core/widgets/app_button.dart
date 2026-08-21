@@ -41,17 +41,16 @@ class AppButton extends StatelessWidget {
         break;
       case AppButtonVariant.cyan:
         bgColor = AppColors.cyanAccent;
-        textColor = AppColors.navyBackground;
+        textColor = AppColors.navy;
         break;
       case AppButtonVariant.navy:
-        bgColor = AppColors.navyCard;
+        bgColor = AppColors.navy;
         textColor = Colors.white;
-        borderSide = BorderSide(color: AppColors.navyBorder.withValues(alpha: 0.8));
         break;
       case AppButtonVariant.outline:
-        bgColor = Colors.transparent;
-        textColor = AppColors.cyanAccent;
-        borderSide = const BorderSide(color: AppColors.cyanAccent, width: 1.5);
+        bgColor = Colors.white;
+        textColor = AppColors.primary;
+        borderSide = const BorderSide(color: AppColors.primary, width: 1.5);
         break;
       case AppButtonVariant.danger:
         bgColor = AppColors.danger;
@@ -102,7 +101,7 @@ class AppButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.35),
+              color: AppColors.primary.withValues(alpha: 0.25),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),

@@ -8,29 +8,22 @@ class AppCard extends StatelessWidget {
   final Color? backgroundColor;
   final BorderSide? border;
 
-  const AppCard({
-    super.key,
-    required this.child,
-    this.padding = const EdgeInsets.all(16),
-    this.onTap,
-    this.backgroundColor,
-    this.border,
-  });
+  const AppCard({super.key, required this.child, this.padding = const EdgeInsets.all(16), this.onTap, this.backgroundColor, this.border});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: backgroundColor ?? AppColors.navySurface,
+        color: backgroundColor ?? AppColors.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.fromBorderSide(
-          border ?? BorderSide(color: AppColors.navyBorder.withValues(alpha: 0.8), width: 1.2),
+          border ?? const BorderSide(color: AppColors.border, width: 1),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.2),
+            color: Colors.black.withValues(alpha: 0.04),
             blurRadius: 8,
-            offset: const Offset(0, 3),
+            offset: const Offset(0, 2),
           ),
         ],
       ),
@@ -39,10 +32,7 @@ class AppCard extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(16),
           onTap: onTap,
-          child: Padding(
-            padding: padding,
-            child: child,
-          ),
+          child: Padding(padding: padding, child: child),
         ),
       ),
     );

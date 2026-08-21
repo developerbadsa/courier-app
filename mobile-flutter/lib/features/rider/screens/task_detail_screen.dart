@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/status_badge_widget.dart';
 import '../cubit/runsheet_cubit.dart';
 import '../models/delivery_task_model.dart';
@@ -17,25 +18,18 @@ class TaskDetailScreen extends StatelessWidget {
 
   void _callCustomer(String phone) async {
     final uri = Uri.parse('tel:${phone.replaceAll(RegExp(r'[^\d+]'), '')}');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    }
+    if (await canLaunchUrl(uri)) await launchUrl(uri);
   }
 
   void _openWhatsApp(String phone, String trackingNumber) async {
     final cleanPhone = phone.replaceAll(RegExp(r'[^\d]'), '');
-    final uri = Uri.parse(
-        'https://wa.me/$cleanPhone?text=Hello,%20this%20is%20your%20Shohnaat%20courier%20rider%20for%20parcel%20$trackingNumber.%20I%20am%20arriving%20shortly.');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    final uri = Uri.parse('https://wa.me/$cleanPhone?text=Hello,%20this%20is%20your%20Shohnaat%20courier%20rider%20for%20parcel%20$trackingNumber.%20I%20am%20arriving%20shortly.');
+    if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   void _openGoogleMaps(String address) async {
     final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(address)}');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+    if (await canLaunchUrl(uri)) await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   void _showReportFailDialog(BuildContext context) {
@@ -46,13 +40,12 @@ class TaskDetailScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.navyCard,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: const Row(
             children: [
               Icon(LucideIcons.alertTriangle, color: AppColors.danger, size: 20),
               SizedBox(width: 8),
-              Text('Report Delivery Issue', style: TextStyle(color: Colors.white, fontSize: 16)),
+              Text('Report Delivery Issue', style: TextStyle(fontSize: 16)),
             ],
           ),
           content: Column(
@@ -64,22 +57,22 @@ class TaskDetailScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
-                  color: AppColors.navySurface,
+                  color: AppColors.inputFill,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.navyBorder),
+                  border: Border.all(color: AppColors.border),
                 ),
                 child: DropdownButton<String>(
                   value: selectedReason,
                   isExpanded: true,
-                  dropdownColor: AppColors.navyCard,
+                  dropdownColor: AppColors.surface,
                   underline: const SizedBox(),
-                  style: const TextStyle(color: Colors.white, fontSize: 12.5),
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 12.5),
                   items: const [
-                    DropdownMenuItem(value: 'CUSTOMER_UNREACHABLE', child: Text('Customer Unreachable / Phone Off')),
-                    DropdownMenuItem(value: 'WRONG_ADDRESS', child: Text('Incorrect / Incomplete Address')),
-                    DropdownMenuItem(value: 'CUSTOMER_RESCHEDULED', child: Text('Customer Requested Reschedule')),
-                    DropdownMenuItem(value: 'REFUSED_PAYMENT', child: Text('Customer Refused COD Payment')),
-                    DropdownMenuItem(value: 'DAMAGED_BOX', child: Text('Package Damaged in Transit')),
+                    DropdownMenuItem(value: 'CUSTOMER_UNREACHABLE', child: Text('Customer Unreachable')),
+                    DropdownMenuItem(value: 'WRONG_ADDRESS', child: Text('Incorrect Address')),
+                    DropdownMenuItem(value: 'CUSTOMER_RESCHEDULED', child: Text('Customer Rescheduled')),
+                    DropdownMenuItem(value: 'REFUSED_PAYMENT', child: Text('Refused COD Payment')),
+                    DropdownMenuItem(value: 'DAMAGED_BOX', child: Text('Package Damaged')),
                   ],
                   onChanged: (val) => setDialogState(() => selectedReason = val!),
                 ),
@@ -87,22 +80,19 @@ class TaskDetailScreen extends StatelessWidget {
               const SizedBox(height: 12),
               TextField(
                 controller: notesController,
-                style: const TextStyle(color: Colors.white, fontSize: 12.5),
+                style: const TextStyle(color: AppColors.textPrimary, fontSize: 12.5),
                 decoration: InputDecoration(
-                  hintText: 'Additional driver notes...',
-                  hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  hintText: 'Additional notes...',
+                  hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 12),
                   filled: true,
-                  fillColor: AppColors.navySurface,
+                  fillColor: AppColors.inputFill,
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                 ),
               ),
             ],
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Cancel', style: TextStyle(color: AppColors.textMuted)),
-            ),
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: AppColors.danger),
               onPressed: () {
@@ -114,10 +104,7 @@ class TaskDetailScreen extends StatelessWidget {
                 Navigator.pop(ctx);
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('⚠️ Delivery marked as Failed / Returned to Hub'),
-                    backgroundColor: AppColors.danger,
-                  ),
+                  const SnackBar(content: Text('Delivery marked as Failed'), backgroundColor: AppColors.danger),
                 );
               },
               child: const Text('Confirm Return', style: TextStyle(color: Colors.white)),
@@ -137,9 +124,7 @@ class TaskDetailScreen extends StatelessWidget {
         builder: (_) => CashCollectionModal(
           expectedCod: task.codAmount,
           trackingNumber: task.trackingNumber,
-          onCollect: (amount) {
-            _showPodModal(context, amount);
-          },
+          onCollect: (amount) => _showPodModal(context, amount),
         ),
       );
     } else {
@@ -162,10 +147,7 @@ class TaskDetailScreen extends StatelessWidget {
                 otpVerified: true,
               );
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('✅ Delivery Completed Successfully!'),
-              backgroundColor: AppColors.success,
-            ),
+            const SnackBar(content: Text('Delivery Completed Successfully!'), backgroundColor: AppColors.success),
           );
           Navigator.of(context).pop();
         },
@@ -176,18 +158,13 @@ class TaskDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.navyBackground,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.navyBackground,
+        backgroundColor: AppColors.navy,
         elevation: 0,
         title: Text(
           task.trackingNumber,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w900,
-            fontFamily: 'monospace',
-            color: Colors.white,
-          ),
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, fontFamily: 'monospace', color: Colors.white),
         ),
         actions: [
           Padding(
@@ -201,69 +178,48 @@ class TaskDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Customer & Address Info Card
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: AppColors.navySurface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.navyBorder),
-              ),
+            // Customer & Address Card
+            AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        task.recipientName,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      Text(task.recipientName, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                        decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
                         child: Text(
                           task.scheduledTime ?? 'Standard Slot',
-                          style: const TextStyle(color: AppColors.cyanAccent, fontSize: 10.5, fontWeight: FontWeight.bold),
+                          style: const TextStyle(color: AppColors.primary, fontSize: 10.5, fontWeight: FontWeight.bold),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 6),
-                  Text(
-                    task.recipientPhone,
-                    style: const TextStyle(color: AppColors.cyanAccent, fontSize: 13, fontWeight: FontWeight.w600),
-                  ),
+                  Text(task.recipientPhone, style: const TextStyle(color: AppColors.primary, fontSize: 13, fontWeight: FontWeight.w600)),
                   const SizedBox(height: 10),
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(LucideIcons.mapPin, color: AppColors.textMuted, size: 16),
+                      const Icon(LucideIcons.mapPin, color: AppColors.danger, size: 16),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
-                          '${task.deliveryAddress}, ${task.destinationCity}',
-                          style: const TextStyle(color: AppColors.textMuted, fontSize: 12.5),
-                        ),
+                        child: Text('${task.deliveryAddress}, ${task.destinationCity}',
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 12.5)),
                       ),
                     ],
                   ),
                   const SizedBox(height: 16),
-                  // Communication Actions
                   Row(
                     children: [
                       Expanded(
                         child: AppButton(
                           text: 'Call',
-                          variant: AppButtonVariant.navy,
-                          icon: const Icon(LucideIcons.phone, size: 16, color: Colors.white),
+                          variant: AppButtonVariant.outline,
+                          size: AppButtonSize.sm,
+                          icon: const Icon(LucideIcons.phone, size: 16, color: AppColors.primary),
                           onPressed: () => _callCustomer(task.recipientPhone),
                         ),
                       ),
@@ -271,7 +227,8 @@ class TaskDetailScreen extends StatelessWidget {
                       Expanded(
                         child: AppButton(
                           text: 'WhatsApp',
-                          variant: AppButtonVariant.navy,
+                          variant: AppButtonVariant.outline,
+                          size: AppButtonSize.sm,
                           icon: const Icon(LucideIcons.messageSquare, size: 16, color: AppColors.success),
                           onPressed: () => _openWhatsApp(task.recipientPhone, task.trackingNumber),
                         ),
@@ -279,9 +236,10 @@ class TaskDetailScreen extends StatelessWidget {
                       const SizedBox(width: 8),
                       Expanded(
                         child: AppButton(
-                          text: 'Map',
-                          variant: AppButtonVariant.navy,
-                          icon: const Icon(LucideIcons.navigation, size: 16, color: AppColors.cyanAccent),
+                          text: 'Navigate',
+                          variant: AppButtonVariant.outline,
+                          size: AppButtonSize.sm,
+                          icon: const Icon(LucideIcons.navigation, size: 16, color: AppColors.primary),
                           onPressed: () => _openGoogleMaps('${task.deliveryAddress}, ${task.destinationCity}'),
                         ),
                       ),
@@ -291,26 +249,17 @@ class TaskDetailScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 14),
+            const SizedBox(height: 12),
 
-            // Parcel Specs & Payment
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: AppColors.navySurface,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.navyBorder),
-              ),
+            // Parcel Specs
+            AppCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Parcel Specs & Pricing', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13.5)),
+                  const Text('Parcel Details', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
                   const SizedBox(height: 12),
                   _buildDetailRow('Package Weight', '${task.weightKg} kg'),
-                  _buildDetailRow(
-                    'Payment Mode',
-                    task.codAmount > 0 ? 'Cash on Delivery (COD)' : 'Prepaid Online',
-                  ),
+                  _buildDetailRow('Payment Mode', task.codAmount > 0 ? 'Cash on Delivery' : 'Prepaid'),
                   _buildDetailRow(
                     'Cash to Collect',
                     task.codAmount > 0 ? '\$${task.codAmount.toStringAsFixed(2)} USD' : '\$0.00 (Prepaid)',
@@ -321,18 +270,16 @@ class TaskDetailScreen extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
+                        color: AppColors.infoLight,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
                         children: [
-                          const Icon(LucideIcons.info, color: AppColors.cyanAccent, size: 14),
+                          const Icon(LucideIcons.info, color: AppColors.info, size: 14),
                           const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              task.driverNotes!,
-                              style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5, fontStyle: FontStyle.italic),
-                            ),
+                            child: Text(task.driverNotes!,
+                                style: const TextStyle(color: AppColors.textSecondary, fontSize: 11.5, fontStyle: FontStyle.italic)),
                           ),
                         ],
                       ),
@@ -344,7 +291,6 @@ class TaskDetailScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // Delivery Actions (Complete or Report Issue)
             if (!task.isCompleted) ...[
               AppButton(
                 text: task.codAmount > 0 ? 'Collect Cash & Complete POD' : 'Capture Digital Signature (POD)',
@@ -363,19 +309,16 @@ class TaskDetailScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.15),
+                  color: AppColors.successLight,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
+                  border: Border.all(color: AppColors.success.withValues(alpha: 0.2)),
                 ),
                 child: const Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(LucideIcons.checkCircle2, color: AppColors.success, size: 20),
                     SizedBox(width: 8),
-                    Text(
-                      'Delivery Completed & Signed',
-                      style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold, fontSize: 14),
-                    ),
+                    Text('Delivery Completed & Signed', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold, fontSize: 14)),
                   ],
                 ),
               ),
@@ -398,7 +341,7 @@ class TaskDetailScreen extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              color: isHighlight ? Colors.amberAccent : Colors.white,
+              color: isHighlight ? AppColors.warning : AppColors.textPrimary,
               fontWeight: isHighlight ? FontWeight.bold : FontWeight.w600,
               fontSize: 12.5,
             ),

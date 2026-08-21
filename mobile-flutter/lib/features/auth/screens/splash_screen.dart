@@ -24,7 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.navyBackground,
+      backgroundColor: AppColors.navy,
       body: BlocListener<AuthCubit, AuthState>(
         listener: (context, state) {
           if (state is Authenticated) {
@@ -41,6 +41,7 @@ class _SplashScreenState extends State<SplashScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              // Logo
               ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: Image.asset(
@@ -51,37 +52,41 @@ class _SplashScreenState extends State<SplashScreen> {
                   errorBuilder: (_, __, ___) => Container(
                     width: 80,
                     height: 80,
-                    color: AppColors.primary,
+                    decoration: BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                     child: const Icon(LucideIcons.bike, color: Colors.white, size: 40),
                   ),
                 ),
               ),
               const SizedBox(height: 20),
               const Text(
-                'SHOHNAAT RIDER PRO',
+                'SHOHNAAT',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 22,
+                  fontSize: 26,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 1.5,
+                  letterSpacing: 3,
                 ),
               ),
-              const SizedBox(height: 6),
-              const Text(
-                'High-Performance Courier Dispatch & Route Hub',
+              const SizedBox(height: 4),
+              Text(
+                'Logistics & Courier Platform',
                 style: TextStyle(
-                  color: AppColors.cyanAccent,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.6),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  letterSpacing: 0.5,
                 ),
               ),
-              const SizedBox(height: 36),
+              const SizedBox(height: 40),
               const SizedBox(
                 width: 24,
                 height: 24,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.cyanAccent),
+                  valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
                 ),
               ),
             ],

@@ -5,6 +5,7 @@ import '../../../core/constants/app_colors.dart';
 import '../../../core/network/dio_client.dart';
 import '../../../core/constants/api_constants.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_stat_card.dart';
 import '../../../core/widgets/filter_pill_bar.dart';
 import '../../../core/widgets/status_badge_widget.dart';
@@ -24,7 +25,6 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
   List<Map<String, dynamic>> _shipments = [];
   bool _isLoading = true;
   String _selectedFilter = 'ALL';
-
   double _walletBalance = 4250.00;
   double _escrowCod = 1820.00;
   int _totalShipments = 128;
@@ -49,7 +49,7 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
           return {
             'id': s['id']?.toString() ?? '',
             'tracking': s['trackingNumber']?.toString() ?? 'SHN-000',
-            'recipient': consignee?['name']?.toString() ?? s['consigneeName']?.toString() ?? 'Customer',
+            'recipient': consignee?['name']?.toString() ?? 'Customer',
             'city': addr?['city']?.toString() ?? 'Austin, TX',
             'status': (s['currentStatus']?.toString() ?? 'IN_TRANSIT').toUpperCase(),
             'cod': double.tryParse(s['codAmount']?.toString() ?? '0') ?? 0.0,
@@ -70,45 +70,12 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
       }
     } catch (_) {}
 
-    // Rich Sample Fallback
     setState(() {
       _shipments = [
-        {
-          'id': '1',
-          'tracking': 'SHN-9482-US',
-          'recipient': 'Michael Chang',
-          'city': 'Downtown Austin, TX',
-          'status': 'OUT_FOR_DELIVERY',
-          'cod': 48.50,
-          'createdAt': '10 mins ago',
-        },
-        {
-          'id': '2',
-          'tracking': 'SHN-8831-US',
-          'recipient': 'Sophia Rodriguez',
-          'city': 'South Congress, Austin',
-          'status': 'IN_TRANSIT',
-          'cod': 0.0,
-          'createdAt': '1 hour ago',
-        },
-        {
-          'id': '3',
-          'tracking': 'SHN-7712-US',
-          'recipient': 'David Miller',
-          'city': 'North Campus, Austin',
-          'status': 'ASSIGNED',
-          'cod': 112.00,
-          'createdAt': '2 hours ago',
-        },
-        {
-          'id': '4',
-          'tracking': 'SHN-6604-US',
-          'recipient': 'Emma Watson',
-          'city': 'East Austin, TX',
-          'status': 'DELIVERED',
-          'cod': 32.00,
-          'createdAt': 'Delivered today',
-        },
+        {'id': '1', 'tracking': 'SHN-9482-US', 'recipient': 'Michael Chang', 'city': 'Downtown Austin', 'status': 'OUT_FOR_DELIVERY', 'cod': 48.50, 'createdAt': '10 mins ago'},
+        {'id': '2', 'tracking': 'SHN-8831-US', 'recipient': 'Sophia Rodriguez', 'city': 'South Congress', 'status': 'IN_TRANSIT', 'cod': 0.0, 'createdAt': '1 hour ago'},
+        {'id': '3', 'tracking': 'SHN-7712-US', 'recipient': 'David Miller', 'city': 'North Campus', 'status': 'ASSIGNED', 'cod': 112.00, 'createdAt': '2 hours ago'},
+        {'id': '4', 'tracking': 'SHN-6604-US', 'recipient': 'Emma Watson', 'city': 'East Austin', 'status': 'DELIVERED', 'cod': 32.00, 'createdAt': 'Delivered'},
       ];
       _isLoading = false;
     });
@@ -121,14 +88,9 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) => Container(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          top: 20,
-          left: 20,
-          right: 20,
-        ),
+        padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom + 20, top: 20, left: 20, right: 20),
         decoration: const BoxDecoration(
-          color: AppColors.navyCard,
+          color: AppColors.surface,
           borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: Column(
@@ -138,47 +100,33 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Request Instant Payout',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                IconButton(
-                  icon: const Icon(LucideIcons.x, color: AppColors.textMuted),
-                  onPressed: () => Navigator.pop(ctx),
-                ),
+                const Text('Request Instant Payout', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                IconButton(icon: const Icon(LucideIcons.x), onPressed: () => Navigator.pop(ctx)),
               ],
             ),
             const SizedBox(height: 12),
-            Text(
-              'Available Balance: \$${_walletBalance.toStringAsFixed(2)} USD',
-              style: const TextStyle(color: AppColors.cyanAccent, fontWeight: FontWeight.w600, fontSize: 13),
-            ),
+            Text('Available: \$${_walletBalance.toStringAsFixed(2)} USD', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600, fontSize: 13)),
             const SizedBox(height: 14),
             TextField(
               controller: amountController,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               decoration: InputDecoration(
                 prefixText: '\$ ',
-                prefixStyle: const TextStyle(color: AppColors.cyanAccent, fontSize: 16, fontWeight: FontWeight.bold),
                 labelText: 'Withdrawal Amount',
-                labelStyle: const TextStyle(color: AppColors.textMuted),
                 filled: true,
-                fillColor: AppColors.navySurface,
+                fillColor: AppColors.inputFill,
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
               ),
             ),
             const SizedBox(height: 20),
             AppButton(
-              text: 'Confirm Transfer to Bank',
+              text: 'Confirm Transfer',
               icon: const Icon(LucideIcons.arrowRight, size: 16),
               onPressed: () {
                 Navigator.pop(ctx);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('🎉 Payout Request submitted to Finance Gateway!'),
-                    backgroundColor: AppColors.success,
-                  ),
+                  const SnackBar(content: Text('Payout Request submitted!'), backgroundColor: AppColors.success),
                 );
               },
             ),
@@ -198,48 +146,36 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
     }).toList();
 
     return Scaffold(
-      backgroundColor: AppColors.navyBackground,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.navyBackground,
+        backgroundColor: AppColors.navy,
         elevation: 0,
         title: Row(
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: Image.asset(
-                'assets/images/app_logo.png',
-                width: 34,
-                height: 34,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => const Icon(LucideIcons.store, color: AppColors.cyanAccent, size: 24),
+              child: Image.asset('assets/images/app_logo.png', width: 34, height: 34, fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const Icon(LucideIcons.store, color: Colors.white, size: 24),
               ),
             ),
             const SizedBox(width: 10),
             const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'MERCHANT PORTAL',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, letterSpacing: 1.1, color: Colors.white),
-                ),
-                Text(
-                  'Apex Global Store • VIP Enterprise',
-                  style: TextStyle(fontSize: 10.5, color: AppColors.textMuted),
-                ),
+                Text('Merchant Portal', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.white)),
+                Text('Apex Global Store', style: TextStyle(fontSize: 10.5, color: AppColors.textLight)),
               ],
             ),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(LucideIcons.calendarDays, color: AppColors.cyanAccent, size: 20),
-            tooltip: 'Pickup Requests',
-            onPressed: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PickupRequestsScreen()));
-            },
+            icon: const Icon(LucideIcons.calendarDays, color: Colors.white, size: 20),
+            tooltip: 'Pickups',
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PickupRequestsScreen())),
           ),
           IconButton(
-            icon: const Icon(LucideIcons.logOut, color: AppColors.textMuted, size: 20),
+            icon: const Icon(LucideIcons.logOut, color: AppColors.textLight, size: 20),
             tooltip: 'Logout',
             onPressed: () => context.read<AuthCubit>().logout(),
           ),
@@ -255,30 +191,20 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _loadMerchantData,
-        color: AppColors.cyanAccent,
-        backgroundColor: AppColors.navyCard,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Merchant Wallet Card
+              // Wallet Card
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6), Color(0xFF06B6D4)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  gradient: AppColors.primaryGradient,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.35),
-                      blurRadius: 16,
-                      offset: const Offset(0, 6),
-                    ),
+                    BoxShadow(color: AppColors.primary.withValues(alpha: 0.25), blurRadius: 16, offset: const Offset(0, 6)),
                   ],
                 ),
                 child: Column(
@@ -287,16 +213,10 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'Available COD Balance',
-                          style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
-                        ),
+                        const Text('Available COD Balance', style: TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500)),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
+                          decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(20)),
                           child: const Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -309,25 +229,14 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Text(
-                      '\$${_walletBalance.toStringAsFixed(2)} USD',
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                        letterSpacing: -1,
-                      ),
-                    ),
+                    Text('\$${_walletBalance.toStringAsFixed(2)} USD', style: const TextStyle(fontSize: 32, fontWeight: FontWeight.w900, color: Colors.white, letterSpacing: -1)),
                     const SizedBox(height: 6),
-                    Text(
-                      'Escrow COD: \$${_escrowCod.toStringAsFixed(2)} USD (In Delivery)',
-                      style: const TextStyle(color: Colors.white70, fontSize: 11.5),
-                    ),
+                    Text('Escrow: \$${_escrowCod.toStringAsFixed(2)} (In Delivery)', style: const TextStyle(color: Colors.white70, fontSize: 11.5)),
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                       onPressed: _showPayoutModal,
-                      icon: const Icon(LucideIcons.wallet, size: 16, color: AppColors.navyBackground),
-                      label: const Text('Withdraw Funds Now', style: TextStyle(color: AppColors.navyBackground, fontWeight: FontWeight.bold)),
+                      icon: const Icon(LucideIcons.wallet, size: 16, color: AppColors.navy),
+                      label: const Text('Withdraw Funds', style: TextStyle(color: AppColors.navy, fontWeight: FontWeight.bold)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         elevation: 0,
@@ -341,7 +250,7 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
 
               const SizedBox(height: 16),
 
-              // 4-Card KPI Stat Grid
+              // KPI Grid
               GridView.count(
                 crossAxisCount: 2,
                 shrinkWrap: true,
@@ -350,43 +259,19 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
                 mainAxisSpacing: 10,
                 childAspectRatio: 1.6,
                 children: [
-                  AppStatCard(
-                    title: 'Total Parcels',
-                    value: '$_totalShipments',
-                    icon: LucideIcons.package,
-                    iconColor: AppColors.cyanAccent,
-                    trend: '+18% MoM',
-                  ),
-                  AppStatCard(
-                    title: 'In Transit',
-                    value: '$_inTransitCount',
-                    icon: LucideIcons.truck,
-                    iconColor: AppColors.warning,
-                    trend: 'Active',
-                  ),
-                  AppStatCard(
-                    title: 'Delivered',
-                    value: '$_deliveredCount',
-                    icon: LucideIcons.checkCircle2,
-                    iconColor: AppColors.success,
-                    trend: '98.2% Rate',
-                  ),
-                  AppStatCard(
-                    title: 'Return Ratio',
-                    value: '1.4%',
-                    icon: LucideIcons.rotateCcw,
-                    iconColor: AppColors.purple,
-                    trend: 'Low',
-                  ),
+                  AppStatCard(title: 'Total Parcels', value: '$_totalShipments', icon: LucideIcons.package, iconColor: AppColors.primary, trend: '+18% MoM'),
+                  AppStatCard(title: 'In Transit', value: '$_inTransitCount', icon: LucideIcons.truck, iconColor: AppColors.warning, trend: 'Active'),
+                  AppStatCard(title: 'Delivered', value: '$_deliveredCount', icon: LucideIcons.checkCircle2, iconColor: AppColors.success, trend: '98.2%'),
+                  AppStatCard(title: 'Return Rate', value: '1.4%', icon: LucideIcons.rotateCcw, iconColor: AppColors.purple, trend: 'Low'),
                 ],
               ),
 
               const SizedBox(height: 18),
 
-              // Filter Capsule Pills
+              // Filter Pills
               FilterPillBar(
                 items: [
-                  FilterPillItem(key: 'ALL', label: 'All Parcels', count: _shipments.length, icon: LucideIcons.layers),
+                  FilterPillItem(key: 'ALL', label: 'All', count: _shipments.length, icon: LucideIcons.layers),
                   FilterPillItem(key: 'IN_TRANSIT', label: 'In Transit', count: _inTransitCount, icon: LucideIcons.truck),
                   FilterPillItem(key: 'DELIVERED', label: 'Delivered', count: _deliveredCount, icon: LucideIcons.checkCircle2),
                   FilterPillItem(key: 'PENDING', label: 'Pending', icon: LucideIcons.clock),
@@ -397,23 +282,15 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
 
               const SizedBox(height: 16),
 
-              // Recent Shipments Feed
+              // Shipments
               if (_isLoading)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 30),
-                  child: Center(child: CircularProgressIndicator(color: AppColors.cyanAccent)),
+                  child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
                 )
               else if (filtered.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: AppColors.navySurface,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.navyBorder),
-                  ),
-                  child: const Center(
-                    child: Text('No parcels in this filter', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                  ),
+                AppCard(
+                  child: const Center(child: Text('No parcels in this filter', style: TextStyle(fontWeight: FontWeight.bold))),
                 )
               else
                 ListView.separated(
@@ -425,29 +302,19 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
                     final s = filtered[index];
                     return InkWell(
                       onTap: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(
-                            builder: (_) => CustomerTrackingScreen(initialTrackingNumber: s['tracking']),
-                          ),
-                        );
+                        Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => CustomerTrackingScreen(initialTrackingNumber: s['tracking']),
+                        ));
                       },
-                      borderRadius: BorderRadius.circular(14),
-                      child: Container(
+                      borderRadius: BorderRadius.circular(16),
+                      child: AppCard(
                         padding: const EdgeInsets.all(14),
-                        decoration: BoxDecoration(
-                          color: AppColors.navySurface,
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(color: AppColors.navyBorder),
-                        ),
                         child: Row(
                           children: [
                             Container(
                               padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Icon(LucideIcons.package, color: AppColors.cyanAccent, size: 20),
+                              decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(12)),
+                              child: const Icon(LucideIcons.package, color: AppColors.primary, size: 20),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
@@ -457,34 +324,20 @@ class _MerchantHomeScreenState extends State<MerchantHomeScreen> {
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text(
-                                        s['tracking'],
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 13,
-                                          fontFamily: 'monospace',
-                                        ),
-                                      ),
+                                      Text(s['tracking'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, fontFamily: 'monospace')),
                                       StatusBadgeWidget(status: s['status']),
                                     ],
                                   ),
                                   const SizedBox(height: 4),
-                                  Text(
-                                    '${s['recipient']} • ${s['city']}',
-                                    style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5),
-                                  ),
+                                  Text('${s['recipient']} • ${s['city']}', style: const TextStyle(color: AppColors.textMuted, fontSize: 11.5)),
                                   if ((s['cod'] as double) > 0) ...[
                                     const SizedBox(height: 2),
-                                    Text(
-                                      'COD: \$${(s['cod'] as double).toStringAsFixed(2)}',
-                                      style: const TextStyle(color: Colors.amberAccent, fontSize: 11, fontWeight: FontWeight.bold),
-                                    ),
+                                    Text('COD: \$${(s['cod'] as double).toStringAsFixed(2)}', style: const TextStyle(color: AppColors.warning, fontSize: 11, fontWeight: FontWeight.bold)),
                                   ],
                                 ],
                               ),
                             ),
-                            const Icon(LucideIcons.chevronRight, color: AppColors.textMuted, size: 16),
+                            const Icon(LucideIcons.chevronRight, color: AppColors.textLight, size: 16),
                           ],
                         ),
                       ),

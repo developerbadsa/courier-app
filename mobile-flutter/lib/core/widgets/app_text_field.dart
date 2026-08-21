@@ -14,26 +14,13 @@ class AppTextField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final FormFieldValidator<String>? validator;
 
-  const AppTextField({
-    super.key,
-    this.label,
-    this.hint,
-    this.controller,
-    this.obscureText = false,
-    this.keyboardType = TextInputType.text,
-    this.prefixIcon,
-    this.suffixIcon,
-    this.errorText,
-    this.maxLines = 1,
-    this.onChanged,
-    this.validator,
-  });
+  const AppTextField({super.key, this.label, this.hint, this.controller, this.obscureText = false, this.keyboardType = TextInputType.text, this.prefixIcon, this.suffixIcon, this.errorText, this.maxLines = 1, this.onChanged, this.validator});
 
   @override
   Widget build(BuildContext context) {
     Widget? prefix;
     if (prefixIcon is IconData) {
-      prefix = Icon(prefixIcon as IconData, size: 18, color: AppColors.textMuted);
+      prefix = Icon(prefixIcon as IconData, size: 18, color: AppColors.textLight);
     } else if (prefixIcon is Widget) {
       prefix = prefixIcon as Widget;
     }
@@ -42,14 +29,7 @@ class AppTextField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (label != null) ...[
-          Text(
-            label!,
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textMuted,
-            ),
-          ),
+          Text(label!, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textSecondary)),
           const SizedBox(height: 6),
         ],
         TextFormField(
@@ -59,23 +39,23 @@ class AppTextField extends StatelessWidget {
           maxLines: maxLines,
           onChanged: onChanged,
           validator: validator,
-          style: const TextStyle(fontSize: 13.5, color: Colors.white, fontWeight: FontWeight.w500),
+          style: const TextStyle(fontSize: 13.5, color: AppColors.textPrimary, fontWeight: FontWeight.w500),
           decoration: InputDecoration(
             hintText: hint,
-            hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 12.5),
+            hintStyle: const TextStyle(color: AppColors.textLight, fontSize: 12.5),
             errorText: errorText,
             filled: true,
-            fillColor: AppColors.navySurface,
+            fillColor: AppColors.inputFill,
             prefixIcon: prefix,
             suffixIcon: suffixIcon,
             contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: AppColors.navyBorder.withValues(alpha: 0.8), width: 1.2),
+              borderSide: const BorderSide(color: AppColors.border, width: 1),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: const BorderSide(color: AppColors.cyanAccent, width: 1.8),
+              borderSide: const BorderSide(color: AppColors.primary, width: 1.8),
             ),
             errorBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),

@@ -37,9 +37,9 @@ class _RiderRouteMapScreenState extends State<RiderRouteMapScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.navyBackground,
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        backgroundColor: AppColors.navyBackground,
+        backgroundColor: AppColors.navy,
         elevation: 0,
         title: const Row(
           children: [
@@ -48,14 +48,8 @@ class _RiderRouteMapScreenState extends State<RiderRouteMapScreen> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'LIVE ROUTE DISPATCH MAP',
-                  style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w900, letterSpacing: 1.1, color: Colors.white),
-                ),
-                Text(
-                  'Multi-Stop Route Navigation Engine',
-                  style: TextStyle(fontSize: 10, color: AppColors.textMuted),
-                ),
+                Text('Route Dispatch Map', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.white)),
+                Text('Multi-Stop Navigation', style: TextStyle(fontSize: 10, color: AppColors.textLight)),
               ],
             ),
           ],
@@ -69,79 +63,16 @@ class _RiderRouteMapScreenState extends State<RiderRouteMapScreen> {
               ? (_selectedStopIndex < activeTasks.length ? activeTasks[_selectedStopIndex] : activeTasks.first)
               : (tasks.isNotEmpty ? tasks.first : null);
 
-          return Stack(
+          return Column(
             children: [
-              // High-Tech Stylized Dark Map Grid Simulator
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _TechMapPainter(
-                    stopsCount: tasks.length,
-                    activeStopIndex: _selectedStopIndex,
-                  ),
-                ),
-              ),
-
-              // Top Live Status Overlay Pill
-              Positioned(
-                top: 16,
-                left: 16,
-                right: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-                  decoration: BoxDecoration(
-                    color: AppColors.navySurface.withValues(alpha: 0.92),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: AppColors.cyanAccent.withValues(alpha: 0.5)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.4),
-                        blurRadius: 12,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            width: 10,
-                            height: 10,
-                            decoration: const BoxDecoration(
-                              color: AppColors.success,
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(color: AppColors.success, blurRadius: 8, spreadRadius: 2),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          const Text(
-                            'GPS Tracking: Online',
-                            style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                      Text(
-                        '${activeTasks.length} Active Drops Remaining',
-                        style: const TextStyle(color: AppColors.cyanAccent, fontSize: 11.5, fontWeight: FontWeight.bold),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-
-              // Stop Waypoint Selector Rail (Horizontal Pills)
+              // Stop selector pills
               if (activeTasks.isNotEmpty)
-                Positioned(
-                  top: 72,
-                  left: 0,
-                  right: 0,
-                  height: 46,
+                Container(
+                  height: 52,
+                  color: AppColors.surface,
                   child: ListView.separated(
                     scrollDirection: Axis.horizontal,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     itemCount: activeTasks.length,
                     separatorBuilder: (_, __) => const SizedBox(width: 8),
                     itemBuilder: (context, idx) {
@@ -150,34 +81,23 @@ class _RiderRouteMapScreenState extends State<RiderRouteMapScreen> {
                       return GestureDetector(
                         onTap: () => setState(() => _selectedStopIndex = idx),
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                           decoration: BoxDecoration(
-                            gradient: isSel ? AppColors.primaryGradient : null,
-                            color: isSel ? null : AppColors.navyCard,
-                            borderRadius: BorderRadius.circular(16),
+                            color: isSel ? AppColors.primary : AppColors.surface,
+                            borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: isSel ? AppColors.cyanAccent : AppColors.navyBorder,
-                              width: isSel ? 1.5 : 1,
+                              color: isSel ? AppColors.primary : AppColors.border,
+                              width: 1,
                             ),
                           ),
                           child: Row(
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text(
-                                'Stop ${idx + 1}',
-                                style: TextStyle(
-                                  color: isSel ? Colors.white : AppColors.textMuted,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                ),
-                              ),
+                              Text('Stop ${idx + 1}',
+                                  style: TextStyle(color: isSel ? Colors.white : AppColors.textMuted, fontWeight: FontWeight.bold, fontSize: 12)),
                               const SizedBox(width: 6),
-                              Text(
-                                t.destinationCity.split(',').first,
-                                style: TextStyle(
-                                  color: isSel ? Colors.white70 : AppColors.textMuted,
-                                  fontSize: 11,
-                                ),
-                              ),
+                              Text(t.destinationCity.split(',').first,
+                                  style: TextStyle(color: isSel ? Colors.white70 : AppColors.textMuted, fontSize: 11)),
                             ],
                           ),
                         ),
@@ -186,140 +106,148 @@ class _RiderRouteMapScreenState extends State<RiderRouteMapScreen> {
                   ),
                 ),
 
-              // Bottom Active Stop Navigation Card
-              if (currentTask != null)
-                Positioned(
-                  bottom: 20,
-                  left: 16,
-                  right: 16,
-                  child: Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(
-                      gradient: AppColors.darkCardGradient,
-                      borderRadius: BorderRadius.circular(22),
-                      border: Border.all(color: AppColors.cyanAccent.withValues(alpha: 0.5), width: 1.4),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.35),
-                          blurRadius: 20,
-                          offset: const Offset(0, 6),
+              // Map placeholder area
+              Expanded(
+                child: Stack(
+                  children: [
+                    // Stylized map background
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _TechMapPainter(
+                          stopsCount: tasks.length,
+                          activeStopIndex: _selectedStopIndex,
                         ),
-                      ],
+                      ),
                     ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Card Header
-                        Row(
+
+                    // Status pill
+                    Positioned(
+                      top: 12,
+                      left: 16,
+                      right: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: AppColors.border),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 8, offset: const Offset(0, 2)),
+                          ],
+                        ),
+                        child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Row(
                               children: [
                                 Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    gradient: AppColors.primaryGradient,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Text(
-                                    'STOP ${_selectedStopIndex + 1} OF ${activeTasks.length}',
-                                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10.5),
-                                  ),
+                                  width: 8,
+                                  height: 8,
+                                  decoration: const BoxDecoration(color: AppColors.success, shape: BoxShape.circle),
                                 ),
                                 const SizedBox(width: 8),
-                                Text(
-                                  currentTask.trackingNumber,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontFamily: 'monospace',
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12.5,
-                                  ),
-                                ),
+                                const Text('GPS Online', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
                               ],
                             ),
-                            StatusBadgeWidget(status: currentTask.status),
+                            Text('${activeTasks.length} Active Drops',
+                                style: const TextStyle(color: AppColors.primary, fontSize: 11.5, fontWeight: FontWeight.bold)),
                           ],
                         ),
-
-                        const SizedBox(height: 12),
-
-                        // Recipient Name & Address
-                        Text(
-                          currentTask.recipientName,
-                          style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(LucideIcons.mapPin, color: AppColors.cyanAccent, size: 14),
-                            const SizedBox(width: 6),
-                            Expanded(
-                              child: Text(
-                                '${currentTask.deliveryAddress}, ${currentTask.destinationCity}',
-                                style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        // ETA & COD
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                              children: [
-                                const Icon(LucideIcons.clock, color: Colors.amberAccent, size: 14),
-                                const SizedBox(width: 5),
-                                Text(
-                                  'ETA: ~${(_selectedStopIndex + 1) * 12} mins (2.${_selectedStopIndex + 1} km)',
-                                  style: const TextStyle(color: Colors.amberAccent, fontSize: 12, fontWeight: FontWeight.bold),
-                                ),
-                              ],
-                            ),
-                            if (currentTask.codAmount > 0)
-                              Text(
-                                'COD: \$${currentTask.codAmount.toStringAsFixed(2)}',
-                                style: const TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.bold, fontSize: 12),
-                              )
-                            else
-                              const Text(
-                                'PREPAID',
-                                style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold, fontSize: 11),
-                              ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 14),
-
-                        // Turn-by-Turn Navigation Launch Button
-                        Row(
-                          children: [
-                            IconButton.filledTonal(
-                              icon: const Icon(LucideIcons.phone, size: 18),
-                              style: IconButton.styleFrom(
-                                backgroundColor: AppColors.navyCard,
-                                foregroundColor: Colors.white,
-                              ),
-                              tooltip: 'Call Customer',
-                              onPressed: () => _callRecipient(currentTask.recipientPhone),
-                            ),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: AppButton(
-                                text: 'Start Turn-by-Turn GPS Navigation',
-                                icon: const Icon(LucideIcons.navigation, size: 16),
-                                onPressed: () => _openGoogleMaps('${currentTask.deliveryAddress}, ${currentTask.destinationCity}'),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                      ),
                     ),
+                  ],
+                ),
+              ),
+
+              // Bottom navigation card
+              if (currentTask != null)
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                    border: const Border(top: BorderSide(color: AppColors.border)),
+                    boxShadow: [
+                      BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 12, offset: const Offset(0, -3)),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(color: AppColors.primaryLight, borderRadius: BorderRadius.circular(10)),
+                                child: Text(
+                                  'STOP ${_selectedStopIndex + 1} OF ${activeTasks.length}',
+                                  style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.w900, fontSize: 10.5),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(currentTask.trackingNumber,
+                                  style: const TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold, fontSize: 12.5)),
+                            ],
+                          ),
+                          StatusBadgeWidget(status: currentTask.status),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(currentTask.recipientName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          const Icon(LucideIcons.mapPin, color: AppColors.danger, size: 14),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text('${currentTask.deliveryAddress}, ${currentTask.destinationCity}',
+                                style: const TextStyle(color: AppColors.textMuted, fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(LucideIcons.clock, color: AppColors.warning, size: 14),
+                              const SizedBox(width: 5),
+                              Text('ETA: ~${(_selectedStopIndex + 1) * 12} mins',
+                                  style: const TextStyle(color: AppColors.warning, fontSize: 12, fontWeight: FontWeight.bold)),
+                            ],
+                          ),
+                          if (currentTask.codAmount > 0)
+                            Text('COD: \$${currentTask.codAmount.toStringAsFixed(2)}',
+                                style: const TextStyle(color: AppColors.warning, fontWeight: FontWeight.bold, fontSize: 12))
+                          else
+                            const Text('PREPAID', style: TextStyle(color: AppColors.success, fontWeight: FontWeight.bold, fontSize: 11)),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(LucideIcons.phone, size: 18),
+                            color: AppColors.primary,
+                            tooltip: 'Call Customer',
+                            onPressed: () => _callRecipient(currentTask.recipientPhone),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: AppButton(
+                              text: 'Start GPS Navigation',
+                              icon: const Icon(LucideIcons.navigation, size: 16),
+                              onPressed: () => _openGoogleMaps('${currentTask.deliveryAddress}, ${currentTask.destinationCity}'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
             ],
@@ -338,13 +266,12 @@ class _TechMapPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final bgPaint = Paint()..color = const Color(0xFF070D1E);
+    // Light background
+    final bgPaint = Paint()..color = const Color(0xFFF1F5F9);
     canvas.drawRect(Offset.zero & size, bgPaint);
 
-    final gridPaint = Paint()
-      ..color = const Color(0xFF132042).withValues(alpha: 0.4)
-      ..strokeWidth = 1.0;
-
+    // Grid lines
+    final gridPaint = Paint()..color = AppColors.border.withValues(alpha: 0.5)..strokeWidth = 0.8;
     const gridSize = 40.0;
     for (double x = 0; x < size.width; x += gridSize) {
       canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
@@ -353,16 +280,9 @@ class _TechMapPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
 
-    // Dynamic Tech Route Path
-    final pathPaint = Paint()
-      ..color = AppColors.cyanAccent.withValues(alpha: 0.8)
-      ..strokeWidth = 3.5
-      ..style = PaintingStyle.stroke;
-
-    final glowPaint = Paint()
-      ..color = AppColors.primary.withValues(alpha: 0.4)
-      ..strokeWidth = 10.0
-      ..style = PaintingStyle.stroke;
+    // Route path
+    final glowPaint = Paint()..color = AppColors.primary.withValues(alpha: 0.15)..strokeWidth = 12.0..style = PaintingStyle.stroke;
+    final pathPaint = Paint()..color = AppColors.primary..strokeWidth = 3.0..style = PaintingStyle.stroke;
 
     final path = Path();
     final start = Offset(size.width * 0.25, size.height * 0.65);
@@ -378,33 +298,18 @@ class _TechMapPainter extends CustomPainter {
     canvas.drawPath(path, glowPaint);
     canvas.drawPath(path, pathPaint);
 
-    // Draw Waypoint Pins
+    // Waypoint pins
     final waypoints = [start, p1, p2, p3];
     for (int i = 0; i < waypoints.length; i++) {
       final isSel = i == activeStopIndex;
       final wp = waypoints[i];
 
-      // Outer Pulse Ring
       if (isSel) {
-        canvas.drawCircle(
-          wp,
-          18,
-          Paint()..color = AppColors.cyanAccent.withValues(alpha: 0.3),
-        );
+        canvas.drawCircle(wp, 16, Paint()..color = AppColors.primary.withValues(alpha: 0.15));
       }
 
-      // Pin Body
-      canvas.drawCircle(
-        wp,
-        isSel ? 12 : 9,
-        Paint()..color = isSel ? AppColors.cyanAccent : AppColors.primary,
-      );
-
-      canvas.drawCircle(
-        wp,
-        isSel ? 6 : 4,
-        Paint()..color = Colors.white,
-      );
+      canvas.drawCircle(wp, isSel ? 12 : 8, Paint()..color = isSel ? AppColors.primary : AppColors.textLight);
+      canvas.drawCircle(wp, isSel ? 6 : 3, Paint()..color = Colors.white);
     }
   }
 

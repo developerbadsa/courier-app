@@ -14,15 +14,7 @@ class ModernTaskCard extends StatelessWidget {
   final VoidCallback? onPOD;
   final VoidCallback? onTap;
 
-  const ModernTaskCard({
-    super.key,
-    required this.task,
-    this.stopNumber,
-    this.onDeliver,
-    this.onFailed,
-    this.onPOD,
-    this.onTap,
-  });
+  const ModernTaskCard({super.key, required this.task, this.stopNumber, this.onDeliver, this.onFailed, this.onPOD, this.onTap});
 
   void _makePhoneCall(String phone) async {
     final uri = Uri.parse('tel:$phone');
@@ -48,15 +40,12 @@ class ModernTaskCard extends StatelessWidget {
       child: Container(
         margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: AppColors.border,
-            width: 1,
-          ),
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.border, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withValues(alpha: 0.04),
               blurRadius: 8,
               offset: const Offset(0, 2),
             ),
@@ -78,7 +67,7 @@ class ModernTaskCard extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
                             color: AppColors.primary,
-                            borderRadius: BorderRadius.circular(6),
+                            borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             '#$stopNumber',
@@ -107,7 +96,7 @@ class ModernTaskCard extends StatelessWidget {
               ),
             ),
 
-            const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+            const Divider(height: 1, thickness: 1, color: AppColors.borderLight),
 
             Padding(
               padding: const EdgeInsets.all(14),
@@ -131,11 +120,7 @@ class ModernTaskCard extends StatelessWidget {
                     onTap: () => _makePhoneCall(task.recipientPhone),
                     child: Row(
                       children: [
-                        const Icon(
-                          LucideIcons.phone,
-                          size: 14,
-                          color: AppColors.primary,
-                        ),
+                        const Icon(LucideIcons.phone, size: 14, color: AppColors.primary),
                         const SizedBox(width: 6),
                         Text(
                           task.recipientPhone,
@@ -143,17 +128,10 @@ class ModernTaskCard extends StatelessWidget {
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: AppColors.primary,
-                            decoration: TextDecoration.underline,
                           ),
                         ),
                         const SizedBox(width: 4),
-                        const Text(
-                          '(Tap to Call)',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textMuted,
-                          ),
-                        ),
+                        const Text('(Tap to Call)', style: TextStyle(fontSize: 11, color: AppColors.textLight)),
                       ],
                     ),
                   ),
@@ -163,17 +141,12 @@ class ModernTaskCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.border),
+                      color: AppColors.inputFill,
+                      borderRadius: BorderRadius.circular(10),
                     ),
                     child: Row(
                       children: [
-                        const Icon(
-                          LucideIcons.mapPin,
-                          size: 16,
-                          color: Color(0xFFEF4444),
-                        ),
+                        const Icon(LucideIcons.mapPin, size: 16, color: AppColors.danger),
                         const SizedBox(width: 8),
                         Expanded(
                           child: Column(
@@ -192,7 +165,7 @@ class ModernTaskCard extends StatelessWidget {
                                 task.destinationCity,
                                 style: const TextStyle(
                                   fontSize: 11,
-                                  color: AppColors.textSecondary,
+                                  color: AppColors.textMuted,
                                   height: 1.2,
                                 ),
                               ),
@@ -201,11 +174,7 @@ class ModernTaskCard extends StatelessWidget {
                         ),
                         IconButton(
                           onPressed: () => _openGoogleMaps(task.latitude ?? 30.2672, task.longitude ?? -97.7431),
-                          icon: const Icon(
-                            LucideIcons.navigation,
-                            size: 18,
-                            color: AppColors.primary,
-                          ),
+                          icon: const Icon(LucideIcons.navigation, size: 18, color: AppColors.primary),
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                           style: IconButton.styleFrom(
@@ -222,17 +191,13 @@ class ModernTaskCard extends StatelessWidget {
                     const SizedBox(height: 10),
                     Row(
                       children: [
-                        const Icon(
-                          LucideIcons.clock,
-                          size: 13,
-                          color: AppColors.textMuted,
-                        ),
+                        const Icon(LucideIcons.clock, size: 13, color: AppColors.textLight),
                         const SizedBox(width: 6),
                         Text(
                           task.scheduledTime!,
                           style: const TextStyle(
                             fontSize: 11.5,
-                            color: AppColors.textSecondary,
+                            color: AppColors.textMuted,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -247,24 +212,19 @@ class ModernTaskCard extends StatelessWidget {
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
                         color: AppColors.infoLight,
-                        borderRadius: BorderRadius.circular(6),
-                        border: Border.all(color: AppColors.info.withValues(alpha: 0.2)),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
-                            LucideIcons.fileText,
-                            size: 13,
-                            color: AppColors.info,
-                          ),
+                          const Icon(LucideIcons.fileText, size: 13, color: AppColors.info),
                           const SizedBox(width: 6),
                           Expanded(
                             child: Text(
                               task.driverNotes!,
                               style: const TextStyle(
                                 fontSize: 11.5,
-                                color: Color(0xFF0C4A6E),
+                                color: AppColors.textSecondary,
                                 fontWeight: FontWeight.w500,
                                 height: 1.3,
                               ),
@@ -282,8 +242,7 @@ class ModernTaskCard extends StatelessWidget {
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                       decoration: BoxDecoration(
                         color: AppColors.warningLight,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -293,7 +252,7 @@ class ModernTaskCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Color(0xFF92400E),
+                              color: AppColors.textSecondary,
                             ),
                           ),
                           Text(
@@ -301,7 +260,7 @@ class ModernTaskCard extends StatelessWidget {
                             style: const TextStyle(
                               fontSize: 15,
                               fontWeight: FontWeight.w900,
-                              color: Color(0xFFB45309),
+                              color: AppColors.warning,
                             ),
                           ),
                         ],
@@ -312,7 +271,7 @@ class ModernTaskCard extends StatelessWidget {
                   // Action Buttons
                   if (!isCompleted) ...[
                     const SizedBox(height: 14),
-                    const Divider(height: 1, thickness: 1, color: Color(0xFFF1F5F9)),
+                    const Divider(height: 1, thickness: 1, color: AppColors.borderLight),
                     const SizedBox(height: 14),
                     Row(
                       children: [
@@ -321,21 +280,13 @@ class ModernTaskCard extends StatelessWidget {
                           child: ElevatedButton.icon(
                             onPressed: onDeliver,
                             icon: const Icon(LucideIcons.checkCircle, size: 14),
-                            label: const Text(
-                              'Delivered',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
+                            label: const Text('Delivered', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
                             style: ElevatedButton.styleFrom(
                               backgroundColor: AppColors.success,
                               foregroundColor: Colors.white,
                               elevation: 0,
                               padding: const EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                           ),
                         ),
@@ -344,20 +295,12 @@ class ModernTaskCard extends StatelessWidget {
                           child: OutlinedButton.icon(
                             onPressed: onFailed,
                             icon: const Icon(LucideIcons.xCircle, size: 14),
-                            label: const Text(
-                              'Failed',
-                              style: TextStyle(
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
+                            label: const Text('Failed', style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w700)),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.danger,
-                              side: const BorderSide(color: Color(0xFFFECACA)),
+                              side: BorderSide(color: AppColors.danger.withValues(alpha: 0.3)),
                               padding: const EdgeInsets.symmetric(vertical: 10),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                             ),
                           ),
                         ),
@@ -365,12 +308,10 @@ class ModernTaskCard extends StatelessWidget {
                         OutlinedButton(
                           onPressed: onPOD,
                           style: OutlinedButton.styleFrom(
-                            foregroundColor: AppColors.textSecondary,
-                            side: BorderSide(color: AppColors.border),
+                            foregroundColor: AppColors.textMuted,
+                            side: const BorderSide(color: AppColors.border),
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                           ),
                           child: const Icon(LucideIcons.camera, size: 16),
                         ),
@@ -385,25 +326,16 @@ class ModernTaskCard extends StatelessWidget {
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: AppColors.successLight,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.success.withOpacity(0.3)),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            LucideIcons.check,
-                            size: 16,
-                            color: AppColors.success,
-                          ),
+                          Icon(LucideIcons.check, size: 16, color: AppColors.success),
                           SizedBox(width: 8),
                           Text(
                             'Successfully Delivered',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.success,
-                            ),
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.success),
                           ),
                         ],
                       ),
@@ -416,25 +348,16 @@ class ModernTaskCard extends StatelessWidget {
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
                         color: AppColors.dangerLight,
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: AppColors.danger.withOpacity(0.3)),
+                        borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            LucideIcons.alertTriangle,
-                            size: 16,
-                            color: AppColors.danger,
-                          ),
+                          Icon(LucideIcons.alertTriangle, size: 16, color: AppColors.danger),
                           SizedBox(width: 8),
                           Text(
                             'Delivery Failed — Awaiting Reschedule',
-                            style: TextStyle(
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.danger,
-                            ),
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: AppColors.danger),
                           ),
                         ],
                       ),

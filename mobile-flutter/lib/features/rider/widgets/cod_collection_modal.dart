@@ -90,7 +90,7 @@ class _CODCollectionModalState extends State<CODCollectionModal> {
               decoration: BoxDecoration(
                 color: AppColors.primaryLight,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.primary.withOpacity(0.2)),
+                border: Border.all(color: AppColors.primary.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [
@@ -127,11 +127,11 @@ class _CODCollectionModalState extends State<CODCollectionModal> {
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                gradient: AppColors.amberGradient,
+                gradient: AppColors.successGradient,
                 borderRadius: BorderRadius.circular(10),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.warning.withOpacity(0.2),
+                    color: AppColors.warning.withValues(alpha: 0.2),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -219,7 +219,7 @@ class _CODCollectionModalState extends State<CODCollectionModal> {
               decoration: BoxDecoration(
                 color: AppColors.successLight,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: AppColors.success.withOpacity(0.2)),
+                border: Border.all(color: AppColors.success.withValues(alpha: 0.2)),
               ),
               child: Row(
                 children: [

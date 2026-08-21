@@ -90,7 +90,16 @@ if %BUILD_EXIT_CODE% equ 0 if defined APK_SOURCE (
     copy /y "!APK_SOURCE!" "%APK_DEST%" >nul
     for %%A in ("%APK_DEST%") do set "APK_SIZE=%%~zA"
     set /a "APK_MB=!APK_SIZE! / 1048576"
-    echo   SUCCESS: Release APK Built
+    echo.
+    echo   [Auto-Deploy] Copying to web downloads folder...
+    set "WEB_DL=..\frontend\public\downloads\shohnaat-rider.apk"
+    copy /y "%APK_DEST%" "!WEB_DL!" >nul 2>&1
+    if exist "!WEB_DL!" (
+        echo   ✅ APK deployed to web: /downloads/shohnaat-rider.apk
+        echo   🌐 Download URL: https://shohnaat.rahimbadsa.me/downloads/shohnaat-rider.apk
+    ) else (
+        echo   ⚠️  Could not copy to web folder (build from project root)
+    )
     echo ========================================================
     echo.
     echo   File: %~dp0%APK_DEST%
