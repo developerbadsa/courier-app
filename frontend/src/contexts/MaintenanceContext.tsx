@@ -332,6 +332,17 @@ export const MaintenanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
       return false;
     }
 
+    const isLocalhost =
+      typeof window !== 'undefined' &&
+      (window.location.hostname === 'localhost' ||
+        window.location.hostname === '127.0.0.1' ||
+        window.location.hostname.endsWith('.local'));
+
+    // On local dev server, stay hidden and operational unless simulating
+    if (isLocalhost && !isSimulatingUserView) {
+      return false;
+    }
+
     // 1. If Super Admin is simulating the customer experience, trigger maintenance page
     if (isSimulatingUserView) {
       return true;

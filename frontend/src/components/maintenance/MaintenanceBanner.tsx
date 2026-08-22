@@ -19,6 +19,17 @@ export const MaintenanceBanner: React.FC = () => {
 
   const isEnabled = Boolean(settings?.isEnabled || settings?.effectiveEnabled || settings?.rawEnabled);
 
+  const isLocalhost =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' ||
+      window.location.hostname === '127.0.0.1' ||
+      window.location.hostname.endsWith('.local'));
+
+  // Keep hidden on local server unless explicitly simulating
+  if (isLocalhost && !isSimulatingUserView) {
+    return null;
+  }
+
   // Show banner to Super Admins when Maintenance Mode is active (or when simulation is active)
   if ((!isEnabled && !isSimulatingUserView) || !isSuperAdmin || isDismissed) {
     return null;
