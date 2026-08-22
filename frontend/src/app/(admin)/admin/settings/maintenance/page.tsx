@@ -12,27 +12,24 @@ import {
   Layers,
   Clock,
   Calendar,
-  AlertTriangle,
-  CheckCircle2,
   ShieldCheck,
   KeyRound,
   Copy,
-  ExternalLink,
   Save,
   RotateCcw,
   Eye,
-  Info,
-  ChevronRight,
   Plus,
   Trash2,
   Phone,
   Mail,
   Lock,
   Unlock,
-  Radio,
+  Check,
+  AlertCircle,
+  EyeOff,
 } from 'lucide-react';
 import { DashboardLayout } from '@/components/layout';
-import { Button, Card, Badge, Input, Modal } from '@/components/ui';
+import { Button, Card, Badge, Modal } from '@/components/ui';
 import { apiGet, apiPatch, showToast } from '@/lib/api';
 import { useMaintenance, MaintenanceSettings } from '@/contexts/MaintenanceContext';
 
@@ -41,112 +38,52 @@ interface TargetRoleOption {
   name: string;
   description: string;
   icon: React.ElementType;
-  color: string;
 }
 
 interface TargetPageOption {
   id: string;
   name: string;
   path: string;
-  description: string;
-  category: 'public' | 'merchant' | 'rider' | 'operator';
+  icon: React.ElementType;
 }
 
 const ROLE_OPTIONS: TargetRoleOption[] = [
   {
     id: 'public',
-    name: 'Public Guests & Visitors',
-    description: 'Landing page visitors, public tracking searches, and new signups.',
+    name: 'Public & Visitors',
+    description: 'Landing page and tracking visitors',
     icon: Globe,
-    color: 'blue',
   },
   {
     id: 'merchant',
-    name: 'Merchants & Sellers',
-    description: 'Merchant dashboard, order bookings, pickup requests, and invoices.',
+    name: 'Merchants',
+    description: 'Merchant dashboard, bookings, invoices',
     icon: Building2,
-    color: 'indigo',
   },
   {
     id: 'rider',
     name: 'Delivery Riders',
-    description: 'Rider mobile app, assigned deliveries, tasks, and status updates.',
+    description: 'Rider tasks and delivery runsheets',
     icon: Truck,
-    color: 'amber',
   },
   {
     id: 'operator',
-    name: 'Hub Operators & Staff',
-    description: 'Branch hub staff, barcode scanning, bag dispatches, and sorting.',
+    name: 'Hub Staff',
+    description: 'Branch hub barcode scanning',
     icon: Package,
-    color: 'emerald',
   },
 ];
 
 const PRESET_PAGES: TargetPageOption[] = [
-  {
-    id: 'landing',
-    name: 'Landing Page',
-    path: '/',
-    description: 'Home page & public marketing website',
-    category: 'public',
-  },
-  {
-    id: 'tracking',
-    name: 'Public Tracking',
-    path: '/track',
-    description: 'Public shipment tracking portal',
-    category: 'public',
-  },
-  {
-    id: 'register',
-    name: 'Merchant Registration',
-    path: '/register',
-    description: 'New merchant signup form',
-    category: 'public',
-  },
-  {
-    id: 'merchant_dashboard',
-    name: 'Merchant Dashboard',
-    path: '/dashboard',
-    description: 'Merchant main analytics & overview',
-    category: 'merchant',
-  },
-  {
-    id: 'merchant_shipments',
-    name: 'Shipments & Booking',
-    path: '/dashboard/shipments',
-    description: 'Parcel booking and bulk parcel uploads',
-    category: 'merchant',
-  },
-  {
-    id: 'merchant_pickups',
-    name: 'Pickup Requests',
-    path: '/dashboard/pickups',
-    description: 'Scheduling and tracking doorstep pickups',
-    category: 'merchant',
-  },
-  {
-    id: 'merchant_finance',
-    name: 'Finance & Invoices',
-    path: '/dashboard/finance',
-    description: 'COD remittance, statements, and payouts',
-    category: 'merchant',
-  },
-  {
-    id: 'rider_portal',
-    name: 'Rider Task Portal',
-    path: '/rider',
-    description: 'Rider delivery tasks and run-sheets',
-    category: 'rider',
-  },
-  {
-    id: 'hub_scan',
-    name: 'Hub Barcode Scanning',
-    path: '/admin/scan',
-    description: 'Inbound & outbound manifest scanning',
-    category: 'operator',
-  },
+  { id: 'landing', name: 'Home Landing Page', path: '/', icon: Globe },
+  { id: 'tracking', name: 'Public Tracking', path: '/track', icon: Globe },
+  { id: 'register', name: 'Merchant Signup', path: '/register', icon: Building2 },
+  { id: 'merchant_dashboard', name: 'Merchant Dashboard', path: '/dashboard', icon: Building2 },
+  { id: 'merchant_shipments', name: 'Parcel Booking', path: '/dashboard/shipments', icon: Package },
+  { id: 'merchant_pickups', name: 'Pickup Requests', path: '/dashboard/pickups', icon: Truck },
+  { id: 'merchant_finance', name: 'Finance & Invoices', path: '/dashboard/finance', icon: Building2 },
+  { id: 'rider_portal', name: 'Rider Portal', path: '/rider', icon: Truck },
+  { id: 'hub_scan', name: 'Hub Barcode Scan', path: '/admin/scan', icon: Package },
 ];
 
 interface AuditEntry {
@@ -165,8 +102,6 @@ export default function MaintenanceSettingsPage() {
     refreshMaintenance,
     isSimulatingUserView,
     setIsSimulatingUserView,
-    simulationRole,
-    setSimulationRole,
   } = useMaintenance();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -179,7 +114,7 @@ export default function MaintenanceSettingsPage() {
   const [isEnabled, setIsEnabled] = useState(false);
   const [title, setTitle] = useState('System Under Scheduled Maintenance');
   const [message, setMessage] = useState(
-    'We are performing essential system updates and infrastructure maintenance to provide you with faster, more reliable courier logistics.'
+    'We are currently performing essential platform upgrades to improve service reliability and speed. Services will be restored shortly.'
   );
   const [startAt, setStartAt] = useState('');
   const [endAt, setEndAt] = useState('');
@@ -201,7 +136,6 @@ export default function MaintenanceSettingsPage() {
   const [email, setEmail] = useState('support@shohnaat.com');
   const [readOnlyMode, setReadOnlyMode] = useState(false);
 
-  // Load settings on mount
   useEffect(() => {
     fetchSettings();
   }, []);
@@ -258,14 +192,6 @@ export default function MaintenanceSettingsPage() {
     );
   };
 
-  const handleSelectAllRoles = () => {
-    setSelectedRoles(ROLE_OPTIONS.map((r) => r.id));
-  };
-
-  const handleClearAllRoles = () => {
-    setSelectedRoles([]);
-  };
-
   const handleTogglePage = (pagePath: string) => {
     setSelectedPages((prev) =>
       prev.includes(pagePath) ? prev.filter((p) => p !== pagePath) : [...prev, pagePath]
@@ -295,7 +221,7 @@ export default function MaintenanceSettingsPage() {
       res += chars.charAt(Math.floor(Math.random() * chars.length));
     }
     setBypassSecret(res);
-    showToast('info', 'New bypass secret key generated.');
+    showToast('info', 'New bypass key generated.');
   };
 
   const handleCopyBypassUrl = () => {
@@ -336,27 +262,25 @@ export default function MaintenanceSettingsPage() {
       if (res.success) {
         showToast(
           'success',
-          `Site Maintenance Mode ${targetEnabled ? 'ENABLED' : 'DISABLED'} successfully.`
+          `Maintenance mode ${targetEnabled ? 'ENABLED' : 'DISABLED'} successfully.`
         );
         setShowConfirmModal(false);
 
-        // Cross-tab immediate synchronization
+        // Cross-tab immediate notification
         try {
           const channel = new BroadcastChannel('shohnaat_maintenance_channel');
           channel.postMessage({ type: 'MAINTENANCE_TOGGLED', isEnabled: targetEnabled });
           channel.close();
           localStorage.setItem('shohnaat_maint_broadcast', String(Date.now()));
-        } catch {
-          // ignore
-        }
+        } catch {}
 
         await refreshMaintenance();
         fetchSettings();
       } else {
-        showToast('error', res.message || 'Failed to update maintenance settings.');
+        showToast('error', res.message || 'Failed to update settings.');
       }
     } catch {
-      showToast('error', 'Network error while updating maintenance settings.');
+      showToast('error', 'Network error while updating settings.');
     } finally {
       setIsSaving(false);
     }
@@ -365,207 +289,108 @@ export default function MaintenanceSettingsPage() {
   return (
     <DashboardLayout
       role="admin"
-      title="Site Maintenance & Access Lockdown"
-      subtitle="Configure platform maintenance mode, target user groups, offline modules, schedules, and bypass rules."
+      title="Maintenance & System Lockdown"
+      subtitle="Manage scheduled platform maintenance, user role restrictions, offline routes, and bypass access."
     >
-      {/* ── Top Status Card & Master Switch ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Main Status Block */}
-        <div
-          className={`lg:col-span-2 rounded-2xl p-6 sm:p-8 border transition-all relative overflow-hidden shadow-sm ${
-            isEnabled
-              ? 'bg-gradient-to-br from-amber-950/40 via-slate-900 to-slate-900 border-amber-500/40 text-amber-100 shadow-amber-500/5'
-              : 'bg-white border-slate-200 text-slate-800'
-          }`}
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
-            <div className="flex items-start gap-4">
-              <div
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 shadow-lg ${
-                  isEnabled
-                    ? 'bg-amber-500 text-slate-950 shadow-amber-500/30'
-                    : 'bg-emerald-600 text-white shadow-emerald-600/20'
+      {/* ── Top Master Switch Card ── */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-3.5">
+            <div
+              className={`w-11 h-11 rounded-lg flex items-center justify-center shrink-0 ${
+                isEnabled ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'
+              }`}
+            >
+              <Wrench className="w-5 h-5 stroke-[2]" />
+            </div>
+
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <h2 className="text-base font-bold text-slate-900">
+                  Platform Status: {isEnabled ? 'Maintenance Mode Active' : 'Operational'}
+                </h2>
+                <Badge variant={isEnabled ? 'amber' : 'green'} size="sm">
+                  {isEnabled ? 'Lockdown Live' : 'All Online'}
+                </Badge>
+              </div>
+              <p className="text-xs text-slate-500">
+                {isEnabled
+                  ? `Restricting traffic for ${
+                      selectedRoles.length > 0 ? selectedRoles.join(', ') : 'all non-admin users'
+                    } across selected modules.`
+                  : 'All customer and merchant portals are actively accepting traffic.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsSimulatingUserView(!isSimulatingUserView)}
+              leftIcon={isSimulatingUserView ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+            >
+              {isSimulatingUserView ? 'Exit Simulation' : 'Simulate Visitor View'}
+            </Button>
+
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={() => {
+                if (!isEnabled) {
+                  setShowConfirmModal(true);
+                } else {
+                  handleSave(false);
+                }
+              }}
+              className={`relative inline-flex h-9 w-20 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                isEnabled ? 'bg-amber-500' : 'bg-slate-300'
+              } ${isSaving ? 'opacity-60 cursor-not-allowed' : ''}`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-8 w-8 transform rounded-full bg-white shadow-sm transition duration-200 flex items-center justify-center ${
+                  isEnabled ? 'translate-x-11 text-amber-600' : 'translate-x-0 text-slate-400'
                 }`}
               >
-                {isEnabled ? (
-                  <Wrench className="w-7 h-7 stroke-[2.2] animate-pulse" />
+                {isSaving ? (
+                  <RotateCcw className="w-4 h-4 animate-spin text-amber-600" />
                 ) : (
-                  <ShieldCheck className="w-7 h-7 stroke-[2.2]" />
+                  <Power className="w-4 h-4 stroke-[2]" />
                 )}
-              </div>
-
-              <div>
-                <div className="flex items-center gap-3 mb-1">
-                  <h2 className="text-xl sm:text-2xl font-bold tracking-tight">
-                    {isEnabled ? 'Maintenance Mode is LIVE' : 'Platform is FULLY OPERATIONAL'}
-                  </h2>
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider ${
-                      isEnabled
-                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                        : 'bg-emerald-100 text-emerald-800'
-                    }`}
-                  >
-                    <span
-                      className={`w-2 h-2 rounded-full ${
-                        isEnabled ? 'bg-amber-400 animate-ping' : 'bg-emerald-600'
-                      }`}
-                    />
-                    {isEnabled ? 'Active Lockdown' : 'All Online'}
-                  </span>
-                </div>
-
-                <p
-                  className={`text-xs sm:text-sm max-w-xl leading-relaxed ${
-                    isEnabled ? 'text-amber-200/80' : 'text-slate-500'
-                  }`}
-                >
-                  {isEnabled
-                    ? `Site traffic for ${
-                        selectedRoles.length > 0 ? selectedRoles.join(', ') : 'all non-admin users'
-                      } is currently being redirected to the scheduled maintenance notice.`
-                    : 'All customer, merchant, and rider portals are actively accepting traffic and live orders.'}
-                </p>
-              </div>
-            </div>
-
-            {/* Glowing Master Toggle */}
-            <div className="flex flex-col items-start sm:items-end gap-2 shrink-0">
-              <button
-                type="button"
-                disabled={isSaving}
-                onClick={() => {
-                  if (!isEnabled) {
-                    setShowConfirmModal(true);
-                  } else {
-                    handleSave(false);
-                  }
-                }}
-                className={`relative inline-flex h-11 w-24 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
-                  isEnabled ? 'bg-amber-500' : 'bg-slate-300'
-                } ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
-              >
-                <span
-                  className={`pointer-events-none inline-block h-10 w-10 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out flex items-center justify-center ${
-                    isEnabled ? 'translate-x-13 text-amber-600' : 'translate-x-0 text-slate-400'
-                  }`}
-                >
-                  {isSaving ? (
-                    <RotateCcw className="w-5 h-5 animate-spin text-amber-600" />
-                  ) : (
-                    <Power className="w-5 h-5 stroke-[2.5]" />
-                  )}
-                </span>
-              </button>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-                {isEnabled ? 'Click to Turn OFF' : 'Click to Turn ON'}
               </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Stats / Info Widget */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200 flex flex-col justify-between shadow-sm">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-                Lockdown Scope Summary
-              </span>
-              <Badge variant={targetScope === 'ALL' ? 'red' : 'amber'} size="sm">
-                {targetScope === 'ALL' ? 'Full Lockdown' : 'Custom Scope'}
-              </Badge>
-            </div>
-
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="text-slate-500 text-xs">Targeted User Groups:</span>
-                <span className="font-bold text-slate-800 text-xs">
-                  {selectedRoles.length} of {ROLE_OPTIONS.length} Selected
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="text-slate-500 text-xs">Targeted Pages:</span>
-                <span className="font-bold text-slate-800 text-xs">
-                  {targetScope === 'ALL'
-                    ? 'All Pages (Entire Site)'
-                    : `${selectedPages.length + customPaths.length} Modules Blocked`}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <span className="text-slate-500 text-xs">Super Admin Status:</span>
-                <span className="font-bold text-emerald-600 text-xs flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5" /> 100% Exempt
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-4 mt-2 flex flex-col gap-2">
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => setShowPreviewModal(true)}
-                className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors cursor-pointer"
-              >
-                <Eye className="w-3.5 h-3.5" />
-                <span>Modal Preview</span>
-              </button>
-
-              <button
-                onClick={() => setIsSimulatingUserView(!isSimulatingUserView)}
-                className={`flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-                  isSimulatingUserView
-                    ? 'bg-red-600 text-white shadow-sm shadow-red-500/30 animate-pulse'
-                    : 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 border border-amber-500/30'
-                }`}
-              >
-                <Eye className="w-3.5 h-3.5" />
-                <span>{isSimulatingUserView ? 'Exit Simulation' : 'Live Simulation'}</span>
-              </button>
-            </div>
+            </button>
           </div>
         </div>
       </div>
 
-      {/* ── Main Settings Configuration Sections ── */}
-      <div className="space-y-8">
-        {/* ── SECTION 1: Target Audience ("Kader jonno") ── */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
+      <div className="space-y-6">
+        {/* ── Section 1: Target Audience Roles ── */}
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
+          <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
             <div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-bold text-sm">
-                  1
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">
-                  Target Audience & User Roles
-                </h3>
-              </div>
-              <p className="text-xs text-slate-500 mt-1 ml-10">
-                Select which user roles and visitor categories will be blocked when maintenance mode is active.
-              </p>
+              <h3 className="text-sm font-bold text-slate-900">Target User Roles</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Select which groups will be restricted during maintenance.</p>
             </div>
-
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={handleSelectAllRoles}
-                className="px-3 py-1.5 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                onClick={() => setSelectedRoles(ROLE_OPTIONS.map((r) => r.id))}
+                className="text-xs font-semibold text-blue-600 hover:text-blue-700 cursor-pointer"
               >
                 Select All
               </button>
+              <span className="text-slate-300">•</span>
               <button
                 type="button"
-                onClick={handleClearAllRoles}
-                className="px-3 py-1.5 text-xs font-medium text-slate-500 hover:bg-slate-100 rounded-lg transition-colors"
+                onClick={() => setSelectedRoles([])}
+                className="text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer"
               >
-                Clear All
+                Clear
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {ROLE_OPTIONS.map((role) => {
               const isSelected = selectedRoles.includes(role.id);
               const Icon = role.icon;
@@ -574,203 +399,150 @@ export default function MaintenanceSettingsPage() {
                 <div
                   key={role.id}
                   onClick={() => handleToggleRole(role.id)}
-                  className={`p-4 rounded-xl border-2 transition-all cursor-pointer select-none flex flex-col justify-between ${
+                  className={`p-3.5 rounded-lg border transition-all cursor-pointer select-none flex flex-col justify-between ${
                     isSelected
-                      ? 'border-blue-600 bg-blue-50/50 shadow-sm'
+                      ? 'border-blue-600 bg-blue-50/40'
                       : 'border-slate-200 hover:border-slate-300 bg-white'
                   }`}
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <div
-                        className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-                          isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
-                        }`}
-                      >
-                        <Icon className="w-5 h-5 stroke-[2]" />
-                      </div>
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => {}} // Handled by parent div
-                        className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 pointer-events-none"
-                      />
-                    </div>
-
-                    <h4 className="font-bold text-sm text-slate-900 mb-1">{role.name}</h4>
-                    <p className="text-xs text-slate-500 leading-relaxed">{role.description}</p>
-                  </div>
-
-                  <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-slate-400 uppercase">
-                      Status:
-                    </span>
-                    <span
-                      className={`text-xs font-bold ${
-                        isSelected ? 'text-blue-600' : 'text-slate-400'
+                  <div className="flex items-center justify-between mb-2">
+                    <div
+                      className={`w-8 h-8 rounded-md flex items-center justify-center ${
+                        isSelected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'
                       }`}
                     >
-                      {isSelected ? '🔒 Blocked' : '🔓 Allowed'}
-                    </span>
+                      <Icon className="w-4 h-4 stroke-[2]" />
+                    </div>
+
+                    <div
+                      className={`w-5 h-5 rounded flex items-center justify-center border transition-colors ${
+                        isSelected
+                          ? 'bg-blue-600 border-blue-600 text-white'
+                          : 'border-slate-300 bg-white'
+                      }`}
+                    >
+                      {isSelected && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-xs text-slate-900">{role.name}</h4>
+                    <p className="text-[11px] text-slate-500 mt-0.5 leading-tight">{role.description}</p>
                   </div>
                 </div>
               );
             })}
           </div>
-
-          {/* Super Admin Notice Pill */}
-          <div className="mt-5 p-3 rounded-xl bg-emerald-50 border border-emerald-200/80 flex items-center gap-3 text-xs text-emerald-800 font-medium">
-            <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
-            <span>
-              <strong>Note:</strong> Super Administrators are permanently whitelisted and will never be locked out of the administration portal.
-            </span>
-          </div>
         </div>
 
-        {/* ── SECTION 2: Target Pages & Modules ("Kon kon page offline") ── */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-100">
+        {/* ── Section 2: Protected Routes & Scope ── */}
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
+          <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
             <div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold text-sm">
-                  2
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">
-                  Target Pages & Functional Modules
-                </h3>
-              </div>
-              <p className="text-xs text-slate-500 mt-1 ml-10">
-                Choose between locking down the entire website or selecting specific functional modules and custom URL routes.
-              </p>
+              <h3 className="text-sm font-bold text-slate-900">Protected Routes & Modules</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Select modules to lock down or restrict all routes.</p>
             </div>
 
-            {/* Scope Mode Selector */}
-            <div className="flex items-center bg-slate-100 p-1 rounded-xl">
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-lg text-xs font-semibold">
               <button
                 type="button"
                 onClick={() => setTargetScope('CUSTOM')}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                  targetScope === 'CUSTOM'
-                    ? 'bg-white text-blue-600 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+                  targetScope === 'CUSTOM' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600'
                 }`}
               >
-                Granular Modules
+                Selected Routes
               </button>
               <button
                 type="button"
                 onClick={() => setTargetScope('ALL')}
-                className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                  targetScope === 'ALL'
-                    ? 'bg-red-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
+                className={`px-3 py-1 rounded-md transition-all cursor-pointer ${
+                  targetScope === 'ALL' ? 'bg-red-600 text-white shadow-xs' : 'text-slate-600'
                 }`}
               >
-                Entire Platform (All Routes)
+                All Routes
               </button>
             </div>
           </div>
 
           {targetScope === 'ALL' ? (
-            <div className="p-8 rounded-2xl bg-red-50/70 border border-red-200 text-center">
-              <div className="w-12 h-12 rounded-2xl bg-red-600 text-white flex items-center justify-center mx-auto mb-3 shadow-md shadow-red-500/20">
-                <Lock className="w-6 h-6 stroke-[2.2]" />
-              </div>
-              <h4 className="text-base font-bold text-red-950 mb-1">
-                Full Platform Lockdown Active
-              </h4>
-              <p className="text-xs text-red-700 max-w-md mx-auto leading-relaxed">
-                All pages, landing screens, merchant apps, and rider portals will display the Maintenance Notice for target roles. Only authenticated Super Admins can access administrative tools.
+            <div className="p-4 rounded-lg bg-red-50 border border-red-200 text-center">
+              <p className="text-xs text-red-800 font-semibold">
+                Entire platform is set to offline. All visitor, merchant, and rider routes will be redirected to the maintenance notice.
               </p>
             </div>
           ) : (
-            <div className="space-y-6">
-              {/* Pre-configured Module Checkboxes */}
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 block">
-                  Select System Portals & Routes
-                </span>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                {PRESET_PAGES.map((page) => {
+                  const isChecked = selectedPages.includes(page.path);
+                  const Icon = page.icon;
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {PRESET_PAGES.map((page) => {
-                    const isChecked = selectedPages.includes(page.path);
-                    return (
-                      <div
-                        key={page.id}
-                        onClick={() => handleTogglePage(page.path)}
-                        className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3 select-none ${
-                          isChecked
-                            ? 'border-indigo-500 bg-indigo-50/40 shadow-xs'
-                            : 'border-slate-200 hover:border-slate-300 bg-slate-50/50'
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => {}}
-                          className="mt-0.5 w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 pointer-events-none"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-xs text-slate-900 truncate">
-                              {page.name}
-                            </span>
-                            <span className="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-slate-200/80 text-slate-600 ml-1 shrink-0">
-                              {page.path}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5 truncate">
-                            {page.description}
-                          </p>
+                  return (
+                    <div
+                      key={page.id}
+                      onClick={() => handleTogglePage(page.path)}
+                      className={`p-3 rounded-lg border transition-all cursor-pointer flex items-center justify-between select-none ${
+                        isChecked
+                          ? 'border-blue-600 bg-blue-50/40'
+                          : 'border-slate-200 hover:border-slate-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div
+                          className={`w-7 h-7 rounded flex items-center justify-center shrink-0 ${
+                            isChecked ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
+                          }`}
+                        >
+                          <Icon className="w-3.5 h-3.5 stroke-[2]" />
+                        </div>
+                        <div className="truncate">
+                          <span className="font-semibold text-xs text-slate-900 block truncate">{page.name}</span>
+                          <span className="text-[10px] font-mono text-slate-500 block truncate">{page.path}</span>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+
+                      <div
+                        className={`w-4 h-4 rounded flex items-center justify-center border shrink-0 ml-2 transition-colors ${
+                          isChecked
+                            ? 'bg-blue-600 border-blue-600 text-white'
+                            : 'border-slate-300 bg-white'
+                        }`}
+                      >
+                        {isChecked && <Check className="w-3 h-3 stroke-[2.5]" />}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Custom Path Adder */}
-              <div className="pt-4 border-t border-slate-100">
-                <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2 block">
-                  Add Custom Route or Path Pattern
-                </span>
-                <form
-                  onSubmit={handleAddCustomPath}
-                  className="flex flex-col sm:flex-row items-center gap-3"
-                >
-                  <div className="relative flex-1 w-full">
-                    <input
-                      type="text"
-                      value={customPathInput}
-                      onChange={(e) => setCustomPathInput(e.target.value)}
-                      placeholder="e.g. /dashboard/developer, /rates, or /api/v1/shipments/*"
-                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-xs focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono"
-                    />
-                  </div>
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    size="md"
-                    leftIcon={<Plus className="w-4 h-4" />}
-                    className="w-full sm:w-auto font-semibold"
-                  >
-                    Add Route
+              <div className="pt-3 border-t border-slate-100">
+                <form onSubmit={handleAddCustomPath} className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customPathInput}
+                    onChange={(e) => setCustomPathInput(e.target.value)}
+                    placeholder="Add custom route (e.g. /dashboard/rates or /api/v1/shipments/*)"
+                    className="flex-1 px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 placeholder:text-slate-400 focus:outline-none focus:bg-white focus:border-blue-600 font-mono"
+                  />
+                  <Button type="submit" variant="secondary" size="sm" leftIcon={<Plus className="w-3.5 h-3.5" />}>
+                    Add Path
                   </Button>
                 </form>
 
-                {/* Custom paths list */}
                 {customPaths.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-3">
+                  <div className="flex flex-wrap gap-1.5 mt-2.5">
                     {customPaths.map((path) => (
                       <span
                         key={path}
-                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-800 text-slate-100 text-xs font-mono"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-100 text-slate-700 text-xs font-mono"
                       >
                         <span>{path}</span>
                         <button
                           type="button"
                           onClick={() => handleRemoveCustomPath(path)}
-                          className="text-slate-400 hover:text-red-400"
+                          className="text-slate-400 hover:text-red-500"
                         >
                           ✕
                         </button>
@@ -783,27 +555,15 @@ export default function MaintenanceSettingsPage() {
           )}
         </div>
 
-        {/* ── SECTION 3: Schedule & Countdown Timer ── */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-6 pb-4 border-b border-slate-100">
-            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-sm">
-              3
-            </div>
+        {/* ── Section 3: Schedule & Duration ── */}
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
+          <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
             <div>
-              <h3 className="text-lg font-bold text-slate-900">
-                Maintenance Schedule & Countdown Timer
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Optionally schedule when maintenance should automatically start and display an expected completion countdown timer to users.
-              </p>
+              <h3 className="text-sm font-bold text-slate-900">Schedule & Countdown</h3>
+              <p className="text-xs text-slate-500 mt-0.5">Optionally schedule start time and expected completion.</p>
             </div>
-          </div>
 
-          <div className="space-y-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mr-2">
-                Quick Duration Presets:
-              </span>
+            <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => {
@@ -813,9 +573,9 @@ export default function MaintenanceSettingsPage() {
                   setEndAt(target.toISOString().slice(0, 16));
                   showToast('info', 'Schedule set for 1 hour duration.');
                 }}
-                className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition-colors cursor-pointer"
+                className="px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
               >
-                +1 Hour
+                +1h
               </button>
               <button
                 type="button"
@@ -826,9 +586,9 @@ export default function MaintenanceSettingsPage() {
                   setEndAt(target.toISOString().slice(0, 16));
                   showToast('info', 'Schedule set for 2 hours duration.');
                 }}
-                className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition-colors cursor-pointer"
+                className="px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
               >
-                +2 Hours
+                +2h
               </button>
               <button
                 type="button"
@@ -839,129 +599,104 @@ export default function MaintenanceSettingsPage() {
                   setEndAt(target.toISOString().slice(0, 16));
                   showToast('info', 'Schedule set for 4 hours duration.');
                 }}
-                className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition-colors cursor-pointer"
+                className="px-2.5 py-1 text-xs font-semibold rounded bg-slate-100 hover:bg-slate-200 text-slate-700 cursor-pointer"
               >
-                +4 Hours
+                +4h
               </button>
               <button
                 type="button"
                 onClick={() => {
                   setStartAt('');
                   setEndAt('');
-                  showToast('info', 'Schedule cleared (immediate mode).');
+                  showToast('info', 'Schedule cleared.');
                 }}
-                className="px-2.5 py-1 text-xs font-medium rounded-lg text-slate-500 hover:bg-slate-100 transition-colors cursor-pointer"
+                className="px-2.5 py-1 text-xs font-semibold text-slate-500 hover:text-slate-700 cursor-pointer"
               >
-                Clear Dates
+                Clear
               </button>
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                  Start Time (Optional)
-                </label>
-                <input
-                  type="datetime-local"
-                  value={startAt}
-                  onChange={(e) => setStartAt(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-sans"
-                />
-                <span className="text-[11px] text-slate-400 mt-1 block">
-                  Leave empty to activate immediately when turned on.
-                </span>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Start Time (Optional)
+              </label>
+              <input
+                type="datetime-local"
+                value={startAt}
+                onChange={(e) => setStartAt(e.target.value)}
+                className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600"
+              />
+            </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
-                  Estimated End Time (Restoration Countdown)
-                </label>
-                <input
-                  type="datetime-local"
-                  value={endAt}
-                  onChange={(e) => setEndAt(e.target.value)}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 font-sans"
-                />
-                <span className="text-[11px] text-slate-400 mt-1 block">
-                  Renders a dynamic Days:Hours:Mins live countdown timer on the maintenance page.
-                </span>
-              </div>
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                Estimated End Time (Countdown Target)
+              </label>
+              <input
+                type="datetime-local"
+                value={endAt}
+                onChange={(e) => setEndAt(e.target.value)}
+                className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600"
+              />
             </div>
           </div>
         </div>
 
-        {/* ── SECTION 4: Customer Notice & Support Branding ── */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-6 pb-4 border-b border-slate-100">
-            <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center font-bold text-sm">
-              4
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">
-                Notice Banner & Support Information
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Customize the headline, explanation text, and urgent support contacts presented to affected customers.
-              </p>
-            </div>
+        {/* ── Section 4: Notice Details & Contacts ── */}
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
+          <div className="pb-4 mb-4 border-b border-slate-100">
+            <h3 className="text-sm font-bold text-slate-900">Notice Announcement & Support</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Customize the notice shown to affected visitors.</p>
           </div>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Notice Title
-              </label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Headline Title</label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Scheduled System Maintenance"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-semibold focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                placeholder="e.g. System Under Scheduled Maintenance"
+                className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-semibold focus:outline-none focus:bg-white focus:border-blue-600"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Announcement Message / Reason
-              </label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Notice Message</label>
               <textarea
-                rows={3}
+                rows={2}
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
-                placeholder="Explain the maintenance reason clearly..."
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm leading-relaxed focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                placeholder="Explain the maintenance reason..."
+                className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600 leading-relaxed"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                  Emergency Support Phone
-                </label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Helpline Phone</label>
                 <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="text"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+880 1700-000000"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                    className="w-full pl-8 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600 font-mono"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                  Support Email Address
-                </label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1.5">Support Email</label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="support@shohnaat.com"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                    className="w-full pl-8 pr-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 focus:outline-none focus:bg-white focus:border-blue-600"
                   />
                 </div>
               </div>
@@ -969,98 +704,77 @@ export default function MaintenanceSettingsPage() {
           </div>
         </div>
 
-        {/* ── SECTION 5: Emergency Bypass & Security ── */}
-        <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm">
-          <div className="flex items-center gap-2 mb-6 pb-4 border-b border-slate-100">
-            <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center font-bold text-sm">
-              5
-            </div>
-            <div>
-              <h3 className="text-lg font-bold text-slate-900">
-                Emergency Access & Secret Bypass
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Generate secret bypass keys for QA testing and whitelist authorized office IP addresses.
-              </p>
-            </div>
+        {/* ── Section 5: Bypass Key & Whitelisted IPs ── */}
+        <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
+          <div className="pb-4 mb-4 border-b border-slate-100">
+            <h3 className="text-sm font-bold text-slate-900">Bypass Access & Whitelist</h3>
+            <p className="text-xs text-slate-500 mt-0.5">Emergency access key and authorized office IP addresses.</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Secret Bypass Key
-              </label>
-              <div className="flex items-center gap-2">
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Bypass Secret Key</label>
+              <div className="flex gap-1.5">
                 <input
                   type="text"
                   value={bypassSecret}
                   onChange={(e) => setBypassSecret(e.target.value)}
-                  className="flex-1 px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono focus:outline-none focus:bg-white focus:border-blue-600"
                 />
                 <button
                   type="button"
                   onClick={handleGenerateSecret}
-                  className="px-3 py-2.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors shrink-0"
+                  className="px-2.5 py-2 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition-colors cursor-pointer"
                 >
                   Generate
                 </button>
                 <button
                   type="button"
                   onClick={handleCopyBypassUrl}
-                  className="px-3 py-2.5 text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl transition-colors flex items-center gap-1 shrink-0"
+                  className="px-2.5 py-2 text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
                 >
                   <Copy className="w-3.5 h-3.5" />
-                  <span>Copy URL</span>
+                  <span>Copy</span>
                 </button>
               </div>
-              <span className="text-[11px] text-slate-400 mt-1.5 block leading-relaxed">
-                Anyone visiting with <code>?maint_bypass={bypassSecret}</code> can bypass maintenance.
-              </span>
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Whitelisted IP Addresses (Comma separated)
-              </label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1.5">Whitelisted IPs (Comma-separated)</label>
               <input
                 type="text"
                 value={allowedIpsText}
                 onChange={(e) => setAllowedIpsText(e.target.value)}
                 placeholder="103.145.2.1, 127.0.0.1"
-                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 text-sm font-mono focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                className="w-full px-3.5 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-mono focus:outline-none focus:bg-white focus:border-blue-600"
               />
-              <span className="text-[11px] text-slate-400 mt-1.5 block">
-                Requests from these IPs bypass maintenance automatically.
-              </span>
             </div>
           </div>
         </div>
 
-        {/* ── SECTION 6: Audit History Trail ── */}
+        {/* ── Section 6: Audit History ── */}
         {auditLogs.length > 0 && (
-          <div className="bg-white rounded-2xl p-6 sm:p-8 border border-slate-200 shadow-sm">
-            <div className="flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
-              <Clock className="w-5 h-5 text-slate-500" />
-              <h3 className="text-base font-bold text-slate-900">Recent Maintenance Activity Log</h3>
+          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
+            <div className="flex items-center gap-2 pb-3 mb-3 border-b border-slate-100">
+              <Clock className="w-4 h-4 text-slate-500" />
+              <h3 className="text-sm font-bold text-slate-900">Recent Activity Log</h3>
             </div>
 
             <div className="divide-y divide-slate-100">
-              {auditLogs.slice(0, 5).map((log) => (
-                <div key={log.id} className="py-3 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-3">
+              {auditLogs.slice(0, 4).map((log) => (
+                <div key={log.id} className="py-2.5 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2.5">
                     <span
                       className={`w-2 h-2 rounded-full ${
                         log.diff?.isEnabled ? 'bg-amber-500' : 'bg-slate-400'
                       }`}
                     />
-                    <div>
-                      <span className="font-bold text-slate-800">
-                        {log.diff?.isEnabled ? 'Enabled Maintenance Mode' : 'Disabled Maintenance Mode'}
-                      </span>
-                      <span className="text-slate-400 ml-2">by {log.actor?.name || 'Super Admin'}</span>
-                    </div>
+                    <span className="font-semibold text-slate-800">
+                      {log.diff?.isEnabled ? 'Enabled Maintenance Mode' : 'Disabled Maintenance Mode'}
+                    </span>
+                    <span className="text-slate-400">by {log.actor?.name || 'Super Admin'}</span>
                   </div>
-                  <span className="text-slate-400 font-mono">
+                  <span className="text-slate-400 font-mono text-[11px]">
                     {new Date(log.createdAt).toLocaleString()}
                   </span>
                 </div>
@@ -1070,56 +784,41 @@ export default function MaintenanceSettingsPage() {
         )}
       </div>
 
-      {/* ── Sticky Bottom Action Bar ── */}
-      <div className="sticky bottom-0 z-30 mt-10 -mx-6 sm:-mx-8 lg:-mx-10 p-4 sm:p-6 bg-white/90 backdrop-blur-md border-t border-slate-200 shadow-lg flex items-center justify-between gap-4">
-        <div className="flex items-center gap-3 text-xs text-slate-500">
-          <Info className="w-4 h-4 text-blue-600 shrink-0" />
-          <span>Click save to immediately synchronize changes across API & UI guards.</span>
-        </div>
+      {/* ── Bottom Sticky Save Bar ── */}
+      <div className="sticky bottom-0 z-20 mt-8 -mx-4 sm:-mx-6 lg:-mx-8 p-4 bg-white/95 backdrop-blur-md border-t border-slate-200 shadow-sm flex items-center justify-between gap-4">
+        <span className="text-xs text-slate-500">Changes apply immediately across all apps and live routes.</span>
 
-        <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            size="md"
-            onClick={fetchSettings}
-            leftIcon={<RotateCcw className="w-4 h-4" />}
-          >
+        <div className="flex items-center gap-2.5">
+          <Button variant="outline" size="sm" onClick={fetchSettings} leftIcon={<RotateCcw className="w-3.5 h-3.5" />}>
             Reset
           </Button>
 
           <Button
             variant="primary"
-            size="md"
+            size="sm"
             onClick={() => handleSave()}
             isLoading={isSaving}
-            leftIcon={<Save className="w-4 h-4 stroke-[2.5]" />}
-            className="shadow-md shadow-blue-600/20 font-bold"
+            leftIcon={<Save className="w-3.5 h-3.5 stroke-[2]" />}
           >
             Save & Apply Changes
           </Button>
         </div>
       </div>
 
-      {/* ── Confirmation Modal on Enabling ── */}
+      {/* ── Confirmation Modal ── */}
       {showConfirmModal && (
         <Modal
           isOpen={showConfirmModal}
           onClose={() => setShowConfirmModal(false)}
-          title="Confirm Maintenance Mode Activation"
+          title="Confirm Maintenance Activation"
         >
           <div className="space-y-4 text-slate-700">
-            <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-start gap-3">
-              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
-              <div className="space-y-1">
-                <span className="font-bold text-sm block">Are you sure you want to proceed?</span>
-                <p className="leading-relaxed">
-                  Activating maintenance mode will immediately lock out selected roles (
-                  <strong>{selectedRoles.join(', ')}</strong>) from accessing offline routes. Super Admins will retain access.
-                </p>
-              </div>
-            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Activating maintenance mode will immediately lock out selected roles (
+              <strong>{selectedRoles.join(', ')}</strong>) from accessing offline routes. Super Admins will retain access.
+            </p>
 
-            <div className="flex items-center justify-end gap-3 pt-4">
+            <div className="flex items-center justify-end gap-2 pt-2">
               <Button variant="outline" size="sm" onClick={() => setShowConfirmModal(false)}>
                 Cancel
               </Button>
@@ -1133,40 +832,8 @@ export default function MaintenanceSettingsPage() {
                   handleSave(true);
                 }}
               >
-                Yes, Enable Maintenance Mode
+                Yes, Enable
               </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
-
-      {/* ── Live Preview Modal ── */}
-      {showPreviewModal && (
-        <Modal
-          isOpen={showPreviewModal}
-          onClose={() => setShowPreviewModal(false)}
-          title="Customer Maintenance Screen Preview"
-          size="lg"
-        >
-          <div className="bg-[#090D16] text-white p-6 sm:p-8 rounded-2xl text-center relative overflow-hidden border border-slate-800">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold uppercase tracking-wider mb-4">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-              <span>Scheduled Infrastructure Maintenance</span>
-            </div>
-
-            <h3 className="text-2xl font-extrabold text-white mb-2">{title}</h3>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-lg mx-auto mb-6 leading-relaxed">
-              {message}
-            </p>
-
-            <div className="flex items-center justify-center gap-3 text-xs text-slate-400 mb-6">
-              <span>Hotline: {phone}</span>
-              <span>•</span>
-              <span>Email: {email}</span>
-            </div>
-
-            <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 text-[11px] text-slate-400">
-              ⚡ This is a real-time preview of how customers and merchants will see the offline maintenance screen.
             </div>
           </div>
         </Modal>
