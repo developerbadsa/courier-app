@@ -129,12 +129,35 @@ api.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
+/* ─────────────────────────────────────────────────────────────
+ *  Maintenance Mode Global Subscriber
+ * ───────────────────────────────────────────────────────────── */
+type MaintenanceListener = (payload?: any) => void;
+let maintenanceListeners: MaintenanceListener[] = [];
+
+export function subscribeMaintenance(listener: MaintenanceListener) {
+  maintenanceListeners.push(listener);
+  return () => {
+    maintenanceListeners = maintenanceListeners.filter((l) => l !== listener);
+  };
+}
+
+export function notifyMaintenanceTriggered(payload?: any) {
+  maintenanceListeners.forEach((l) => l(payload));
+}
+
 // Response interceptor — normalize errors, show toasts
 api.interceptors.response.use(
   (response) => response,
-  (error: AxiosError<{ message?: string }>) => {
+  (error: AxiosError<{ message?: string; maintenance?: boolean; title?: string }>) => {
     const status = error.response?.status;
     const message = getErrorMessage(error);
+
+    // Handle 503 Maintenance Mode immediately
+    if (status === 503) {
+      notifyMaintenanceTriggered(error.response?.data);
+      return Promise.reject(error);
+    }
 
     // Don't show toast for login errors (handled locally)
     const url = error.config?.url || '';

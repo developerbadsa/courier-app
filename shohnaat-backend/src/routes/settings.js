@@ -5,6 +5,7 @@ const {
   getMaintenanceSettings,
   saveMaintenanceSettings,
   DEFAULT_MAINTENANCE_CONFIG,
+  addSseSubscriber,
 } = require('../services/systemSettingService');
 
 // ── Public Maintenance Status Endpoint ──
@@ -19,6 +20,40 @@ router.get('/maintenance', async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+});
+
+// ── Real-Time Live Maintenance Status Stream (SSE) ──
+// Subscribes browsers and devices to instant push updates on maintenance status changes
+router.get('/maintenance/live', async (req, res) => {
+  try {
+    const prisma = req.app.locals.prisma;
+    
+    // Set headers for Server-Sent Events
+    res.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      'Connection': 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+
+    // Send initial state immediately
+    const current = await getMaintenanceSettings(prisma, false);
+    res.write(`event: initial_state\ndata: ${JSON.stringify(current)}\n\n`);
+
+    // Register subscriber for live push broadcasts
+    addSseSubscriber(res);
+
+    // Heartbeat ping every 25 seconds
+    const pingTimer = setInterval(() => {
+      res.write(': keepalive\n\n');
+    }, 25000);
+
+    req.on('close', () => {
+      clearInterval(pingTimer);
+    });
+  } catch (error) {
+    res.status(500).end();
   }
 });
 

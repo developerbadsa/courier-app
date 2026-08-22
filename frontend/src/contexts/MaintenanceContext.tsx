@@ -1,8 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { apiGet } from '@/lib/api';
+import { apiGet, subscribeMaintenance } from '@/lib/api';
 
 export interface MaintenanceSettings {
   isEnabled: boolean;
@@ -33,6 +33,10 @@ export interface MaintenanceContextType {
   isSuperAdmin: boolean;
   userRole: string;
   hasBypass: boolean;
+  isSimulatingUserView: boolean;
+  simulationRole: 'merchant' | 'rider' | 'public';
+  setIsSimulatingUserView: (simulating: boolean) => void;
+  setSimulationRole: (role: 'merchant' | 'rider' | 'public') => void;
   refreshMaintenance: () => Promise<void>;
   applyBypassKey: (key: string) => boolean;
   clearBypassKey: () => void;
@@ -48,12 +52,12 @@ export interface MaintenanceContextType {
 const DEFAULT_SETTINGS: MaintenanceSettings = {
   isEnabled: false,
   title: 'System Under Scheduled Maintenance',
-  message: 'We are currently performing essential platform upgrades. The affected services will be restored shortly.',
+  message: 'We are currently performing essential platform upgrades to improve performance and reliability. The affected services will be restored shortly.',
   startAt: null,
   endAt: null,
   targetScope: 'CUSTOM',
   targetRoles: ['merchant', 'rider', 'public'],
-  targetPages: ['/dashboard', '/rider', '/track'],
+  targetPages: ['/', '/track', '/dashboard', '/rider'],
   supportContact: {
     phone: '+880 1700-000000',
     email: 'support@shohnaat.com',
@@ -68,6 +72,10 @@ const MaintenanceContext = createContext<MaintenanceContextType>({
   isSuperAdmin: false,
   userRole: 'public',
   hasBypass: false,
+  isSimulatingUserView: false,
+  simulationRole: 'merchant',
+  setIsSimulatingUserView: () => {},
+  setSimulationRole: () => {},
   refreshMaintenance: async () => {},
   applyBypassKey: () => false,
   clearBypassKey: () => {},
@@ -80,12 +88,14 @@ export const MaintenanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const [userRole, setUserRole] = useState<string>('public');
   const [isSuperAdmin, setIsSuperAdmin] = useState<boolean>(false);
   const [hasBypass, setHasBypass] = useState<boolean>(false);
+  const [isSimulatingUserView, setIsSimulatingUserView] = useState<boolean>(false);
+  const [simulationRole, setSimulationRole] = useState<'merchant' | 'rider' | 'public'>('merchant');
   const [timeRemaining, setTimeRemaining] = useState<MaintenanceContextType['timeRemaining']>(null);
 
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  // Load user role from localStorage
+  // Load user role & simulation state from localStorage
   useEffect(() => {
     try {
       const stored = localStorage.getItem('shohnaat_user');
@@ -102,6 +112,15 @@ export const MaintenanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     } catch {
       setUserRole('public');
       setIsSuperAdmin(false);
+    }
+
+    try {
+      const sim = localStorage.getItem('shohnaat_maint_simulation');
+      if (sim === 'true') {
+        setIsSimulatingUserView(true);
+      }
+    } catch {
+      // ignore
     }
   }, [pathname]);
 
@@ -125,7 +144,6 @@ export const MaintenanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   // Fetch maintenance settings from backend
   const refreshMaintenance = useCallback(async () => {
     try {
-      // If Super Admin, fetch admin endpoint to get complete details
       const endpoint = isSuperAdmin ? '/api/v1/settings/maintenance/admin' : '/api/v1/settings/maintenance';
       const res = await apiGet<MaintenanceSettings>(endpoint);
       if (res.success && res.data) {
@@ -138,13 +156,109 @@ export const MaintenanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     }
   }, [isSuperAdmin]);
 
+  // Initial fetch and regular polling fallback (every 20 seconds)
   useEffect(() => {
     refreshMaintenance();
-
-    // Poll every 30 seconds for live maintenance status
-    const interval = setInterval(refreshMaintenance, 30000);
+    const interval = setInterval(refreshMaintenance, 20000);
     return () => clearInterval(interval);
   }, [refreshMaintenance]);
+
+  // Real-Time SSE Stream for instant push updates
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let eventSource: EventSource | null = null;
+    try {
+      const apiHost = process.env.NEXT_PUBLIC_API_URL || 
+        (window.location.hostname.includes('shohnaat.rahimbadsa.me') ? 'https://api-shohnaat.rahimbadsa.me' : 'http://localhost:5001');
+      
+      eventSource = new EventSource(`${apiHost}/api/v1/settings/maintenance/live`);
+
+      eventSource.addEventListener('maintenance_update', (event) => {
+        try {
+          const updated = JSON.parse(event.data);
+          setSettings((prev) => ({
+            ...(prev || DEFAULT_SETTINGS),
+            ...updated,
+          }));
+        } catch {
+          // ignore
+        }
+      });
+
+      eventSource.addEventListener('initial_state', (event) => {
+        try {
+          const initial = JSON.parse(event.data);
+          setSettings((prev) => ({
+            ...(prev || DEFAULT_SETTINGS),
+            ...initial,
+          }));
+        } catch {
+          // ignore
+        }
+      });
+
+      eventSource.onerror = () => {
+        // SSE disconnected, fallback polling is active
+        eventSource?.close();
+      };
+    } catch {
+      // SSE not supported or network error
+    }
+
+    return () => {
+      eventSource?.close();
+    };
+  }, []);
+
+  // BroadcastChannel & storage event for cross-tab instant synchronization
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel('shohnaat_maintenance_channel');
+      channel.onmessage = (event) => {
+        if (event.data?.type === 'MAINTENANCE_TOGGLED') {
+          refreshMaintenance();
+        }
+      };
+    } catch {
+      // BroadcastChannel fallback
+    }
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'shohnaat_maint_broadcast') {
+        refreshMaintenance();
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+
+    return () => {
+      channel?.close();
+      window.removeEventListener('storage', handleStorage);
+    };
+  }, [refreshMaintenance]);
+
+  // Hook into 503 API interceptor to immediately trigger maintenance screen
+  useEffect(() => {
+    const unsubscribe = subscribeMaintenance((payload) => {
+      if (payload?.maintenance) {
+        setSettings((prev) => ({
+          ...(prev || DEFAULT_SETTINGS),
+          isEnabled: true,
+          effectiveEnabled: true,
+          title: payload.title || prev?.title || DEFAULT_SETTINGS.title,
+          message: payload.message || prev?.message || DEFAULT_SETTINGS.message,
+          startAt: payload.startAt || prev?.startAt,
+          endAt: payload.endAt || prev?.endAt,
+          supportContact: payload.supportContact || prev?.supportContact || DEFAULT_SETTINGS.supportContact,
+        }));
+      }
+    });
+
+    return unsubscribe;
+  }, []);
 
   // Countdown timer calculations
   useEffect(() => {
@@ -176,6 +290,19 @@ export const MaintenanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
     return () => clearInterval(timer);
   }, [settings?.endAt]);
 
+  const handleSetSimulatingUserView = (simulating: boolean) => {
+    setIsSimulatingUserView(simulating);
+    try {
+      if (simulating) {
+        localStorage.setItem('shohnaat_maint_simulation', 'true');
+      } else {
+        localStorage.removeItem('shohnaat_maint_simulation');
+      }
+    } catch {
+      // ignore
+    }
+  };
+
   const applyBypassKey = (key: string): boolean => {
     if (!key.trim()) return false;
     try {
@@ -197,53 +324,72 @@ export const MaintenanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   };
 
   // Determine if current route & user is under maintenance
-  const isUnderMaintenance = React.useMemo(() => {
-    if (!settings) return false;
-
-    // Must be effectively enabled
-    const enabled = settings.isEnabled || settings.effectiveEnabled;
-    if (!enabled) return false;
-
-    // Super Admin is never blocked
-    if (isSuperAdmin) return false;
-
-    // Has bypass key?
-    if (hasBypass) return false;
-
-    // Check if target scope applies to the user's role
-    const targetedRoles = settings.targetRoles || [];
-    const isRoleTargeted = targetedRoles.length === 0 || targetedRoles.includes(userRole);
-    if (!isRoleTargeted) return false;
-
-    // Check if path is targeted
+  const isUnderMaintenance = useMemo(() => {
     const currentPath = (pathname || '/').toLowerCase();
 
-    // Never block /admin login or maintenance bypass routes
-    if (currentPath.startsWith('/admin') && isSuperAdmin) return false;
+    // Never block /admin/settings/maintenance so super admins can configure or exit
+    if (currentPath === '/admin/settings/maintenance') {
+      return false;
+    }
 
-    if (settings.targetScope === 'ALL') {
-      // Allow admin routes even if ALL is selected so admins can log in
-      if (currentPath.startsWith('/admin')) return false;
+    // 1. If Super Admin is simulating the customer experience, trigger maintenance page
+    if (isSimulatingUserView) {
+      // Don't trap admin on login page
+      if (currentPath === '/login' || currentPath === '/admin/settings/maintenance') return false;
       return true;
     }
 
-    // Check targeted pages
+    if (!settings) return false;
+
+    // 2. Must be effectively enabled
+    const enabled = Boolean(settings.isEnabled || settings.effectiveEnabled || settings.rawEnabled);
+    if (!enabled) return false;
+
+    // 3. Super Admin is exempt during normal operations
+    if (isSuperAdmin) return false;
+
+    // 4. Authorized bypass key holders are exempt
+    if (hasBypass) return false;
+
+    // 5. Check if target scope applies to the user's role
+    const effectiveRole = isSimulatingUserView ? simulationRole : userRole;
+    const targetedRoles = settings.targetRoles || [];
+    const isRoleTargeted = targetedRoles.length === 0 || targetedRoles.includes(effectiveRole);
+    if (!isRoleTargeted) return false;
+
+    // 6. Check if path is targeted
+    // If targetScope is 'ALL', block all customer & public routes
+    if (settings.targetScope === 'ALL') {
+      if (currentPath.startsWith('/admin') && isSuperAdmin) return false;
+      return true;
+    }
+
+    // 7. Check targeted pages (with robust wildcard and sub-route matching)
     const targetPages = settings.targetPages || [];
     if (targetPages.length === 0) return false;
 
     return targetPages.some((pattern) => {
       if (!pattern) return false;
       const p = pattern.trim().toLowerCase();
+
+      // Exact match
       if (currentPath === p) return true;
+
+      // Root path '/'
       if (p === '/') return currentPath === '/';
+
+      // Wildcard pattern: e.g. "/dashboard/*" or "/rider/*"
       if (p.endsWith('/*')) {
         const base = p.slice(0, -2);
         return currentPath === base || currentPath.startsWith(base + '/');
       }
+
+      // Prefix match (e.g. "/dashboard" blocks "/dashboard/shipments", "/dashboard/pickups", etc.)
       if (currentPath.startsWith(p + '/')) return true;
+
       return false;
     });
-  }, [settings, isSuperAdmin, hasBypass, userRole, pathname]);
+  }, [settings, isSuperAdmin, hasBypass, userRole, pathname, isSimulatingUserView, simulationRole]);
 
   return (
     <MaintenanceContext.Provider
@@ -254,6 +400,10 @@ export const MaintenanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
         isSuperAdmin,
         userRole,
         hasBypass,
+        isSimulatingUserView,
+        simulationRole,
+        setIsSimulatingUserView: handleSetSimulatingUserView,
+        setSimulationRole,
         refreshMaintenance,
         applyBypassKey,
         clearBypassKey,

@@ -93,6 +93,35 @@ const formatSettingsResponse = (config, isAdmin) => {
   };
 };
 
+// Active SSE client connections for real-time maintenance updates
+const sseSubscribers = new Set();
+
+/**
+ * Register an SSE client connection
+ */
+const addSseSubscriber = (res) => {
+  sseSubscribers.add(res);
+  res.on('close', () => {
+    sseSubscribers.delete(res);
+  });
+};
+
+/**
+ * Broadcast maintenance state changes to all connected SSE clients
+ */
+const broadcastMaintenanceUpdate = (config) => {
+  const publicData = formatSettingsResponse(config, false);
+  const eventPayload = `event: maintenance_update\ndata: ${JSON.stringify(publicData)}\n\n`;
+
+  for (const client of sseSubscribers) {
+    try {
+      client.write(eventPayload);
+    } catch {
+      sseSubscribers.delete(client);
+    }
+  }
+};
+
 /**
  * Check if maintenance schedule dates are active
  */
@@ -100,27 +129,45 @@ const evaluateScheduleActive = (config) => {
   if (!config.isEnabled) return false;
   const now = new Date();
 
+  // If a future start time is scheduled, wait until that time
   if (config.startAt) {
     const start = new Date(config.startAt);
     if (!isNaN(start.getTime()) && now < start) {
-      return false; // Hasn't started yet
+      return false; // Scheduled for later
     }
   }
 
+  // If endAt is specified
   if (config.endAt) {
     const end = new Date(config.endAt);
-    if (!isNaN(end.getTime()) && now > end) {
-      return false; // Already finished
+    if (!isNaN(end.getTime())) {
+      // If end date is in the future, it's active
+      if (now <= end) {
+        return true;
+      }
+      // If end date has passed, and was set specifically for a past window,
+      // but isEnabled was NOT explicitly turned off, treat as finished unless
+      // startAt was also cleared.
+      return false; // Expired schedule
     }
   }
 
+  // No schedule restrictions -> active immediately
   return true;
 };
 
 /**
- * Save maintenance settings to DB, invalidate cache, log audit
+ * Save maintenance settings to DB, invalidate cache, log audit, and broadcast
  */
 const saveMaintenanceSettings = async (prisma, newConfig, actorUser = null) => {
+  // If explicitly enabling and no fresh endAt provided, or endAt is in the past, clear stale endAt
+  if (newConfig.isEnabled === true && newConfig.endAt) {
+    const end = new Date(newConfig.endAt);
+    if (!isNaN(end.getTime()) && end <= new Date()) {
+      newConfig.endAt = null; // Clear expired end timestamp so lockdown is effective
+    }
+  }
+
   const mergedConfig = {
     ...DEFAULT_MAINTENANCE_CONFIG,
     ...(cachedMaintenanceConfig || {}),
@@ -171,12 +218,16 @@ const saveMaintenanceSettings = async (prisma, newConfig, actorUser = null) => {
     cachedMaintenanceConfig = mergedConfig;
     lastCacheTime = Date.now();
 
+    // Instant real-time push to all connected tabs/browsers/clients
+    broadcastMaintenanceUpdate(mergedConfig);
+
     return mergedConfig;
   } catch (error) {
     logger.error('Failed to save maintenance settings:', error.message);
     // Keep in memory anyway
     cachedMaintenanceConfig = mergedConfig;
     lastCacheTime = Date.now();
+    broadcastMaintenanceUpdate(mergedConfig);
     return mergedConfig;
   }
 };
@@ -197,7 +248,7 @@ const isPathTargeted = (currentPath, targetPages = [], targetScope = 'CUSTOM') =
     // Exact match
     if (normalizedPath === p) return true;
 
-    // Special case for root: '/' only matches exactly '/' unless wildcard '/*' is explicitly given
+    // Root path: '/' matches '/' exactly
     if (p === '/') return normalizedPath === '/';
 
     // Wildcard match: e.g. "/dashboard/*" or "/rider/*"
@@ -206,6 +257,7 @@ const isPathTargeted = (currentPath, targetPages = [], targetScope = 'CUSTOM') =
       return normalizedPath === base || normalizedPath.startsWith(base + '/');
     }
 
+    // Prefix match
     if (normalizedPath.startsWith(p + '/')) return true;
 
     return false;
@@ -218,4 +270,6 @@ module.exports = {
   saveMaintenanceSettings,
   isPathTargeted,
   evaluateScheduleActive,
+  addSseSubscriber,
+  broadcastMaintenanceUpdate,
 };

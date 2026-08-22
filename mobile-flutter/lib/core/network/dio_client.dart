@@ -7,6 +7,8 @@ import '../storage/local_storage_service.dart';
 
 /// Smart HTTP client with retry, token refresh, caching, and error mapping.
 class DioClient {
+  static Function(dynamic)? onMaintenanceReceived;
+
   final Dio _dio;
   final LocalStorageService _storage;
   final Map<String, CacheEntry> _cache = {};
@@ -45,6 +47,12 @@ class DioClient {
           return handler.next(options);
         },
         onError: (DioException error, handler) async {
+          // Global 503 Maintenance Response hook
+          if (error.response?.statusCode == 503) {
+            onMaintenanceReceived?.call(error.response?.data);
+            return handler.next(error);
+          }
+
           // Auto token refresh on 401
           if (error.response?.statusCode == 401 && _refreshAttempts < 2) {
             _refreshAttempts++;
