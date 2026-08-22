@@ -327,15 +327,13 @@ export const MaintenanceProvider: React.FC<{ children: React.ReactNode }> = ({ c
   const isUnderMaintenance = useMemo(() => {
     const currentPath = (pathname || '/').toLowerCase();
 
-    // Never block /admin/settings/maintenance so super admins can configure or exit
-    if (currentPath === '/admin/settings/maintenance') {
+    // Direct access to /admin and /login are ALWAYS accessible so admins can enter directly
+    if (currentPath.startsWith('/admin') || currentPath === '/login' || currentPath.startsWith('/login/')) {
       return false;
     }
 
     // 1. If Super Admin is simulating the customer experience, trigger maintenance page
     if (isSimulatingUserView) {
-      // Don't trap admin on login page
-      if (currentPath === '/login' || currentPath === '/admin/settings/maintenance') return false;
       return true;
     }
 
