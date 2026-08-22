@@ -305,8 +305,11 @@ export default function MaintenanceSettingsPage() {
     showToast('success', 'Bypass URL copied to clipboard!');
   };
 
-  const handleSave = async () => {
+  const handleSave = async (overrideEnabled?: boolean) => {
     setIsSaving(true);
+    const targetEnabled = typeof overrideEnabled === 'boolean' ? overrideEnabled : isEnabled;
+    setIsEnabled(targetEnabled);
+
     try {
       const allTargetPages = Array.from(new Set([...selectedPages, ...customPaths]));
       const allowedIps = allowedIpsText
@@ -315,7 +318,7 @@ export default function MaintenanceSettingsPage() {
         .filter(Boolean);
 
       const payload = {
-        isEnabled,
+        isEnabled: targetEnabled,
         title,
         message,
         startAt: startAt ? new Date(startAt).toISOString() : null,
@@ -333,14 +336,14 @@ export default function MaintenanceSettingsPage() {
       if (res.success) {
         showToast(
           'success',
-          `Site Maintenance Mode ${isEnabled ? 'ENABLED' : 'DISABLED'} successfully.`
+          `Site Maintenance Mode ${targetEnabled ? 'ENABLED' : 'DISABLED'} successfully.`
         );
         setShowConfirmModal(false);
 
         // Cross-tab immediate synchronization
         try {
           const channel = new BroadcastChannel('shohnaat_maintenance_channel');
-          channel.postMessage({ type: 'MAINTENANCE_TOGGLED', isEnabled });
+          channel.postMessage({ type: 'MAINTENANCE_TOGGLED', isEnabled: targetEnabled });
           channel.close();
           localStorage.setItem('shohnaat_maint_broadcast', String(Date.now()));
         } catch {
@@ -430,23 +433,28 @@ export default function MaintenanceSettingsPage() {
             <div className="flex flex-col items-start sm:items-end gap-2 shrink-0">
               <button
                 type="button"
+                disabled={isSaving}
                 onClick={() => {
                   if (!isEnabled) {
                     setShowConfirmModal(true);
                   } else {
-                    setIsEnabled(false);
+                    handleSave(false);
                   }
                 }}
                 className={`relative inline-flex h-11 w-24 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 ${
                   isEnabled ? 'bg-amber-500' : 'bg-slate-300'
-                }`}
+                } ${isSaving ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
                 <span
                   className={`pointer-events-none inline-block h-10 w-10 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out flex items-center justify-center ${
                     isEnabled ? 'translate-x-13 text-amber-600' : 'translate-x-0 text-slate-400'
                   }`}
                 >
-                  <Power className="w-5 h-5 stroke-[2.5]" />
+                  {isSaving ? (
+                    <RotateCcw className="w-5 h-5 animate-spin text-amber-600" />
+                  ) : (
+                    <Power className="w-5 h-5 stroke-[2.5]" />
+                  )}
                 </span>
               </button>
               <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -1082,7 +1090,7 @@ export default function MaintenanceSettingsPage() {
           <Button
             variant="primary"
             size="md"
-            onClick={handleSave}
+            onClick={() => handleSave()}
             isLoading={isSaving}
             leftIcon={<Save className="w-4 h-4 stroke-[2.5]" />}
             className="shadow-md shadow-blue-600/20 font-bold"
@@ -1118,11 +1126,11 @@ export default function MaintenanceSettingsPage() {
               <Button
                 variant="primary"
                 size="sm"
+                isLoading={isSaving}
                 className="bg-amber-600 hover:bg-amber-700 font-bold"
                 onClick={() => {
-                  setIsEnabled(true);
                   setShowConfirmModal(false);
-                  handleSave();
+                  handleSave(true);
                 }}
               >
                 Yes, Enable Maintenance Mode

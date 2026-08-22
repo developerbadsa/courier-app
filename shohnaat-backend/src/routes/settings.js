@@ -60,7 +60,7 @@ router.get('/maintenance/live', async (req, res) => {
 // ── Admin-Only Endpoints ──
 
 // GET /api/v1/settings/maintenance/admin — Full config for Super Admin
-router.get('/maintenance/admin', auth, requireRole('super_admin'), async (req, res, next) => {
+router.get('/maintenance/admin', auth, requireRole('super_admin', 'admin'), async (req, res, next) => {
   try {
     const prisma = req.app.locals.prisma;
     const settings = await getMaintenanceSettings(prisma, true);
@@ -74,7 +74,7 @@ router.get('/maintenance/admin', auth, requireRole('super_admin'), async (req, r
 });
 
 // PATCH /api/v1/settings/maintenance — Update Maintenance Mode Configuration
-router.patch('/maintenance', auth, requireRole('super_admin'), async (req, res, next) => {
+router.patch('/maintenance', auth, requireRole('super_admin', 'admin'), async (req, res, next) => {
   try {
     const prisma = req.app.locals.prisma;
     const {
@@ -132,7 +132,7 @@ router.patch('/maintenance', auth, requireRole('super_admin'), async (req, res, 
 });
 
 // GET /api/v1/settings/maintenance/audit — View maintenance change history
-router.get('/maintenance/audit', auth, requireRole('super_admin'), async (req, res, next) => {
+router.get('/maintenance/audit', auth, requireRole('super_admin', 'admin'), async (req, res, next) => {
   try {
     const prisma = req.app.locals.prisma;
     let logs = [];
